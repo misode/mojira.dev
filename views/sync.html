@@ -1,24 +1,30 @@
 {{define "title"}}Sync Overview{{end}}
 
 {{define "content"}}
-<table style="border-collapse:collapse;min-width:400px;">
+<table class="sync-table">
   <thead>
     <tr>
-      <th style="text-align:left;padding:4px 8px;">Project</th>
-      <th style="text-align:right;padding:4px 8px;">Max Key</th>
-      <th style="text-align:right;padding:4px 8px;">Synced Issues</th>
-      <th style="text-align:right;padding:4px 8px;">Percent</th>
+      <th>Project</th>
+      <th>Max Key</th>
+      <th>Synced Issues</th>
+      <th>Percent</th>
     </tr>
   </thead>
   <tbody>
     {{range .Stats}}
     <tr>
-      <td style="padding:4px 8px;">{{.Project}}</td>
-      <td style="text-align:right;padding:4px 8px;">{{.MaxKeyNum}}</td>
-      <td style="text-align:right;padding:4px 8px;">{{.Count}}</td>
-      <td style="text-align:right;padding:4px 8px;">{{printf "%.1f%%" .Percent}}</td>
+      <td>{{.Project}}</td>
+      <td>{{.MaxKeyNum}}</td>
+      <td>{{.Count}}</td>
+      <td>{{printf "%.1f%%" .Percent}}</td>
     </tr>
     {{end}}
+    <tr>
+      <th>Total</th>
+      <th>{{.Total.MaxKeyNum}}</th>
+      <th>{{.Total.Count}}</th>
+      <th>{{printf "%.1f%%" .Total.Percent}}</th>
+    </tr>
   </tbody>
 </table>
 {{end}}

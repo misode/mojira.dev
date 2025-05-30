@@ -131,7 +131,7 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		return nil, err
 	}
 	comments := []model.Comment{}
-	rows, err := c.db.Query(`SELECT date, author, avatar_url, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
+	rows, err := c.db.Query(`SELECT date, author, avatar_url, adf_comment FROM comment WHERE issue_key = $1 AND adf_comment != '' ORDER BY date ASC`, key)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -265,7 +265,7 @@ func (c *DBClient) RemoveQueuedIssueKey(ctx context.Context, key string) error {
 
 func (c *DBClient) GetMaxIssueNumberForPrefix(ctx context.Context, prefix string) (int, error) {
 	var max int
-	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1`, prefix)
+	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1 AND missing = FALSE`, prefix)
 	err := row.Scan(&max)
 	return max, err
 }

@@ -5,23 +5,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{block "title" .}}mojira.dev{{end}}</title>
+  <link rel="stylesheet" href="/static/reset.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <header>
-    <a href="/">mojira.dev</a>
+    <a class="header-main" href="/">mojira.dev</a>
+    <div class="search">
+      <input type="text" placeholder="Search...">
+      <div id="search-results"></div>
+    </div>
   </header>
-  <main>
+
+  <div class="content">
     {{block "content" .}}{{end}}
-  </main>
-  <script>
-    document.querySelectorAll('time[datetime]').forEach(function(el) {
-      const d = new Date(el.getAttribute('datetime'));
-      if (!isNaN(d)) {
-        el.textContent = d.toLocaleString();
-      }
-    });
-  </script>
+  </div>
+
+  <footer>
+    <p>Not an official Minecraft website. Not approved by or associated with Mojang or Microsoft.</p>
+  </footer>
+
+  <script src="/static/main.js"></script>
 </body>
 </html>
 {{end}}

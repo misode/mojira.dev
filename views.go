@@ -53,8 +53,23 @@ func syncOverviewHandler(service *IssueService) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		total := struct {
+			MaxKeyNum int
+			Count     int
+			Percent   float64
+		}{0, 0, 0}
+		for _, s := range stats {
+			total.MaxKeyNum += s.MaxKeyNum
+			total.Count += s.Count
+		}
+		if total.MaxKeyNum > 0 {
+			total.Percent = float64(total.Count) / float64(total.MaxKeyNum) * 100
+		}
 		tmpl := template.Must(template.New("layout.html").ParseFiles("views/layout.html", "views/sync.html"))
-		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{"Stats": stats})
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Stats": stats,
+			"Total": total,
+		})
 	}
 }
 
@@ -148,6 +163,18 @@ func renderADFNode(node map[string]interface{}) string {
 						text = "<code>" + text + "</code>"
 					case "underline":
 						text = "<u>" + text + "</u>"
+					case "subsup":
+						if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+							if typeStr, ok := attrs["type"].(string); ok && (typeStr == "sub" || typeStr == "sup") {
+								text = "<" + typeStr + ">" + text + "</" + typeStr + ">"
+							}
+						}
+					case "textColor":
+						if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+							if color, ok := attrs["color"].(string); ok {
+								text = fmt.Sprintf("<span style='color:%s'>", color) + text + "</span>"
+							}
+						}
 					case "strike":
 						text = "<s>" + text + "</s>"
 					case "link":

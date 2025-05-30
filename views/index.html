@@ -1,13 +1,16 @@
 {{define "content"}}
-<ul>
+<div class="issue-list">
   {{ range .Issues }}
-  <li style="margin-bottom:1.2em;">
-    <a href="/{{.Key}}" style="font-size:1.1em;font-weight:500;">[{{.Key}}] {{ .Summary }}</a><br>
-    <time datetime="{{FormatTime .CreatedDate}}" style="color:gray">{{FormatTime .CreatedDate}}</time>
-    <span style="color:gray;font-size:0.95em;">| {{.Status}}</span>
-  </li>
+  <a class="issue-card" href="/{{.Key}}">
+    <span>{{ .Summary }}</span>
+    <div class="issue-card-details">
+      <img src="/static/bug.svg" alt="">
+      <span class="issue-card-key">{{.Key}}</span>
+      <span>{{.ReporterName}}</span>
+    </div>
+  </a>
   {{ end }}
-</ul>
+</div>
 {{end}}
 
 {{define "title"}}mojira.dev - Issue List{{end}}

@@ -92,10 +92,7 @@ func runInitialSync(service *IssueService) {
 		}
 		batchSize := 5
 		start := last + 1
-		end := start + batchSize - 1
-		if end > max {
-			end = max
-		}
+		end := min(start+batchSize-1, max)
 		for i := start; i <= end; i++ {
 			key := fmt.Sprintf("%s-%d", prefix, i)
 			issue, err := service.FetchIssue(ctx, key)

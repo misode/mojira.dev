@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,13 +11,18 @@ import (
 )
 
 func main() {
+	noSync := flag.Bool("nosync", false, "Disable background syncing")
+	flag.Parse()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	service := NewIssueService()
-	StartSync(service)
+	if !*noSync {
+		StartSync(service)
+	}
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", indexHandler(service))

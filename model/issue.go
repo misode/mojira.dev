@@ -53,6 +53,10 @@ type Comment struct {
 	AdfComment string
 }
 
+func (i *Issue) IsResolved() bool {
+	return i.Status == "Resolved" || i.Status == "Done"
+}
+
 func (a *Attachment) IsImage() bool {
 	return strings.HasPrefix(a.MimeType, "image/")
 }
