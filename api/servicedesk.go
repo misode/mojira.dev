@@ -232,6 +232,9 @@ func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, err
 	if err != nil {
 		return nil, err
 	}
+	if strings.HasPrefix(string(raw), "<!DOCTYPE html>") {
+		return nil, errors.New("received HTML response, likely rate limited")
+	}
 
 	var response struct {
 		AllReqFilter struct {

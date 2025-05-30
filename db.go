@@ -285,3 +285,45 @@ func (c *DBClient) SetSyncState(ctx context.Context, prefix string, last int) er
 		ON CONFLICT (prefix) DO UPDATE SET last_processed = EXCLUDED.last_processed`, prefix, last)
 	return err
 }
+
+func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
+	Project   string
+	MaxKeyNum int
+	Count     int
+	Percent   float64
+}, error) {
+	rows, err := c.db.QueryContext(ctx, `
+		SELECT project, COALESCE(MAX(key_num),0) AS max_key_num, COUNT(*) AS count
+		FROM issue
+		WHERE missing = FALSE
+		GROUP BY project
+		ORDER BY project`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var stats []struct {
+		Project   string
+		MaxKeyNum int
+		Count     int
+		Percent   float64
+	}
+	for rows.Next() {
+		var s struct {
+			Project   string
+			MaxKeyNum int
+			Count     int
+			Percent   float64
+		}
+		if err := rows.Scan(&s.Project, &s.MaxKeyNum, &s.Count); err != nil {
+			return nil, err
+		}
+		if s.MaxKeyNum > 0 {
+			s.Percent = float64(s.Count) / float64(s.MaxKeyNum) * 100
+		} else {
+			s.Percent = 0
+		}
+		stats = append(stats, s)
+	}
+	return stats, nil
+}

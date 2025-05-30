@@ -45,6 +45,19 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
+func syncOverviewHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		stats, err := service.db.GetSyncStats(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tmpl := template.Must(template.New("layout.html").ParseFiles("views/layout.html", "views/sync.html"))
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{"Stats": stats})
+	}
+}
+
 func FormatTime(t interface{}) string {
 	switch v := t.(type) {
 	case nil:
