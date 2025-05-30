@@ -1,0 +1,15 @@
+{{define "content"}}
+<ul>
+  {{ range .Issues }}
+  <li style="margin-bottom:1.2em;">
+    <a href="/{{.Key}}" style="font-size:1.1em;font-weight:500;">[{{.Key}}] {{ .Summary }}</a><br>
+    <time datetime="{{FormatTime .CreatedDate}}" style="color:gray">{{FormatTime .CreatedDate}}</time>
+    <span style="color:gray;font-size:0.95em;">| {{.Status}}</span>
+  </li>
+  {{ end }}
+</ul>
+{{end}}
+
+{{define "title"}}mojira.dev - Issue List{{end}}
+
+{{template "base" .}}

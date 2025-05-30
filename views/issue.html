@@ -1,0 +1,72 @@
+{{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}
+
+{{define "content"}}
+<h1>{{.Issue.Key}}: {{.Issue.Summary}}</h1>
+<p><strong>Created Date:</strong> <time datetime="{{FormatTime .Issue.CreatedDate}}" style="color:gray">{{FormatTime .Issue.CreatedDate}}</time></p>
+<p><strong>Updated Date:</strong> <time datetime="{{FormatTime .Issue.UpdatedDate}}" style="color:gray">{{FormatTime .Issue.UpdatedDate}}</time></p>
+<p><strong>Resolved Date:</strong> <time datetime="{{FormatTime .Issue.ResolvedDate}}" style="color:gray">{{FormatTime .Issue.ResolvedDate}}</time></p>
+<p><strong>Reporter:</strong>
+  {{if .Issue.ReporterAvatar}}
+    <img src="{{.Issue.ReporterAvatar}}" alt="avatar" style="height:1.6rem;vertical-align:middle;border-radius:50%;">
+  {{end}}
+  {{.Issue.ReporterName}}
+</p>
+<p><strong>Status:</strong> {{.Issue.Status}}</p>
+<p><strong>Confirmation Status:</strong> {{.Issue.ConfirmationStatus}}</p>
+<p><strong>Resolution:</strong> {{.Issue.Resolution}}</p>
+<p><strong>Labels:</strong> {{.Issue.Labels}}</p>
+<p><strong>Area:</strong> {{.Issue.Area}}</p>
+<p><strong>Category:</strong> {{.Issue.Category}}</p>
+<p><strong>Mojang Priority:</strong> {{.Issue.MojangPriority}}</p>
+<p><strong>Affects Versions:</strong> {{.Issue.AffectedVersions}}</p>
+<p><strong>Fix Versions:</strong> {{.Issue.FixVersions}}</p>
+<p><strong>Environment:</strong> <span class="adf">{{RenderADF .Issue.Environment}}</span></p>
+<hr>
+<div class="adf">{{RenderADF .Issue.Description}}</div>
+<hr>
+{{if .Issue.Links}}
+  <h2>Related Issues</h2>
+  <ul>
+    {{range .Issue.Links}}
+      <li>{{.Type}} <a href="/{{.OtherKey}}">{{.OtherKey}}</a>: {{.OtherSummary}}</li>
+    {{end}}
+  </ul>
+  <hr>
+{{end}}
+{{if .Issue.Attachments}}
+  <h2>Attachments</h2>
+  <ul>
+    {{range .Issue.Attachments}}
+      <li>
+        <a href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" target="_blank">
+          {{if .IsImage}}
+            <img src="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" alt="{{.Filename}}" style="max-width:200px;max-height:120px;vertical-align:middle;" loading="lazy" />
+          {{else}}
+            {{.Filename}}
+          {{end}}
+        </a>
+        <span style="color:gray;font-size:0.9em;">({{.Size}} bytes, uploaded <time datetime="{{FormatTime .CreatedDate}}">{{FormatTime .CreatedDate}}</time> by {{.AuthorName}})</span>
+      </li>
+    {{end}}
+  </ul>
+  <hr>
+{{end}}
+<h2>Comments</h2>
+{{range .Issue.Comments}}
+  <div style="margin-bottom:1em;">
+    <div>
+      {{if .AvatarUrl}}
+      <img src="{{.AvatarUrl}}" alt="avatar" style="height:1.6rem;vertical-align:middle;border-radius:50%;">
+      {{end}}
+      <strong>{{.Author}}</strong>
+      <time datetime="{{FormatTime .Date}}" style="color:gray">{{FormatTime .Date}}</time>
+      <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="margin-left:0.5em;">📋</button>
+    </div>
+    <div class="adf" style="margin-left:2em;">{{RenderADF .AdfComment}}</div>
+  </div>
+{{else}}
+  <p>No comments.</p>
+{{end}}
+{{end}}
+
+{{template "base" .}}
