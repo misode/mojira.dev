@@ -94,12 +94,11 @@
       {{if .Issue.ResolvedDate}}
       <p><label>Resolved:</label> <time datetime="{{FormatTime .Issue.ResolvedDate}}">{{FormatTime .Issue.ResolvedDate}}</time></p>
       {{end}}
-      {{if .Issue.IsProject "MCPE"}}
+      {{if .Issue.IsProject "MC" "MCPE"}}
       <p><label>ADO:</label> {{.Issue.ADO}}</p>
       {{end}}
       <p><label>Votes:</label> {{.Issue.Votes}}</p>
       <p><label>Confirmation Status:</label> {{.Issue.ConfirmationStatus}}</p>
-      <p><label>Labels:</label> {{.Issue.Labels}}</p>
       {{if .Issue.IsProject "MCPE"}}
       <p><label>Platform:</label> {{.Issue.Platform}}</p>
       <p><label>OS Version:</label> {{.Issue.OSVersion}}</p>
@@ -114,9 +113,10 @@
       <p><label>Components:</label> {{.Issue.Components}}</p>
       {{end}}
       {{if .Issue.IsProject "MC"}}
-      <p><label>Category:</label> {{.Issue.Category}}</p>
       <p><label>Mojang Priority:</label> {{.Issue.MojangPriority}}</p>
+      <p><label>Category:</label> {{.Issue.Category}}</p>
       {{end}}
+      <p><label>Labels:</label> {{.Issue.Labels}}</p>
       {{if .Issue.IsProject "MC" "MCPE"}}
       <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
       <p><label>Fix Versions:</label> {{.Issue.FixVersions}}</p>

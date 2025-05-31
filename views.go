@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/kyokomi/emoji/v2"
 )
 
 func indexHandler(service *IssueService) http.HandlerFunc {
@@ -135,7 +137,7 @@ func renderADFNode(node map[string]any) string {
 		}
 		return fmt.Sprintf("<pre><code class='lang-%s'>%s</code></pre>", template.HTMLEscapeString(lang), renderADFChildren(node))
 	case "rule":
-		return "<hr/>"
+		return "<hr>"
 	case "panel":
 		panelType := "info"
 		if attrs, ok := node["attrs"].(map[string]any); ok {
@@ -202,26 +204,26 @@ func renderADFNode(node map[string]any) string {
 				return template.HTMLEscapeString(txt)
 			}
 			if short, ok := attrs["shortName"].(string); ok {
-				return template.HTMLEscapeString(short)
+				return template.HTMLEscapeString(emoji.Sprint(short))
 			}
 			if txt, ok := attrs["text"].(string); ok {
 				return template.HTMLEscapeString(txt)
 			}
 		}
-		return "[emoji]"
+		return "<span class='placeholder'>[emoji]</span>"
 	case "mention":
 		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if text, ok := attrs["text"].(string); ok {
 				return template.HTMLEscapeString(text)
 			}
 		}
-		return "@mention"
+		return "@unknown"
 	case "mediaSingle":
 		return renderADFChildren(node)
 	case "mediaGroup":
 		return renderADFChildren(node)
 	case "media":
-		return "<span class='media'>[media]</span>"
+		return "<span class='placeholder'>[media]</span>"
 	case "inlineCard":
 		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if url, ok := attrs["url"].(string); ok {
