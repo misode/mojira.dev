@@ -143,22 +143,26 @@ footer {
 }
 
 .issue-split {
-  padding-top: 1rem;
+  padding-top: 0.5rem;
   display: grid;
   gap: 1rem 2rem;
 }
 
 @media (min-width: 720px) {
   .issue-split {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
 
-.issue-description {
+.issue-body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   justify-content: flex-start;
+}
+
+.issue-description {
+  overflow-x: auto;
 }
 
 .issue h2 {
@@ -171,25 +175,30 @@ footer {
 }
 
 .attachments {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat( auto-fit, minmax(180px, 1fr) );
   gap: 1rem;
   flex-wrap: wrap;
 }
 
 .attachment {
-  max-width: 180px;
-  max-height: 120px;
   background-color: var(--gray-200);
   border-radius: 0.25rem;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16/9;
+}
+
+.attachment img {
+  object-position: center center;
+  object-fit: contain;
 }
 
 .attachment-nopreview {
   padding: 0.5rem;
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
 }
 
 .comment-time {
@@ -208,14 +217,44 @@ footer {
   font-size: 14px;
 }
 
-.adf blockquote {
-  margin: 0;
-  padding-left: 1rem;
-  border-left: 4px solid var(--gray-300);
+.adf h1, .adf h2, .adf h3, .adf h4, .adf h5, .adf h6 {
+  font-weight: 600;
+}
+
+.adf h1 {
+  font-size: 24px;
+}
+
+.adf h2 {
+  font-size: 18px;
+}
+
+.adf h3 {
+  font-size: 16px;
+}
+
+.adf h4 {
+  font-size: 14px;
+}
+
+.adf h5 {
+  font-size: 12px;
+}
+
+.adf h6 {
+  font-size: 10px;
+}
+
+.adf h1, .adf h2, .adf h3, .adf h4, .adf h5, .adf h6 {
+  margin: 1rem 0 0 0;
+}
+
+.adf h1:first-child, .adf h2:first-child, .adf h3:first-child, .adf h4:first-child, .adf h5:first-child, .adf h6:first-child {
+  margin-top: 0;
 }
 
 .adf p, .adf ul, .adf ol, .adf blockquote, .adf table {
-  margin: 0.75rem 0 0 0;
+  margin: 0.5rem 0 0 0;
 }
 
 .adf p:first-child, .adf ul:first-child, .adf ol:first-child, .adf blockquote:first-child, .adf table:first-child {
@@ -226,16 +265,24 @@ footer {
   line-height: 1.5;
 }
 
-.adf ul, .adf ol {
+.adf ul {
   padding-left: 1.5rem;
+  list-style: disc;
 }
 
-.adf ul {
-  list-style: disc;
+.adf ol {
+  padding-left: 1.5rem;
+  list-style: decimal;
 }
 
 .adf a {
   text-decoration: underline;
+}
+
+.adf blockquote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 4px solid var(--gray-300);
 }
 
 .adf hr {
@@ -250,7 +297,7 @@ footer {
 }
 
 .adf pre {
-  padding: 4px;
+  padding: 0.5rem;
   background-color: var(--gray-200);
   border-radius: 0.25rem;
 }

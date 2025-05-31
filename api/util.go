@@ -1,6 +1,9 @@
 package api
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 func ParseTime(s string) (*time.Time, error) {
 	if s == "" {
@@ -19,4 +22,12 @@ func ParseTime(s string) (*time.Time, error) {
 		return &t, nil
 	}
 	return nil, err
+}
+
+func SafeName(s string) string {
+	at := strings.IndexByte(s, '@')
+	if at >= 0 {
+		return s[:at]
+	}
+	return s
 }

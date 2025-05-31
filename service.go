@@ -88,6 +88,12 @@ func (s *IssueService) FetchIssue(ctx context.Context, key string) (*model.Issue
 		if merged.ReporterAvatar == "" {
 			merged.ReporterAvatar = sdIssue.ReporterAvatar
 		}
+		if merged.AssigneeName == "" {
+			merged.AssigneeName = sdIssue.AssigneeName
+		}
+		if merged.AssigneeAvatar == "" {
+			merged.AssigneeAvatar = sdIssue.AssigneeAvatar
+		}
 		if merged.Description == "" {
 			merged.Description = sdIssue.Description
 		}
@@ -102,6 +108,12 @@ func (s *IssueService) FetchIssue(ctx context.Context, key string) (*model.Issue
 		}
 		if merged.AffectedVersions == "" {
 			merged.AffectedVersions = sdIssue.AffectedVersions
+		}
+		if merged.Components == "" {
+			merged.Components = sdIssue.Components
+		}
+		if merged.RealmsPlatform == "" {
+			merged.RealmsPlatform = sdIssue.RealmsPlatform
 		}
 		if merged.Comments == nil {
 			merged.Comments = sdIssue.Comments

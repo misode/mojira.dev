@@ -12,14 +12,14 @@
   </h1>
 
   <div class="issue-split">
-    <main class="issue-description">
-      <div class="reporter">
-        {{if .Issue.ReporterAvatar}}
-          <img class="avatar" src="{{.Issue.ReporterAvatar}}">
-        {{end}}
-        {{.Issue.ReporterName}}
+    <main class="issue-body">
+      <div class="issue-description">
+        <div class="adf">{{RenderADF .Issue.Description}}</div>
       </div>
-      <div class="adf">{{RenderADF .Issue.Description}}</div>
+      {{if .Issue.Environment}}
+      <h2>Environment</h2>
+      <div class="adf">{{RenderADF .Issue.Environment}}</div>
+      {{end}}
       {{if .Issue.Links}}
         <h2>Related issues</h2>
         <div>
@@ -46,10 +46,10 @@
       {{range .Issue.Comments}}
         <div>
           <div>
-            {{if .AvatarUrl}}
-            <img class="avatar" src="{{.AvatarUrl}}">
+            {{if .AuthorAvatar}}
+            <img class="avatar" src="{{.AuthorAvatar}}">
             {{end}}
-            <strong>{{.Author}}</strong>
+            <strong>{{.AuthorName}}</strong>
             <time class="comment-time" datetime="{{FormatTime .Date}}">{{FormatTime .Date}}</time>
             <!-- <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button> -->
           </div>
@@ -67,19 +67,40 @@
         </div>
         {{.Issue.Resolution}}
       </div>
+      <p><strong>Reporter:</strong>
+        {{if .Issue.ReporterAvatar}}
+          <img class="avatar" src="{{.Issue.ReporterAvatar}}">
+        {{end}}
+        {{.Issue.ReporterName}}
+      </p>
+      <p><strong>Assignee:</strong>
+        {{if .Issue.AssigneeAvatar}}
+          <img class="avatar" src="{{.Issue.AssigneeAvatar}}">
+        {{end}}
+        {{if .Issue.AssigneeName}}
+        {{.Issue.AssigneeName}}
+        {{else}}
+        (Unassigned)
+        {{end}}
+      </p>
       <p><strong>Created:</strong> <time datetime="{{FormatTime .Issue.CreatedDate}}">{{FormatTime .Issue.CreatedDate}}</time></p>
       <p><strong>Updated:</strong> <time datetime="{{FormatTime .Issue.UpdatedDate}}">{{FormatTime .Issue.UpdatedDate}}</time></p>
       {{if .Issue.ResolvedDate}}
       <p><strong>Resolved:</strong> <time datetime="{{FormatTime .Issue.ResolvedDate}}">{{FormatTime .Issue.ResolvedDate}}</time></p>
       {{end}}
+      <p><strong>ADO:</strong> {{.Issue.ADO}}</p>
+      <p><strong>Votes:</strong> {{.Issue.Votes}}</p>
       <p><strong>Confirmation Status:</strong> {{.Issue.ConfirmationStatus}}</p>
       <p><strong>Labels:</strong> {{.Issue.Labels}}</p>
+      <p><strong>Platform:</strong> {{.Issue.Platform}}</p>
+      <p><strong>OS Version:</strong> {{.Issue.OSVersion}}</p>
+      <p><strong>Realms Platform:</strong> {{.Issue.RealmsPlatform}}</p>
       <p><strong>Area:</strong> {{.Issue.Area}}</p>
+      <p><strong>Components:</strong> {{.Issue.Components}}</p>
       <p><strong>Category:</strong> {{.Issue.Category}}</p>
       <p><strong>Mojang Priority:</strong> {{.Issue.MojangPriority}}</p>
       <p><strong>Affects Versions:</strong> {{.Issue.AffectedVersions}}</p>
       <p><strong>Fix Versions:</strong> {{.Issue.FixVersions}}</p>
-      <p><strong>Environment:</strong> <span class="adf">{{RenderADF .Issue.Environment}}</span></p>
     </div>
   </div>
 </div>

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,6 +104,10 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 					DisplayName string
 					AvatarUrl   string
 				}
+				Assignee struct {
+					DisplayName string
+					AvatarUrl   string
+				}
 				Summary string
 				Status  string
 				Date    string
@@ -111,6 +116,8 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 					Value json.RawMessage
 				}
 				ActivityStream []struct {
+					Type       string
+					CommentId  int
 					Date       string
 					Author     string
 					AvatarUrl  string
@@ -129,6 +136,9 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 	apiIssue := parsed.ReqDetails.Issue
 	comments := make([]model.Comment, 0, len(apiIssue.ActivityStream))
 	for _, c := range apiIssue.ActivityStream {
+		if c.Type != "worker-comment" && c.Type != "requester-comment" {
+			continue
+		}
 		var date *time.Time
 		if c.Date != "" {
 			t, err := ParseTime(c.Date)
@@ -138,16 +148,19 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 			date = t
 		}
 		comments = append(comments, model.Comment{
-			Date:       date,
-			Author:     c.Author,
-			AvatarUrl:  c.AvatarUrl,
-			AdfComment: c.AdfComment,
+			Id:           strconv.Itoa(c.CommentId),
+			Date:         date,
+			AuthorName:   SafeName(c.Author),
+			AuthorAvatar: c.AvatarUrl,
+			AdfComment:   c.AdfComment,
 		})
 	}
 
 	description := ""
 	affectedVersions := ""
 	environment := ""
+	components := ""
+	realmsPlatform := ""
 	for _, f := range apiIssue.Fields {
 		switch f.Id {
 		case "description":
@@ -168,6 +181,18 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 			}
 			_ = json.Unmarshal(f.Value, &v)
 			environment = v.Adf
+		case "components":
+			var v struct {
+				Text string
+			}
+			_ = json.Unmarshal(f.Value, &v)
+			components = v.Text
+		case "customfield_10056":
+			var v struct {
+				Text string
+			}
+			_ = json.Unmarshal(f.Value, &v)
+			realmsPlatform = v.Text
 		}
 	}
 
@@ -182,8 +207,10 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 	return &model.Issue{
 		Key:                key,
 		Summary:            apiIssue.Summary,
-		ReporterName:       apiIssue.Reporter.DisplayName,
+		ReporterName:       SafeName(apiIssue.Reporter.DisplayName),
 		ReporterAvatar:     apiIssue.Reporter.AvatarUrl,
+		AssigneeName:       SafeName(apiIssue.Assignee.DisplayName),
+		AssigneeAvatar:     apiIssue.Assignee.AvatarUrl,
 		Description:        description,
 		Environment:        environment,
 		Labels:             "",
@@ -195,8 +222,15 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 		Resolution:         "",
 		AffectedVersions:   affectedVersions,
 		FixVersions:        "",
+		Category:           "",
 		MojangPriority:     "",
 		Area:               "",
+		Components:         components,
+		Platform:           "",
+		OSVersion:          "",
+		RealmsPlatform:     realmsPlatform,
+		ADO:                "",
+		Votes:              0,
 		Comments:           comments,
 	}, nil
 }

@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"mojira/model"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -44,6 +46,8 @@ func initTables(db *sql.DB) {
 			summary TEXT,
 			reporter_name TEXT,
 			reporter_avatar TEXT,
+			assignee_name TEXT,
+			assignee_avatar TEXT,
 			description TEXT,
 			environment TEXT,
 			labels TEXT,
@@ -58,6 +62,13 @@ func initTables(db *sql.DB) {
 			category TEXT,
 			mojang_priority TEXT,
 			area TEXT,
+			components TEXT,
+			ado TEXT,
+			platform TEXT,
+			os_version TEXT,
+			realms_platform TEXT,
+			votes INTEGER NOT NULL DEFAULT 0,
+			text TEXT,
 			synced_date TIMESTAMPTZ NOT NULL,
 			missing BOOLEAN NOT NULL DEFAULT FALSE
 		);
@@ -67,9 +78,10 @@ func initTables(db *sql.DB) {
 		CREATE TABLE IF NOT EXISTS comment (
 			id SERIAL PRIMARY KEY,
 			issue_key VARCHAR(32) NOT NULL REFERENCES issue(key) ON DELETE CASCADE,
+			comment_id TEXT,
 			date TIMESTAMPTZ,
-			author TEXT,
-			avatar_url TEXT,
+			author_name TEXT,
+			author_avatar TEXT,
 			adf_comment TEXT NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS issue_link (
@@ -81,11 +93,12 @@ func initTables(db *sql.DB) {
 			other_status TEXT
 		);
 		CREATE TABLE IF NOT EXISTS attachment (
-			id VARCHAR(32) PRIMARY KEY,
+			id SERIAL PRIMARY KEY,
 			issue_key VARCHAR(32) NOT NULL REFERENCES issue(key) ON DELETE CASCADE,
+			attachment_id VARCHAR(32),
 			filename TEXT,
-			author TEXT,
-			avatar_url TEXT,
+			author_name TEXT,
+			author_avatar TEXT,
 			created_date TIMESTAMPTZ,
 			size INTEGER,
 			mime_type TEXT
@@ -105,7 +118,7 @@ func initTables(db *sql.DB) {
 }
 
 func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query("SELECT key, summary, reporter_name, reporter_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, mojang_priority, area, category FROM issue WHERE missing = FALSE ORDER BY created_date DESC LIMIT $1", limit)
+	rows, err := c.db.Query("SELECT key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE missing = FALSE ORDER BY created_date DESC LIMIT $1", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +127,7 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.MojangPriority, &issue.Area, &issue.Category); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.Category, &issue.MojangPriority, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes); err != nil {
 			return nil, err
 		}
 		issues = append(issues, issue)
@@ -123,20 +136,20 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, mojang_priority, area, category FROM issue WHERE key = $1 AND missing = FALSE", key)
+	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE key = $1 AND missing = FALSE", key)
 	var issue model.Issue
 	issue.Key = key
-	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.MojangPriority, &issue.Area, &issue.Category)
+	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.MojangPriority, &issue.Category, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes)
 	if err != nil {
 		return nil, err
 	}
 	comments := []model.Comment{}
-	rows, err := c.db.Query(`SELECT date, author, avatar_url, adf_comment FROM comment WHERE issue_key = $1 AND adf_comment != '' ORDER BY date ASC`, key)
+	rows, err := c.db.Query(`SELECT comment_id, date, author, avatar_url, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var cmt model.Comment
-			if err := rows.Scan(&cmt.Date, &cmt.Author, &cmt.AvatarUrl, &cmt.AdfComment); err == nil {
+			if err := rows.Scan(&cmt.Id, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment); err == nil {
 				comments = append(comments, cmt)
 			}
 		}
@@ -155,7 +168,7 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	}
 	issue.Links = links
 	attachments := []model.Attachment{}
-	rows, err = c.db.Query(`SELECT id, filename, author, avatar_url, created_date, size, mime_type FROM attachment WHERE issue_key = $1`, key)
+	rows, err = c.db.Query(`SELECT attachment_id, filename, author_name, author_avatar, created_date, size, mime_type FROM attachment WHERE issue_key = $1`, key)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -182,17 +195,34 @@ func (c *DBClient) InsertIssue(ctx context.Context, issue *model.Issue) error {
 }
 
 func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
+	var textParts []string
+	if issue.Summary != "" {
+		textParts = append(textParts, issue.Summary)
+	}
+	if issue.Description != "" {
+		textParts = append(textParts, extractPlainTextFromADF(issue.Description))
+	}
+	if issue.Environment != "" {
+		textParts = append(textParts, extractPlainTextFromADF(issue.Environment))
+	}
+	for _, cmt := range issue.Comments {
+		if cmt.AdfComment != "" {
+			textParts = append(textParts, extractPlainTextFromADF(cmt.AdfComment))
+		}
+	}
+	text := strings.Join(textParts, "\n")
+
 	_, err := tx.Exec(`DELETE FROM issue WHERE key = $1`, issue.Key)
 	if err != nil {
 		return err
 	}
-	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, synced_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`
-	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.Description, issue.Environment, issue.Labels, issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, issue.AffectedVersions, issue.FixVersions, issue.Category, issue.MojangPriority, issue.Area, time.Now())
+	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`
+	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, issue.Labels, issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, issue.AffectedVersions, issue.FixVersions, issue.Category, issue.MojangPriority, issue.Area, issue.Components, issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, time.Now())
 	if err != nil {
 		return errors.New("failed to insert issue: " + err.Error())
 	}
 	for _, cmt := range issue.Comments {
-		_, err = tx.Exec(`INSERT INTO comment (issue_key, date, author, avatar_url, adf_comment) VALUES ($1, $2, $3, $4, $5)`, issue.Key, cmt.Date, cmt.Author, cmt.AvatarUrl, cmt.AdfComment)
+		_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6)`, issue.Key, cmt.Id, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
 		if err != nil {
 			return errors.New("failed to insert comment: " + err.Error())
 		}
@@ -204,7 +234,7 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 		}
 	}
 	for _, a := range issue.Attachments {
-		_, err = tx.Exec(`INSERT INTO attachment (id, issue_key, filename, author, avatar_url, created_date, size, mime_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, a.Id, issue.Key, a.Filename, a.AuthorName, a.AuthorAvatar, a.CreatedDate, a.Size, a.MimeType)
+		_, err = tx.Exec(`INSERT INTO attachment (issue_key, attachment_id, filename, author_name, author_avatar, created_date, size, mime_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, issue.Key, a.Id, a.Filename, a.AuthorName, a.AuthorAvatar, a.CreatedDate, a.Size, a.MimeType)
 		if err != nil {
 			return errors.New("failed to insert attachment: " + err.Error())
 		}
@@ -326,4 +356,39 @@ func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
 		stats = append(stats, s)
 	}
 	return stats, nil
+}
+
+func extractPlainTextFromADF(adf string) string {
+	if adf == "" {
+		return ""
+	}
+	var node map[string]interface{}
+	err := json.Unmarshal([]byte(adf), &node)
+	if err != nil {
+		return ""
+	}
+	return extractPlainTextFromADFNode(node)
+}
+
+func extractPlainTextFromADFNode(node map[string]interface{}) string {
+	typeStr, _ := node["type"].(string)
+	switch typeStr {
+	case "text":
+		text, _ := node["text"].(string)
+		return text
+	case "hardBreak":
+		return "\n"
+	default:
+		content, ok := node["content"].([]interface{})
+		if !ok {
+			return ""
+		}
+		var sb strings.Builder
+		for _, c := range content {
+			if child, ok := c.(map[string]interface{}); ok {
+				sb.WriteString(extractPlainTextFromADFNode(child))
+			}
+		}
+		return sb.String()
+	}
 }

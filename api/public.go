@@ -76,6 +76,15 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 				MojangPriority struct {
 					Value string
 				} `json:"customfield_10049"`
+				ADO      string `json:"customfield_10050"`
+				Platform struct {
+					Value string
+				} `json:"customfield_10063"`
+				OSVersion      string `json:"customfield_10061"`
+				RealmsPlatform struct {
+					Value string
+				} `json:"customfield_10056"`
+				Votes    int `json:"customfield_10070"`
 				Created  string
 				Updated  string
 				Versions []struct {
@@ -203,6 +212,8 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 		Summary:            f.Summary,
 		ReporterName:       "",
 		ReporterAvatar:     "",
+		AssigneeName:       "",
+		AssigneeAvatar:     "",
 		Description:        desc,
 		Environment:        "",
 		Labels:             strings.Join(f.Labels, ", "),
@@ -217,6 +228,12 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 		Category:           strings.Join(category, ", "),
 		MojangPriority:     f.MojangPriority.Value,
 		Area:               f.Area.Value,
+		Components:         "",
+		Platform:           strings.TrimSpace(f.Platform.Value),
+		OSVersion:          f.OSVersion,
+		RealmsPlatform:     f.RealmsPlatform.Value,
+		ADO:                f.ADO,
+		Votes:              f.Votes,
 		Links:              links,
 		Attachments:        attachments,
 		Comments:           nil,

@@ -10,6 +10,8 @@ type Issue struct {
 	Summary            string
 	ReporterName       string
 	ReporterAvatar     string
+	AssigneeName       string
+	AssigneeAvatar     string
 	Description        string
 	Environment        string
 	Labels             string
@@ -24,6 +26,12 @@ type Issue struct {
 	Category           string
 	MojangPriority     string
 	Area               string
+	Components         string
+	Platform           string
+	OSVersion          string
+	RealmsPlatform     string
+	ADO                string
+	Votes              int
 	Links              []IssueLink
 	Attachments        []Attachment
 	Comments           []Comment
@@ -47,14 +55,15 @@ type Attachment struct {
 }
 
 type Comment struct {
-	Date       *time.Time
-	Author     string
-	AvatarUrl  string
-	AdfComment string
+	Id           string
+	Date         *time.Time
+	AuthorName   string
+	AuthorAvatar string
+	AdfComment   string
 }
 
 func (i *Issue) IsResolved() bool {
-	return i.Status == "Resolved" || i.Status == "Done"
+	return i.Status == "Resolved" || i.Status == "Done" || i.Status == "Closed"
 }
 
 func (a *Attachment) IsImage() bool {
