@@ -17,7 +17,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data := map[string]interface{}{"Issues": issues}
+		data := map[string]any{"Issues": issues}
 		tmpl := template.Must(template.New("layout.html").Funcs(template.FuncMap{
 			"FormatTime": FormatTime,
 		}).ParseFiles("views/layout.html", "views/index.html"))
@@ -37,7 +37,7 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 			"FormatTime": FormatTime,
 			"RenderADF":  RenderADF,
 		}).ParseFiles("views/layout.html", "views/issue.html"))
-		err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{"Issue": issue})
+		err = tmpl.ExecuteTemplate(w, "base", map[string]any{"Issue": issue})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -66,14 +66,14 @@ func syncOverviewHandler(service *IssueService) http.HandlerFunc {
 			total.Percent = float64(total.Count) / float64(total.MaxKeyNum) * 100
 		}
 		tmpl := template.Must(template.New("layout.html").ParseFiles("views/layout.html", "views/sync.html"))
-		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+		tmpl.ExecuteTemplate(w, "base", map[string]any{
 			"Stats": stats,
 			"Total": total,
 		})
 	}
 }
 
-func FormatTime(t interface{}) string {
+func FormatTime(t any) string {
 	switch v := t.(type) {
 	case nil:
 		return ""
@@ -93,14 +93,14 @@ func RenderADF(adf string) template.HTML {
 	if adf == "" {
 		return ""
 	}
-	var node map[string]interface{}
+	var node map[string]any
 	if err := json.Unmarshal([]byte(adf), &node); err != nil {
 		return template.HTML(template.HTMLEscapeString(adf))
 	}
 	return template.HTML(renderADFNode(node))
 }
 
-func renderADFNode(node map[string]interface{}) string {
+func renderADFNode(node map[string]any) string {
 	typeStr, _ := node["type"].(string)
 	switch typeStr {
 	case "doc":
@@ -109,7 +109,7 @@ func renderADFNode(node map[string]interface{}) string {
 		return "<p>" + renderADFChildren(node) + "</p>"
 	case "heading":
 		lvl := 1
-		if attrs, ok := node["attrs"].(map[string]interface{}); ok {
+		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if l, ok := attrs["level"].(float64); ok {
 				lvl = int(l)
 			}
@@ -128,7 +128,7 @@ func renderADFNode(node map[string]interface{}) string {
 		return "<li>" + renderADFChildren(node) + "</li>"
 	case "codeBlock":
 		lang := ""
-		if attrs, ok := node["attrs"].(map[string]interface{}); ok {
+		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if l, ok := attrs["language"].(string); ok {
 				lang = l
 			}
@@ -137,7 +137,13 @@ func renderADFNode(node map[string]interface{}) string {
 	case "rule":
 		return "<hr/>"
 	case "panel":
-		return "<div class='panel'>" + renderADFChildren(node) + "</div>"
+		panelType := "info"
+		if attrs, ok := node["attrs"].(map[string]any); ok {
+			if p, ok := attrs["panelType"].(string); ok {
+				panelType = p
+			}
+		}
+		return fmt.Sprintf("<div class='panel panel-%s'><img src='/static/icons/%s.svg' alt=''><div>", panelType, panelType) + renderADFChildren(node) + "</div></div>"
 	case "table":
 		return "<table>" + renderADFChildren(node) + "</table>"
 	case "tableRow":
@@ -150,9 +156,9 @@ func renderADFNode(node map[string]interface{}) string {
 		text, _ := node["text"].(string)
 		text = template.HTMLEscapeString(text)
 		text = linkifyIssueKeys(text)
-		if marks, ok := node["marks"].([]interface{}); ok {
+		if marks, ok := node["marks"].([]any); ok {
 			for _, m := range marks {
-				if mark, ok := m.(map[string]interface{}); ok {
+				if mark, ok := m.(map[string]any); ok {
 					typeMark, _ := mark["type"].(string)
 					switch typeMark {
 					case "strong":
@@ -164,13 +170,13 @@ func renderADFNode(node map[string]interface{}) string {
 					case "underline":
 						text = "<u>" + text + "</u>"
 					case "subsup":
-						if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+						if attrs, ok := mark["attrs"].(map[string]any); ok {
 							if typeStr, ok := attrs["type"].(string); ok && (typeStr == "sub" || typeStr == "sup") {
 								text = "<" + typeStr + ">" + text + "</" + typeStr + ">"
 							}
 						}
 					case "textColor":
-						if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+						if attrs, ok := mark["attrs"].(map[string]any); ok {
 							if color, ok := attrs["color"].(string); ok {
 								text = fmt.Sprintf("<span style='color:%s'>", color) + text + "</span>"
 							}
@@ -178,7 +184,7 @@ func renderADFNode(node map[string]interface{}) string {
 					case "strike":
 						text = "<s>" + text + "</s>"
 					case "link":
-						if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+						if attrs, ok := mark["attrs"].(map[string]any); ok {
 							if href, ok := attrs["href"].(string); ok {
 								text = fmt.Sprintf("<a href='%s' rel='nofollow' target='_blank'>%s</a>", template.HTMLEscapeString(href), text)
 							}
@@ -191,7 +197,7 @@ func renderADFNode(node map[string]interface{}) string {
 	case "hardBreak":
 		return "<br>"
 	case "emoji":
-		if attrs, ok := node["attrs"].(map[string]interface{}); ok {
+		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if txt, ok := attrs["text"].(string); ok && len([]rune(txt)) == 1 {
 				return template.HTMLEscapeString(txt)
 			}
@@ -204,7 +210,7 @@ func renderADFNode(node map[string]interface{}) string {
 		}
 		return "[emoji]"
 	case "mention":
-		if attrs, ok := node["attrs"].(map[string]interface{}); ok {
+		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if text, ok := attrs["text"].(string); ok {
 				return template.HTMLEscapeString(text)
 			}
@@ -215,30 +221,30 @@ func renderADFNode(node map[string]interface{}) string {
 	case "mediaGroup":
 		return renderADFChildren(node)
 	case "media":
-		return "<span style='color:#888;'>[media]</span>"
+		return "<span class='media'>[media]</span>"
 	case "inlineCard":
-		if attrs, ok := node["attrs"].(map[string]interface{}); ok {
+		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if url, ok := attrs["url"].(string); ok {
 				if key := extractIssueKeyFromURL(url); key != "" {
-					return fmt.Sprintf(`<a href='/%s'>%s</a>`, key, key)
+					return fmt.Sprintf("<a href='/%s'>%s</a>", key, key)
 				}
-				return fmt.Sprintf(`<a href='%s' target='_blank'>%s</a>`, template.HTMLEscapeString(url), template.HTMLEscapeString(url))
+				return fmt.Sprintf("<a href='%s' target='_blank'>%s</a>", template.HTMLEscapeString(url), template.HTMLEscapeString(url))
 			}
 		}
 		return "[inlineCard]"
 	default:
-		return fmt.Sprintf("<span style='color:red;font-weight:bold;'>[%s]</span>"+renderADFChildren(node), template.HTMLEscapeString(typeStr))
+		return fmt.Sprintf("<span style='color:red;font-weight:bold;'>[%s]</span>", template.HTMLEscapeString(typeStr)) + renderADFChildren(node)
 	}
 }
 
-func renderADFChildren(node map[string]interface{}) string {
-	content, ok := node["content"].([]interface{})
+func renderADFChildren(node map[string]any) string {
+	content, ok := node["content"].([]any)
 	if !ok {
 		return ""
 	}
 	var sb strings.Builder
 	for _, c := range content {
-		if child, ok := c.(map[string]interface{}); ok {
+		if child, ok := c.(map[string]any); ok {
 			sb.WriteString(renderADFNode(child))
 		}
 	}

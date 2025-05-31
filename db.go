@@ -144,7 +144,7 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		return nil, err
 	}
 	comments := []model.Comment{}
-	rows, err := c.db.Query(`SELECT comment_id, date, author, avatar_url, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
+	rows, err := c.db.Query(`SELECT comment_id, date, author_name, author_avatar, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -362,7 +362,7 @@ func extractPlainTextFromADF(adf string) string {
 	if adf == "" {
 		return ""
 	}
-	var node map[string]interface{}
+	var node map[string]any
 	err := json.Unmarshal([]byte(adf), &node)
 	if err != nil {
 		return ""
@@ -370,7 +370,7 @@ func extractPlainTextFromADF(adf string) string {
 	return extractPlainTextFromADFNode(node)
 }
 
-func extractPlainTextFromADFNode(node map[string]interface{}) string {
+func extractPlainTextFromADFNode(node map[string]any) string {
 	typeStr, _ := node["type"].(string)
 	switch typeStr {
 	case "text":
@@ -379,13 +379,13 @@ func extractPlainTextFromADFNode(node map[string]interface{}) string {
 	case "hardBreak":
 		return "\n"
 	default:
-		content, ok := node["content"].([]interface{})
+		content, ok := node["content"].([]any)
 		if !ok {
 			return ""
 		}
 		var sb strings.Builder
 		for _, c := range content {
-			if child, ok := c.(map[string]interface{}); ok {
+			if child, ok := c.(map[string]any); ok {
 				sb.WriteString(extractPlainTextFromADFNode(child))
 			}
 		}

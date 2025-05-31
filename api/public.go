@@ -55,7 +55,7 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 			Key    string
 			Fields struct {
 				Summary     string
-				Description interface{}
+				Description any
 				Status      struct {
 					Name string
 				}
@@ -153,7 +153,7 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 	switch d := f.Description.(type) {
 	case string:
 		desc = d
-	case map[string]interface{}:
+	case map[string]any:
 		b, _ := json.Marshal(d)
 		desc = string(b)
 	}

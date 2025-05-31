@@ -64,10 +64,10 @@ func NewServiceDeskClient(ctx context.Context) (*ServiceDeskClient, error) {
 
 func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
 	portalId := portalIds[strings.Split(key, "-")[0]]
-	body, err := json.Marshal(map[string]interface{}{
+	body, err := json.Marshal(map[string]any{
 		"models": []string{"reqDetails"},
-		"options": map[string]interface{}{
-			"reqDetails": map[string]interface{}{
+		"options": map[string]any{
+			"reqDetails": map[string]any{
 				"key":      key,
 				"portalId": portalId,
 			},
@@ -236,10 +236,10 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 }
 
 func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, error) {
-	body, err := json.Marshal(map[string]interface{}{
+	body, err := json.Marshal(map[string]any{
 		"models": []string{"allReqFilter"},
-		"options": map[string]interface{}{
-			"allReqFilter": map[string]interface{}{
+		"options": map[string]any{
+			"allReqFilter": map[string]any{
 				"selectedPage": 1,
 				"reporter":     "all",
 			},
