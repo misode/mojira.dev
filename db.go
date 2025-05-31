@@ -325,7 +325,6 @@ func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
 	rows, err := c.db.QueryContext(ctx, `
 		SELECT project, COALESCE(MAX(key_num),0) AS max_key_num, COUNT(*) AS count
 		FROM issue
-		WHERE missing = FALSE
 		GROUP BY project
 		ORDER BY project`)
 	if err != nil {
