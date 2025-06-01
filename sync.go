@@ -90,7 +90,7 @@ func runInitialSync(service *IssueService) {
 			fmt.Printf("Error getting sync state for %s: %v\n", prefix, err)
 			continue
 		}
-		batchSize := 5
+		batchSize := 10
 		start := last + 1
 		end := min(start+batchSize-1, max)
 		fmt.Printf("Running initial sync for %s: start=%v end=%v\n", prefix, start, end)

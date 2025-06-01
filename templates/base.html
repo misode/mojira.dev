@@ -8,13 +8,14 @@
   <title>{{block "title" .}}mojira.dev{{end}}</title>
   <link rel="stylesheet" href="/static/reset.css">
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
   <header>
     <a class="header-main" href="/">mojira.dev</a>
     <div class="search">
-      <input id="search-input" type="text" placeholder="Search...">
-      <div id="search-results"></div>
+      <input type="text" name="search" placeholder="Search" autocomplete="off" hx-post="/api/search" hx-trigger="input delay:0.2s" hx-target="#search-results">
+      <div id="search-results" class="search-results"></div>
     </div>
   </header>
 

@@ -29,6 +29,8 @@ func main() {
 	http.HandleFunc("/sync", syncOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))
 
+	http.HandleFunc("/api/search", apiSearchHandler(service))
+
 	fmt.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }

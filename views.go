@@ -5,12 +5,35 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/kyokomi/emoji/v2"
 )
+
+func render(w http.ResponseWriter, name string, data any) {
+	if !strings.HasSuffix(name, ".html") {
+		name = fmt.Sprintf("%s.html", name)
+	}
+
+	tmpl, err := template.New(filepath.Base(name)).Funcs(template.FuncMap{
+		"FormatTime": FormatTime,
+		"RenderADF":  RenderADF,
+	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -19,11 +42,9 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data := map[string]any{"Issues": issues}
-		tmpl := template.Must(template.New("layout.html").Funcs(template.FuncMap{
-			"FormatTime": FormatTime,
-		}).ParseFiles("views/layout.html", "views/index.html"))
-		tmpl.ExecuteTemplate(w, "base", data)
+		render(w, "pages/index", map[string]any{
+			"Issues": issues,
+		})
 	}
 }
 
@@ -35,15 +56,9 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		tmpl := template.Must(template.New("layout.html").Funcs(template.FuncMap{
-			"FormatTime": FormatTime,
-			"RenderADF":  RenderADF,
-		}).ParseFiles("views/layout.html", "views/issue.html"))
-		err = tmpl.ExecuteTemplate(w, "base", map[string]any{"Issue": issue})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		render(w, "pages/issue", map[string]any{
+			"Issue": issue,
+		})
 	}
 }
 
@@ -67,10 +82,29 @@ func syncOverviewHandler(service *IssueService) http.HandlerFunc {
 		if total.MaxKeyNum > 0 {
 			total.Percent = float64(total.Count) / float64(total.MaxKeyNum) * 100
 		}
-		tmpl := template.Must(template.New("layout.html").ParseFiles("views/layout.html", "views/sync.html"))
-		tmpl.ExecuteTemplate(w, "base", map[string]any{
+		render(w, "pages/sync", map[string]any{
 			"Stats": stats,
 			"Total": total,
+		})
+	}
+}
+
+func apiSearchHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		search := r.Form.Get("search")
+		if len(search) == 0 {
+			w.Write([]byte(""))
+			return
+		}
+		issues, totalCount, err := service.db.SearchIssues(search, 10)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		render(w, "partials/search_results", map[string]any{
+			"Issues":     issues,
+			"TotalCount": totalCount,
 		})
 	}
 }
@@ -129,13 +163,7 @@ func renderADFNode(node map[string]any) string {
 	case "listItem":
 		return "<li>" + renderADFChildren(node) + "</li>"
 	case "codeBlock":
-		lang := ""
-		if attrs, ok := node["attrs"].(map[string]any); ok {
-			if l, ok := attrs["language"].(string); ok {
-				lang = l
-			}
-		}
-		return fmt.Sprintf("<pre><code class='lang-%s'>%s</code></pre>", template.HTMLEscapeString(lang), renderADFChildren(node))
+		return "<pre><code>" + renderADFChildren(node) + "</code></pre>"
 	case "rule":
 		return "<hr>"
 	case "panel":

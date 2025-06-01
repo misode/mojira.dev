@@ -135,6 +135,40 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
+func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, int, error) {
+	search := "%" + text + "%"
+	query := `SELECT key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue
+		WHERE missing = FALSE AND (key ILIKE $1 OR text ILIKE $1)
+		ORDER BY
+			(key ILIKE $1) DESC,
+			(summary ILIKE $1) DESC,
+			(description ILIKE $1) DESC,
+			created_date DESC
+		LIMIT $2;`
+	rows, err := c.db.Query(query, search, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var issues []model.Issue
+	for rows.Next() {
+		var issue model.Issue
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.Category, &issue.MojangPriority, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes); err != nil {
+			return nil, 0, err
+		}
+		issues = append(issues, issue)
+	}
+
+	var count int
+	countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE missing = FALSE AND text LIKE $1`, search)
+	err = countRow.Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+	return issues, count, nil
+}
+
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE key = $1 AND missing = FALSE", key)
 	var issue model.Issue
