@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"mojira/model"
 	"os"
 	"strings"
@@ -19,7 +19,7 @@ type DBClient struct {
 }
 
 func NewDBClient() (*DBClient, error) {
-	fmt.Println("Connecting to database...")
+	log.Println("Connecting to database...")
 	connStr := os.Getenv("DATABASE_URL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -32,7 +32,7 @@ func NewDBClient() (*DBClient, error) {
 }
 
 func (c *DBClient) RunMigration(filepath string) error {
-	fmt.Printf("Running migration '%s'...\n", filepath)
+	log.Printf("Running migration '%s'...\n", filepath)
 	sqlBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *DBClient) RunMigration(filepath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Migration '%s' executed successfully\n", filepath)
+	log.Printf("Migration '%s' executed successfully\n", filepath)
 	return nil
 }
 
@@ -95,10 +95,10 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE key = $1 AND missing = FALSE", key)
+	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date FROM issue WHERE key = $1 AND missing = FALSE", key)
 	var issue model.Issue
 	issue.Key = key
-	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes)
+	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.SyncedDate)
 	if err != nil {
 		return nil, err
 	}

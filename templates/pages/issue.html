@@ -1,12 +1,13 @@
 {{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}
 
 {{define "content"}}
-<div class="issue">
+<div class="issue" id="issue" hx-swap-oob="true">
   <div class="issue-top">
     <div class="issue-title">
-      <div class="issue-key" onclick="navigator.clipboard.writeText('{{.Issue.Key}}')">
+      <div class="issue-key" data-copy="{{.Issue.Key}}">
         <img src="/static/icons/bug.svg" alt="">
         <span>{{.Issue.Key}}</span>
+        {{icon "check"}}
       </div>
 
       <h1 class="issue-summary">
@@ -14,11 +15,17 @@
       </h1>
     </div>
     <div class="issue-actions">
-      <div class="issue-status">
-        <div class="issue-status-button {{if .Issue.IsResolved}}issue-resolved{{end}}">
-          {{.Issue.Status}}
-        </div>
+      <div class="issue-action {{if .Issue.IsResolved}}issue-resolved{{else}}issue-open{{end}}">
+        {{.Issue.Status}}
+      </div>
+      {{if .Issue.Resolution}}
+      <div>
         {{.Issue.Resolution}}
+      </div>
+      {{end}}
+      <div class="issue-action">
+        {{icon "thumbsup"}}
+        {{.Issue.Votes}}
       </div>
     </div>
   </div>
@@ -26,11 +33,11 @@
   <div class="issue-split">
     <main class="issue-body">
       <div class="issue-description">
-        <div class="adf">{{RenderADF .Issue.Description}}</div>
+        <div class="adf">{{renderADF .Issue.Description}}</div>
       </div>
       {{if .Issue.HasEnvironment}}
       <h2>Environment</h2>
-      <div class="adf">{{RenderADF .Issue.Environment}}</div>
+      <div class="adf">{{renderADF .Issue.Environment}}</div>
       {{end}}
       {{if .Issue.Links}}
         <h2>Related issues</h2>
@@ -62,10 +69,10 @@
             <img class="avatar" src="{{.AuthorAvatar}}">
             {{end}}
             <strong>{{.AuthorName}}</strong>
-            <time class="comment-time" datetime="{{FormatTime .Date}}">{{FormatTime .Date}}</time>
+            <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
             <!-- <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button> -->
           </div>
-          <div class="comment-body adf">{{RenderADF .AdfComment}}</div>
+          <div class="comment-body adf">{{renderADF .AdfComment}}</div>
         </div>
       {{else}}
         <p>No comments.</p>
@@ -89,15 +96,14 @@
         (Unassigned)
         {{end}}
       </p>
-      <p><label>Created:</label> <time datetime="{{FormatTime .Issue.CreatedDate}}">{{FormatTime .Issue.CreatedDate}}</time></p>
-      <p><label>Updated:</label> <time datetime="{{FormatTime .Issue.UpdatedDate}}">{{FormatTime .Issue.UpdatedDate}}</time></p>
+      <p><label>Created:</label> <time datetime="{{formatTime .Issue.CreatedDate}}">{{formatTime .Issue.CreatedDate}}</time></p>
+      <p><label>Updated:</label> <time datetime="{{formatTime .Issue.UpdatedDate}}">{{formatTime .Issue.UpdatedDate}}</time></p>
       {{if .Issue.ResolvedDate}}
-      <p><label>Resolved:</label> <time datetime="{{FormatTime .Issue.ResolvedDate}}">{{FormatTime .Issue.ResolvedDate}}</time></p>
+      <p><label>Resolved:</label> <time datetime="{{formatTime .Issue.ResolvedDate}}">{{formatTime .Issue.ResolvedDate}}</time></p>
       {{end}}
       {{if .Issue.IsProject "MC" "MCPE"}}
-      <p><label>ADO:</label> {{.Issue.ADO}}</p>
+      <p><label>ADO:</label> <span data-copy="{{.Issue.ADO}}">{{.Issue.ADO}} {{icon "check"}}</span></p>
       {{end}}
-      <p><label>Votes:</label> {{.Issue.Votes}}</p>
       <p><label>Confirmation Status:</label> {{.Issue.ConfirmationStatus}}</p>
       {{if .Issue.IsProject "MCPE"}}
       <p><label>Platform:</label> {{.Issue.Platform}}</p>
@@ -121,6 +127,10 @@
       <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
       {{end}}
+      <p class="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/refresh/{{.Issue.Key}}" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
+        {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}
+        Retrieved <time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
+      </p>
     </div>
   </div>
 </div>

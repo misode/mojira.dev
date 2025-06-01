@@ -37,6 +37,10 @@ a {
   text-decoration: underline;
 }
 
+svg {
+  fill: currentColor;
+}
+
 /* HEADER */
 
 header {
@@ -154,7 +158,7 @@ footer {
 }
 
 .issue {
-  max-width: 1250px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -172,20 +176,15 @@ footer {
   .issue-top {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
   }
 }
 
 .issue-key {
-  width: max-content; 
-  display: flex;
-  gap: 0.25rem;
+  width: max-content;
   font-size: 12px;
   color: var(--gray-800);
-  cursor: pointer;
-}
-
-.issue-key:hover {
-  text-decoration: underline;
 }
 
 .issue-summary {
@@ -193,30 +192,36 @@ footer {
   font-weight: 500;
 }
 
-.issue-status {
+.issue-actions {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
+}
+
+.issue-action {
+  display: flex;
+  gap: 0.25rem;
   align-items: center;
   white-space: nowrap;
-}
-
-@media (min-width: 720px) {
-  .issue-status {
-    flex-direction: row-reverse;
-  }
-}
-
-.issue-status-button {
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   font-weight: 600;
   font-size: 14px;
-  background-color: var(--gray-300);
   border-radius: 0.25rem;
 }
 
-.issue-status-button.issue-resolved {
+.issue-action.issue-open {
+  background-color: var(--gray-300);
+}
+
+.issue-action.issue-resolved {
   color: var(--gray-50);
   background-color: var(--resolved);
+}
+
+@media (min-width: 720px) {
+  .issue-actions {
+    flex-direction: row-reverse;
+  }
 }
 
 .issue-split {
@@ -282,6 +287,7 @@ footer {
   color: var(--gray-950);
   background-color: var(--gray-200);
   border-radius: 0.25rem;
+  text-decoration: none;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -296,8 +302,12 @@ footer {
 }
 
 .attachment-nopreview {
+  width: 100%;
   padding: 0.5rem;
+  font-size: 14px;
   text-align: center;
+  white-space: wrap;
+  word-wrap: break-word;
 }
 
 .comment-time {
@@ -307,6 +317,14 @@ footer {
 
 .comment-body {
   margin-left: 2rem;
+}
+
+.sync-note {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  color: var(--gray-400);
 }
 
 /* ADF */
@@ -454,4 +472,24 @@ footer {
 
 .sync-table th:first-child, .sync-table td:first-child {
   text-align: left;
+}
+
+[data-copy] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+[data-copy]:hover {
+  text-decoration: underline;
+}
+
+[data-copy] svg {
+  display: none;
+  color: var(--resolved);
+}
+
+[data-copy].copied svg {
+  display: inline;
 }

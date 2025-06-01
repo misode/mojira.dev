@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -19,8 +21,9 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 
 	tmpl, err := template.New(filepath.Base(name)).Funcs(template.FuncMap{
-		"FormatTime": FormatTime,
-		"RenderADF":  RenderADF,
+		"formatTime": formatTime,
+		"renderADF":  renderADF,
+		"icon":       icon,
 		"join":       func(arr []string) string { return strings.Join(arr, ", ") },
 	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
@@ -109,7 +112,31 @@ func apiSearchHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
-func FormatTime(t any) string {
+func apiRefreshHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := r.PathValue("key")
+		ctx := r.Context()
+		oldIssue, _ := service.db.GetIssueByKey(key)
+		if oldIssue != nil && oldIssue.IsUpToDate() {
+			return
+		}
+		issue, err := service.FetchIssue(ctx, key)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = service.db.InsertIssue(ctx, issue)
+		if err != nil {
+			log.Printf("Error inserting issue %s: %v", key, err)
+		}
+		render(w, "pages/issue", map[string]any{
+			"Issue":     issue,
+			"IsRefresh": true,
+		})
+	}
+}
+
+func formatTime(t any) string {
 	switch v := t.(type) {
 	case nil:
 		return ""
@@ -125,7 +152,7 @@ func FormatTime(t any) string {
 	}
 }
 
-func RenderADF(adf string) template.HTML {
+func renderADF(adf string) template.HTML {
 	if adf == "" {
 		return ""
 	}
@@ -301,4 +328,13 @@ func extractIssueKeyFromURL(url string) string {
 		}
 	}
 	return ""
+}
+
+func icon(name string) template.HTML {
+	path := fmt.Sprintf("templates/icons/%s.svg", name)
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return template.HTML(fmt.Sprintf("<!-- icon '%s' not found -->", name))
+	}
+	return template.HTML(bytes)
 }

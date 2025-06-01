@@ -5,6 +5,7 @@ import (
 	"log"
 	"mojira/api"
 	"mojira/model"
+	"time"
 )
 
 type IssueService struct {
@@ -19,15 +20,15 @@ func NewIssueService() *IssueService {
 		log.Fatal(err)
 	}
 
+	pubClient := api.NewPublicClient()
+
 	ctx := context.Background()
-	serviceDeskClient, err := api.NewServiceDeskClient(ctx)
+	sdClient, err := api.NewServiceDeskClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	publicClient := api.NewPublicClient()
-
-	return &IssueService{db: dbClient, publicAPI: *publicClient, serviceDesk: *serviceDeskClient}
+	return &IssueService{db: dbClient, publicAPI: *pubClient, serviceDesk: *sdClient}
 }
 
 func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
@@ -119,6 +120,9 @@ func (s *IssueService) FetchIssue(ctx context.Context, key string) (*model.Issue
 			merged.Comments = sdIssue.Comments
 		}
 	}
+
+	synced := time.Now()
+	merged.SyncedDate = &synced
 
 	return &merged, nil
 }

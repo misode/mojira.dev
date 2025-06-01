@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -37,7 +36,8 @@ func main() {
 	http.HandleFunc("/{key}", issueHandler(service))
 
 	http.HandleFunc("/api/search", apiSearchHandler(service))
+	http.HandleFunc("/api/refresh/{key}", apiRefreshHandler(service))
 
-	fmt.Println("Starting server...")
+	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }

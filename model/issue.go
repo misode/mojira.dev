@@ -37,6 +37,7 @@ type Issue struct {
 	Links              []IssueLink
 	Attachments        []Attachment
 	Comments           []Comment
+	SyncedDate         *time.Time
 }
 
 type IssueLink struct {
@@ -93,6 +94,9 @@ func (i *Issue) HasEnvironment() bool {
 }
 
 func (i *Issue) ShortAffectedVersions() string {
+	if i.AffectedVersions == nil {
+		return ""
+	}
 	n := len(i.AffectedVersions)
 	if n <= 10 {
 		return strings.Join(i.AffectedVersions, ", ")
@@ -100,6 +104,14 @@ func (i *Issue) ShortAffectedVersions() string {
 	short := append(i.AffectedVersions[:5], "...")
 	short = append(short, i.AffectedVersions[n-5:]...)
 	return strings.Join(short, ", ")
+}
+
+func (i *Issue) IsUpToDate() bool {
+	if i.SyncedDate == nil {
+		return true
+	}
+	offset := time.Duration(-5) * time.Minute
+	return i.SyncedDate.After(time.Now().Add(offset))
 }
 
 func (a *Attachment) IsImage() bool {
