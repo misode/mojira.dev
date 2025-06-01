@@ -110,16 +110,16 @@
       <p><label>Area:</label> {{.Issue.Area}}</p>
       {{end}}
       {{if .Issue.IsProject "WEB"}}
-      <p><label>Components:</label> {{.Issue.Components}}</p>
+      <p><label>Components:</label> {{join .Issue.Components}}</p>
       {{end}}
       {{if .Issue.IsProject "MC"}}
       <p><label>Mojang Priority:</label> {{.Issue.MojangPriority}}</p>
-      <p><label>Category:</label> {{.Issue.Category}}</p>
+      <p><label>Category:</label> {{join .Issue.Category}}</p>
       {{end}}
-      <p><label>Labels:</label> {{.Issue.Labels}}</p>
+      <p><label>Labels:</label> {{join .Issue.Labels}}</p>
       {{if .Issue.IsProject "MC" "MCPE"}}
       <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
-      <p><label>Fix Versions:</label> {{.Issue.FixVersions}}</p>
+      <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
       {{end}}
     </div>
   </div>

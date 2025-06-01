@@ -21,6 +21,7 @@ func render(w http.ResponseWriter, name string, data any) {
 	tmpl, err := template.New(filepath.Base(name)).Funcs(template.FuncMap{
 		"FormatTime": FormatTime,
 		"RenderADF":  RenderADF,
+		"join":       func(arr []string) string { return strings.Join(arr, ", ") },
 	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -97,14 +98,13 @@ func apiSearchHandler(service *IssueService) http.HandlerFunc {
 			w.Write([]byte(""))
 			return
 		}
-		issues, totalCount, err := service.db.SearchIssues(search, 10)
+		issues, err := service.db.SearchIssues(search, 10)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		render(w, "partials/search_results", map[string]any{
-			"Issues":     issues,
-			"TotalCount": totalCount,
+			"Issues": issues,
 		})
 	}
 }

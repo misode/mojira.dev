@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"mojira/model"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type DBClient struct {
@@ -18,6 +19,7 @@ type DBClient struct {
 }
 
 func NewDBClient() (*DBClient, error) {
+	fmt.Println("Connecting to database...")
 	connStr := os.Getenv("DATABASE_URL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -26,99 +28,25 @@ func NewDBClient() (*DBClient, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
-	initTables(db)
 	return &DBClient{db: db}, nil
 }
 
-func initTables(db *sql.DB) {
-	fmt.Println("Initializing database tables...")
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS comment;`)
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS issue_link;`)
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS attachment;`)
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS issue;`)
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS sync_queue;`)
-	// _, _ = db.Exec(`DROP TABLE IF EXISTS sync_state;`)
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS issue (
-			key VARCHAR(32) PRIMARY KEY,
-			project VARCHAR(16) GENERATED ALWAYS AS (substring(key from '^(.*?)-')) STORED,
-			key_num INTEGER GENERATED ALWAYS AS (CAST(substring(key from '[0-9]+$') AS INTEGER)) STORED,
-			summary TEXT,
-			reporter_name TEXT,
-			reporter_avatar TEXT,
-			assignee_name TEXT,
-			assignee_avatar TEXT,
-			description TEXT,
-			environment TEXT,
-			labels TEXT,
-			created_date TIMESTAMPTZ,
-			updated_date TIMESTAMPTZ,
-			resolved_date TIMESTAMPTZ,
-			status TEXT,
-			confirmation_status TEXT,
-			resolution TEXT,
-			affected_versions TEXT,
-			fix_versions TEXT,
-			category TEXT,
-			mojang_priority TEXT,
-			area TEXT,
-			components TEXT,
-			ado TEXT,
-			platform TEXT,
-			os_version TEXT,
-			realms_platform TEXT,
-			votes INTEGER NOT NULL DEFAULT 0,
-			text TEXT,
-			synced_date TIMESTAMPTZ NOT NULL,
-			missing BOOLEAN NOT NULL DEFAULT FALSE
-		);
-		CREATE INDEX IF NOT EXISTS idx_issue_project ON issue(project);
-		CREATE INDEX IF NOT EXISTS idx_issue_key_num ON issue(key_num);
-		CREATE INDEX IF NOT EXISTS idx_issue_project_key_num ON issue(project, key_num);
-		CREATE TABLE IF NOT EXISTS comment (
-			id SERIAL PRIMARY KEY,
-			issue_key VARCHAR(32) NOT NULL REFERENCES issue(key) ON DELETE CASCADE,
-			comment_id TEXT,
-			date TIMESTAMPTZ,
-			author_name TEXT,
-			author_avatar TEXT,
-			adf_comment TEXT NOT NULL
-		);
-		CREATE TABLE IF NOT EXISTS issue_link (
-			id SERIAL PRIMARY KEY,
-			issue_key VARCHAR(32) NOT NULL REFERENCES issue(key) ON DELETE CASCADE,
-			type TEXT NOT NULL,
-			other_key VARCHAR(32) NOT NULL,
-			other_summary TEXT,
-			other_status TEXT
-		);
-		CREATE TABLE IF NOT EXISTS attachment (
-			id SERIAL PRIMARY KEY,
-			issue_key VARCHAR(32) NOT NULL REFERENCES issue(key) ON DELETE CASCADE,
-			attachment_id VARCHAR(32),
-			filename TEXT,
-			author_name TEXT,
-			author_avatar TEXT,
-			created_date TIMESTAMPTZ,
-			size INTEGER,
-			mime_type TEXT
-		);
-		CREATE TABLE IF NOT EXISTS sync_queue (
-			issue_key VARCHAR(32) PRIMARY KEY,
-			queued_date TIMESTAMPTZ DEFAULT NOW()
-		);
-		CREATE TABLE IF NOT EXISTS sync_state (
-			prefix VARCHAR(16) PRIMARY KEY,
-			last_processed INTEGER NOT NULL
-		);
-	`)
+func (c *DBClient) RunMigration(filepath string) error {
+	fmt.Printf("Running migration '%s'...\n", filepath)
+	sqlBytes, err := os.ReadFile(filepath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	_, err = c.db.Exec(string(sqlBytes))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Migration '%s' executed successfully\n", filepath)
+	return nil
 }
 
 func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query("SELECT key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE missing = FALSE ORDER BY created_date DESC LIMIT $1", limit)
+	rows, err := c.db.Query("SELECT key, summary, reporter_name FROM issue WHERE missing = FALSE ORDER BY created_date DESC LIMIT $1", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +55,7 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.Category, &issue.MojangPriority, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName); err != nil {
 			return nil, err
 		}
 		issues = append(issues, issue)
@@ -135,45 +63,42 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
-func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, int, error) {
-	search := "%" + text + "%"
-	query := `SELECT key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue
-		WHERE missing = FALSE AND (key ILIKE $1 OR text ILIKE $1)
+func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
+	// Disallow queries starting with "-" for performance reasons
+	if strings.HasPrefix(strings.TrimSpace(text), "-") {
+		return []model.Issue{}, nil
+	}
+
+	query := `SELECT key, summary FROM issue
+		WHERE
+			missing = FALSE AND
+			to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)
 		ORDER BY
-			(key ILIKE $1) DESC,
-			(summary ILIKE $1) DESC,
-			(description ILIKE $1) DESC,
+			to_tsvector('english', summary) @@ websearch_to_tsquery('english', $1) DESC,
 			created_date DESC
 		LIMIT $2;`
-	rows, err := c.db.Query(query, search, limit)
+	rows, err := c.db.Query(query, text, limit)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.Category, &issue.MojangPriority, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes); err != nil {
-			return nil, 0, err
+		if err := rows.Scan(&issue.Key, &issue.Summary); err != nil {
+			return nil, err
 		}
 		issues = append(issues, issue)
 	}
-
-	var count int
-	countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE missing = FALSE AND text LIKE $1`, search)
-	err = countRow.Scan(&count)
-	if err != nil {
-		return nil, 0, err
-	}
-	return issues, count, nil
+	return issues, nil
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes FROM issue WHERE key = $1 AND missing = FALSE", key)
 	var issue model.Issue
 	issue.Key = key
-	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, &issue.Labels, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, &issue.AffectedVersions, &issue.FixVersions, &issue.Category, &issue.MojangPriority, &issue.Area, &issue.Components, &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes)
+	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +176,7 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 		return err
 	}
 	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`
-	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, issue.Labels, issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, issue.AffectedVersions, issue.FixVersions, issue.Category, issue.MojangPriority, issue.Area, issue.Components, issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, time.Now())
+	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, time.Now())
 	if err != nil {
 		return errors.New("failed to insert issue: " + err.Error())
 	}

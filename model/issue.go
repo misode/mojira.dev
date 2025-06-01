@@ -16,19 +16,19 @@ type Issue struct {
 	AssigneeAvatar     string
 	Description        string
 	Environment        string
-	Labels             string
+	Labels             []string
 	CreatedDate        *time.Time
 	UpdatedDate        *time.Time
 	ResolvedDate       *time.Time
 	Status             string
 	ConfirmationStatus string
 	Resolution         string
-	AffectedVersions   string
-	FixVersions        string
-	Category           string
+	AffectedVersions   []string
+	FixVersions        []string
+	Category           []string
 	MojangPriority     string
 	Area               string
-	Components         string
+	Components         []string
 	Platform           string
 	OSVersion          string
 	RealmsPlatform     string
@@ -93,16 +93,12 @@ func (i *Issue) HasEnvironment() bool {
 }
 
 func (i *Issue) ShortAffectedVersions() string {
-	parts := strings.Split(i.AffectedVersions, ",")
-	for idx, p := range parts {
-		parts[idx] = strings.TrimSpace(p)
-	}
-	n := len(parts)
+	n := len(i.AffectedVersions)
 	if n <= 10 {
-		return strings.Join(parts, ", ")
+		return strings.Join(i.AffectedVersions, ", ")
 	}
-	short := append(parts[:5], "...")
-	short = append(short, parts[n-5:]...)
+	short := append(i.AffectedVersions[:5], "...")
+	short = append(short, i.AffectedVersions[n-5:]...)
 	return strings.Join(short, ", ")
 }
 

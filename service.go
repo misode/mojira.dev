@@ -106,10 +106,10 @@ func (s *IssueService) FetchIssue(ctx context.Context, key string) (*model.Issue
 		if merged.Status == "" {
 			merged.Status = sdIssue.Status
 		}
-		if merged.AffectedVersions == "" {
+		if len(merged.AffectedVersions) == 0 {
 			merged.AffectedVersions = sdIssue.AffectedVersions
 		}
-		if merged.Components == "" {
+		if len(merged.Components) == 0 {
 			merged.Components = sdIssue.Components
 		}
 		if merged.RealmsPlatform == "" {
