@@ -51,7 +51,7 @@
         <h2>Attachments</h2>
         <div class="attachments">
           {{range .Issue.Attachments}}
-            <a class="attachment" href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" target="_blank">
+            <a class="attachment" href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
               {{if .IsImage}}
                 <img src="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" alt="{{.Filename}}" loading="lazy" />
               {{else}}
@@ -132,6 +132,16 @@
         Retrieved <time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
       </p>
     </div>
+  </div>
+</div>
+
+<div id="image-overlay" class="image-overlay">
+  <div class="image-overlay-backdrop"></div>
+  <div class="image-overlay-content">
+    <button class="image-overlay-arrow left" aria-label="Previous image">{{icon "chevron-left"}}</button>
+    <img id="image-overlay-img" src="" alt="" />
+    <button class="image-overlay-arrow right" aria-label="Next image">{{icon "chevron-right"}}</button>
+    <div class="image-overlay-info"></div>
   </div>
 </div>
 {{end}}
