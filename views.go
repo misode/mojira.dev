@@ -39,6 +39,32 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 }
 
+func staticHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/static/")
+	filePath := filepath.Join("static", path)
+	f, err := os.Open(filePath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer f.Close()
+
+	fi, err := f.Stat()
+	if err != nil || fi.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+
+	etag := fmt.Sprintf(`W/"%x-%x"`, fi.ModTime().Unix(), fi.Size())
+	w.Header().Set("ETag", etag)
+	if match := r.Header.Get("If-None-Match"); match != "" && match == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	http.ServeContent(w, r, fi.Name(), fi.ModTime(), f)
+}
+
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		issues, err := service.db.GetAllIssues(100)

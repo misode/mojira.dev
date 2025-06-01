@@ -30,7 +30,7 @@ func main() {
 		StartSync(service)
 	}
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", indexHandler(service))
 	http.HandleFunc("/sync", syncOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))

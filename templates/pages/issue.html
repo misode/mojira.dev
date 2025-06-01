@@ -51,7 +51,7 @@
         <h2>Attachments</h2>
         <div class="attachments">
           {{range .Issue.Attachments}}
-            <a class="attachment" href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
+            <a class="attachment" href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
               {{if .IsImage}}
                 <img src="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" alt="{{.Filename}}" loading="lazy" />
               {{else}}
