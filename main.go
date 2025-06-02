@@ -30,13 +30,17 @@ func main() {
 		StartSync(service)
 	}
 
+	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("User-agent: *\nAllow: /"))
+	})
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", indexHandler(service))
 	http.HandleFunc("/sync", syncOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))
 
 	http.HandleFunc("/api/search", apiSearchHandler(service))
-	http.HandleFunc("/api/refresh/{key}", apiRefreshHandler(service))
+	http.HandleFunc("/api/issues/{key}/refresh", apiRefreshHandler(service))
 
 	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))

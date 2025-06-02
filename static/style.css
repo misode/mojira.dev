@@ -1,5 +1,5 @@
 :root {
-  --gray-50: #f9fafb;
+  --gray-50: #ffffff;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
   --gray-300: #d1d5dc;
@@ -326,7 +326,7 @@ footer {
   align-items: center;
   gap: 0.25rem;
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--gray-500);
 }
 
 /* ADF */

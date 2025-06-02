@@ -5,7 +5,7 @@
   <div class="issue-top">
     <div class="issue-title">
       <div class="issue-key" data-copy="{{.Issue.Key}}">
-        <img src="/static/icons/bug.svg" alt="">
+        <img src="/static/icons/bug.svg" width="16" height="16" alt="">
         <span>{{.Issue.Key}}</span>
         {{icon "check"}}
       </div>
@@ -66,7 +66,7 @@
         <div>
           <div>
             {{if .AuthorAvatar}}
-            <img class="avatar" src="{{.AuthorAvatar}}">
+            <img class="avatar" src="{{.AuthorAvatar}}" alt="">
             {{end}}
             <strong>{{.AuthorName}}</strong>
             <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
@@ -82,13 +82,13 @@
     <div class="issue-details">
       <p><label>Reporter:</label>
         {{if .Issue.ReporterAvatar}}
-          <img class="avatar" src="{{.Issue.ReporterAvatar}}">
+          <img class="avatar" src="{{.Issue.ReporterAvatar}}" alt="">
         {{end}}
         {{.Issue.ReporterName}}
       </p>
       <p><label>Assignee:</label>
         {{if .Issue.AssigneeAvatar}}
-          <img class="avatar" src="{{.Issue.AssigneeAvatar}}">
+          <img class="avatar" src="{{.Issue.AssigneeAvatar}}" alt="">
         {{end}}
         {{if .Issue.AssigneeName}}
         {{.Issue.AssigneeName}}
@@ -127,7 +127,7 @@
       <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
       {{end}}
-      <p class="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/refresh/{{.Issue.Key}}" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
+      <p class="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
         {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}
         Retrieved <time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
       </p>
