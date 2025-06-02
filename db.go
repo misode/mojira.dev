@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"log"
 	"mojira/model"
@@ -159,14 +158,14 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 		textParts = append(textParts, issue.Summary)
 	}
 	if issue.Description != "" {
-		textParts = append(textParts, extractPlainTextFromADF(issue.Description))
+		textParts = append(textParts, model.ExtractPlainTextFromADF(issue.Description))
 	}
 	if issue.Environment != "" {
-		textParts = append(textParts, extractPlainTextFromADF(issue.Environment))
+		textParts = append(textParts, model.ExtractPlainTextFromADF(issue.Environment))
 	}
 	for _, cmt := range issue.Comments {
 		if cmt.AdfComment != "" {
-			textParts = append(textParts, extractPlainTextFromADF(cmt.AdfComment))
+			textParts = append(textParts, model.ExtractPlainTextFromADF(cmt.AdfComment))
 		}
 	}
 	text := strings.Join(textParts, "\n")
@@ -314,39 +313,4 @@ func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
 		stats = append(stats, s)
 	}
 	return stats, nil
-}
-
-func extractPlainTextFromADF(adf string) string {
-	if adf == "" {
-		return ""
-	}
-	var node map[string]any
-	err := json.Unmarshal([]byte(adf), &node)
-	if err != nil {
-		return ""
-	}
-	return extractPlainTextFromADFNode(node)
-}
-
-func extractPlainTextFromADFNode(node map[string]any) string {
-	typeStr, _ := node["type"].(string)
-	switch typeStr {
-	case "text":
-		text, _ := node["text"].(string)
-		return text
-	case "hardBreak":
-		return "\n"
-	default:
-		content, ok := node["content"].([]any)
-		if !ok {
-			return ""
-		}
-		var sb strings.Builder
-		for _, c := range content {
-			if child, ok := c.(map[string]any); ok {
-				sb.WriteString(extractPlainTextFromADFNode(child))
-			}
-		}
-		return sb.String()
-	}
 }

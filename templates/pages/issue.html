@@ -1,3 +1,20 @@
+{{define "meta"}}
+<meta property="og:title" content="[{{.Issue.Key}}] {{.Issue.Summary}}" />
+<meta property="og:description" name="description" content="{{previewADF .Issue.Description}}"/>
+<meta property="og:image" content="/static/bug.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="48" />
+<meta property="og:image:height" content="48" />
+<meta property="og:image:alt" content="Bug Report" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary">
+<meta property="twitter:domain" content="mojira.dev">
+<meta property="twitter:url" content="https://mojira.dev/{{.Issue.Key}}">
+<meta name="twitter:title" content="[{{.Issue.Key}}] {{.Issue.Summary}}">
+<meta name="twitter:description" content="{{previewADF .Issue.Description}}">
+<meta name="twitter:image" content="https://mojira.dev/static/bug.png">
+{{end}}
+
 {{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}
 
 {{define "content"}}
