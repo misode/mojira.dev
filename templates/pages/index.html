@@ -1,5 +1,31 @@
 {{define "content"}}
-<div class="issue-list">
+<div class="issue-controls">
+  <label>
+    Project:
+    <select name="project" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option value="">All</option>
+      <option>MC</option>
+      <option>MCPE</option>
+      <option>MCL</option>
+      <option>REALMS</option>
+      <option>WEB</option>
+      <option>BDS</option>
+    </select>
+  </label>
+  <label>
+    Status:
+    <select name="status" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option value="">All</option>
+      <option>Open</option>
+      <option>Reopened</option>
+      <option>Postponed</option>
+      <option>In Progress</option>
+      <option>Resolved</option>
+      <option>Closed</option>
+    </select>
+  </label>
+</div>
+<div class="issue-list" id="issue-list" hx-swap-oob="true">
   {{ range .Issues }}
   <a class="issue-card" href="/{{.Key}}">
     <span>{{ .Summary }}</span>

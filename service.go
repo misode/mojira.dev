@@ -103,7 +103,7 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 
 	if sdErr != nil {
 		// Servicedesk API error, assume issue was removed
-		return nil, model.ErrIssueRemoved
+		return nil, sdErr
 	}
 
 	// Start by copying over the data from the servicedesk

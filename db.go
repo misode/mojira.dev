@@ -93,6 +93,24 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
+func (c *DBClient) FilterIssues(project string, status string, limit int) ([]model.Issue, error) {
+	rows, err := c.db.Query(`SELECT key, summary, reporter_name FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) ORDER BY created_date DESC LIMIT $3`, project, status, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var issues []model.Issue
+	for rows.Next() {
+		var issue model.Issue
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName); err != nil {
+			return nil, err
+		}
+		issues = append(issues, issue)
+	}
+	return issues, nil
+}
+
 func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
 	row := c.db.QueryRow("SELECT synced_date FROM issue WHERE key = $1 AND state != 'unknown'", key)
 	var issue model.Issue

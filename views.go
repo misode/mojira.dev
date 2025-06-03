@@ -174,6 +174,22 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
+func apiFilterHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		project := query.Get("project")
+		status := query.Get("status")
+		issues, err := service.db.FilterIssues(project, status, 100)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		render(w, "pages/index", map[string]any{
+			"Issues": issues,
+		})
+	}
+}
+
 func formatTime(t any) string {
 	switch v := t.(type) {
 	case nil:

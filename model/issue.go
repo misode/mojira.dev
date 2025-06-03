@@ -75,7 +75,7 @@ func (i *Issue) IsProject(projects ...string) bool {
 }
 
 func (i *Issue) IsResolved() bool {
-	return i.Status == "Resolved" || i.Status == "Done" || i.Status == "Closed"
+	return i.Status == "Resolved" || i.Status == "Closed"
 }
 
 func (i *Issue) HasEnvironment() bool {

@@ -127,13 +127,27 @@ footer {
   padding: 2rem;
   border-top: 1px solid var(--gray-200);
   font-size: 14px;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 /* ISSUES */
 
+.issue-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 2rem;
+}
+
+.issue-controls select {
+  border: 1px solid var(--gray-300);
+  border-radius: 0.25rem;
+}
+
 .issue-list {
   display: grid;
-  padding: 1rem 2rem;
+  padding: 0 2rem 2rem;
 }
 
 .issue-card {
@@ -142,6 +156,10 @@ footer {
   color: var(--gray-950);
   border-bottom: 1px solid var(--gray-300);
   text-decoration: none;
+}
+
+.issue-card:first-child {
+  border-top: 1px solid var(--gray-300);
 }
 
 .issue-card:hover {
