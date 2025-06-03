@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"mojira/model"
 	"net/http"
 	"os"
@@ -22,8 +22,8 @@ func render(w http.ResponseWriter, name string, data any) {
 		"renderADF":  model.RenderADF,
 		"previewADF": func(adf string) string {
 			text := model.ExtractPlainTextFromADF(adf)
-			if len(text) > 150 {
-				return text[:150] + "..."
+			if len(text) > 250 {
+				return text[:250] + "..."
 			}
 			return text
 		},
@@ -89,6 +89,12 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 		key := r.PathValue("key")
 		issue, err := service.GetIssue(r.Context(), key)
 		if err != nil {
+			if errors.Is(err, model.ErrIssueRemoved) {
+				render(w, "pages/issue_removed", map[string]any{
+					"Key": key,
+				})
+				return
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -147,19 +153,19 @@ func apiSearchHandler(service *IssueService) http.HandlerFunc {
 func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
-		ctx := r.Context()
-		oldIssue, _ := service.db.GetIssueByKey(key)
-		if oldIssue != nil && oldIssue.IsUpToDate() {
-			return
-		}
-		issue, err := service.FetchIssue(ctx, key)
+		issue, err := service.RefreshIssue(r.Context(), key)
 		if err != nil {
+			if errors.Is(err, model.ErrIssueRemoved) {
+				render(w, "pages/issue_removed", map[string]any{
+					"Key": key,
+				})
+				return
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		err = service.db.InsertIssue(ctx, issue)
-		if err != nil {
-			log.Printf("Error inserting issue %s: %v", key, err)
+		if issue == nil {
+			return
 		}
 		render(w, "pages/issue", map[string]any{
 			"Issue":     issue,

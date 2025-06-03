@@ -63,9 +63,9 @@ func processQueuedIssues(service *IssueService) {
 		return
 	}
 	for _, key := range keys {
-		_, err := service.GetIssue(ctx, key)
+		_, err := service.RefreshIssue(ctx, key)
 		if err != nil {
-			log.Printf("Error fetching issue %s: %v\n", key, err)
+			log.Printf("Error refreshing issue %s: %v\n", key, err)
 			continue
 		}
 		err = service.db.RemoveQueuedIssueKey(ctx, key)
@@ -97,17 +97,11 @@ func runInitialSync(service *IssueService) {
 		log.Printf("Running initial sync for %s: start=%v end=%v\n", prefix, start, end)
 		for i := start; i <= end; i++ {
 			key := fmt.Sprintf("%s-%d", prefix, i)
-			issue, err := service.FetchIssue(ctx, key)
+			_, err := service.RefreshIssue(ctx, key)
 			if err != nil {
-				err = service.db.InsertMissingIssue(key)
+				err = service.db.InsertUnknownIssue(key)
 				if err != nil {
-					log.Printf("Error inserting missing issue %s: %v\n", key, err)
-					break
-				}
-			} else {
-				err = service.db.InsertIssue(ctx, issue)
-				if err != nil {
-					log.Printf("Error inserting issue %s: %v", key, err)
+					log.Printf("Error inserting unknown issue %s: %v\n", key, err)
 					break
 				}
 			}

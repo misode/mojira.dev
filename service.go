@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"mojira/api"
 	"mojira/model"
@@ -32,12 +33,15 @@ func NewIssueService() *IssueService {
 }
 
 func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
-	issue, _ := s.db.GetIssueByKey(key)
+	issue, err := s.db.GetIssueByKey(key)
+	if errors.Is(err, model.ErrIssueRemoved) {
+		return nil, err
+	}
 	if issue != nil {
 		return issue, nil
 	}
 
-	issue, err := s.FetchIssue(ctx, key)
+	issue, err = s.fetchIssue(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +54,32 @@ func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, 
 	return issue, nil
 }
 
-func (s *IssueService) FetchIssue(ctx context.Context, key string) (*model.Issue, error) {
+func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Issue, error) {
+	oldIssue, _ := s.db.GetIssueByKey(key)
+	if oldIssue != nil && oldIssue.IsUpToDate() {
+		return nil, nil
+	}
+	issue, err := s.fetchIssue(ctx, key)
+	if err != nil {
+		if oldIssue == nil {
+			return nil, err
+		}
+		err = s.db.MarkIssueRemoved(key)
+		if err != nil {
+			return nil, err
+		}
+		return nil, model.ErrIssueRemoved
+	}
+	err = s.db.InsertIssue(ctx, issue)
+	if err != nil {
+		log.Printf("Error inserting refreshed issue %s: %v", key, err)
+	} else {
+		log.Printf("Refreshed issue %s", key)
+	}
+	return issue, nil
+}
+
+func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue, error) {
 	var pubIssue *model.Issue
 	var sdIssue *model.Issue
 	var pubErr, sdErr error

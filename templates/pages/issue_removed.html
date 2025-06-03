@@ -1,0 +1,18 @@
+{{define "content"}}
+<div class="issue" id="issue" hx-swap-oob="true">
+  <div class="issue-key" data-copy="{{.Key}}">
+    <img src="/static/icons/bug.svg" width="16" height="16" alt="">
+    <span>{{.Key}}</span>
+    {{icon "check"}}
+  </div>
+
+  <div class="error-page">
+    {{icon "alert"}}
+    <p>
+      Sorry! This issue is no longer available. It might have been made private, moved to another project, or the bug tracker could be down.
+    </p>
+  </div>
+</div>
+{{end}}
+
+{{template "base" .}}

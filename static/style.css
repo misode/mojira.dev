@@ -567,3 +567,18 @@ footer {
   padding: 0.25rem 1rem;
   border-radius: 0.25rem;
 }
+
+.error-page {
+  margin: 2rem 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.error-page svg {
+  width: 64px;
+  height: 64px;
+}

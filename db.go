@@ -45,7 +45,7 @@ func (c *DBClient) RunMigration(filepath string) error {
 }
 
 func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query("SELECT key, summary, reporter_name FROM issue WHERE missing = FALSE ORDER BY created_date DESC LIMIT $1", limit)
+	rows, err := c.db.Query("SELECT key, summary, reporter_name FROM issue WHERE state = 'present' ORDER BY created_date DESC LIMIT $1", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 
 	query := `SELECT key, summary FROM issue
 		WHERE
-			missing = FALSE AND
+			state = 'present' AND
 			to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)
 		ORDER BY
 			to_tsvector('english', summary) @@ websearch_to_tsquery('english', $1) DESC,
@@ -94,12 +94,16 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date FROM issue WHERE key = $1 AND missing = FALSE", key)
+	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date, state FROM issue WHERE key = $1 AND state != 'unknown'", key)
+	var state string
 	var issue model.Issue
 	issue.Key = key
-	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.SyncedDate)
+	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.SyncedDate, &state)
 	if err != nil {
 		return nil, err
+	}
+	if state == "removed" {
+		return nil, model.ErrIssueRemoved
 	}
 	comments := []model.Comment{}
 	rows, err := c.db.Query(`SELECT comment_id, date, author_name, author_avatar, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
@@ -174,7 +178,7 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	if err != nil {
 		return err
 	}
-	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`
+	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, 'present')`
 	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, time.Now())
 	if err != nil {
 		return errors.New("failed to insert issue: " + err.Error())
@@ -200,11 +204,20 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	return nil
 }
 
-func (c *DBClient) InsertMissingIssue(key string) error {
-	query := `INSERT INTO issue (key, synced_date, missing) VALUES ($1, NOW(), TRUE) ON CONFLICT (key) DO NOTHING`
+func (c *DBClient) InsertUnknownIssue(key string) error {
+	query := `INSERT INTO issue (key, synced_date, state) VALUES ($1, NOW(), 'unknown') ON CONFLICT (key) DO NOTHING`
 	_, err := c.db.Exec(query, key)
 	if err != nil {
-		return errors.New("failed to insert missing issue: " + err.Error())
+		return errors.New("failed to insert unknown issue: " + err.Error())
+	}
+	return nil
+}
+
+func (c *DBClient) MarkIssueRemoved(key string) error {
+	query := `UPDATE issue SET state = 'removed' WHERE key = $1`
+	_, err := c.db.Exec(query, key)
+	if err != nil {
+		return errors.New("failed to mark issue as removed: " + err.Error())
 	}
 	return nil
 }
@@ -253,7 +266,7 @@ func (c *DBClient) RemoveQueuedIssueKey(ctx context.Context, key string) error {
 
 func (c *DBClient) GetMaxIssueNumberForPrefix(ctx context.Context, prefix string) (int, error) {
 	var max int
-	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1 AND missing = FALSE`, prefix)
+	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1 AND state != 'unknown'`, prefix)
 	err := row.Scan(&max)
 	return max, err
 }
