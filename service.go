@@ -55,7 +55,7 @@ func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, 
 }
 
 func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Issue, error) {
-	oldIssue, _ := s.db.GetIssueByKey(key)
+	oldIssue, _ := s.db.GetIssueForSync(key)
 	if oldIssue != nil && oldIssue.IsUpToDate() {
 		return nil, nil
 	}

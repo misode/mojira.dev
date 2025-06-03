@@ -93,6 +93,17 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
+func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
+	row := c.db.QueryRow("SELECT synced_date FROM issue WHERE key = $1 AND state != 'unknown'", key)
+	var issue model.Issue
+	issue.Key = key
+	err := row.Scan(&issue.SyncedDate)
+	if err != nil {
+		return nil, err
+	}
+	return &issue, nil
+}
+
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date, state FROM issue WHERE key = $1 AND state != 'unknown'", key)
 	var state string
