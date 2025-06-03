@@ -275,6 +275,11 @@ func (c *DBClient) RemoveQueuedIssueKey(ctx context.Context, key string) error {
 	return err
 }
 
+func (c *DBClient) ReQueueIssueKey(ctx context.Context, key string) error {
+	_, err := c.db.ExecContext(ctx, `UPDATE sync_queue SET queued_date = NOW() WHERE issue_key = $1`, key)
+	return err
+}
+
 func (c *DBClient) GetMaxIssueNumberForPrefix(ctx context.Context, prefix string) (int, error) {
 	var max int
 	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1 AND state != 'unknown'`, prefix)

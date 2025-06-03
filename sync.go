@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
+	"strings"
 	"time"
 )
+
+var projects = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
 
 func StartSync(service *IssueService) {
 	log.Println("Starting sync tickers...")
@@ -43,7 +47,13 @@ func queueUpdatedIssues(service *IssueService) {
 		log.Printf("[queue] Error fetching updated issues: %v\n", err)
 		return
 	}
-	count, err := service.db.QueueIssueKeys(updatedKeys)
+	var filteredKeys []string
+	for _, key := range updatedKeys {
+		if slices.Contains(projects, strings.Split(key, "-")[0]) {
+			filteredKeys = append(filteredKeys, key)
+		}
+	}
+	count, err := service.db.QueueIssueKeys(filteredKeys)
 	if err != nil {
 		log.Printf("[queue] Error queuing issues: %v\n", err)
 		return
@@ -66,6 +76,8 @@ func processQueuedIssues(service *IssueService) {
 		_, err := service.RefreshIssue(ctx, key)
 		if err != nil {
 			log.Printf("[queue] Error refreshing issue %s: %v\n", key, err)
+			service.db.ReQueueIssueKey(ctx, key)
+			continue
 		}
 		err = service.db.RemoveQueuedIssueKey(ctx, key)
 		if err != nil {
@@ -76,10 +88,9 @@ func processQueuedIssues(service *IssueService) {
 
 func runInitialSync(service *IssueService) {
 	t0 := time.Now()
-	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
 	count := 0
 	ctx := context.Background()
-	for _, prefix := range prefixes {
+	for _, prefix := range projects {
 		max, err := service.db.GetMaxIssueNumberForPrefix(ctx, prefix)
 		if err != nil {
 			log.Printf("[sync] Error getting max issue number for %s: %v\n", prefix, err)
