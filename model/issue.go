@@ -38,6 +38,7 @@ type Issue struct {
 	Attachments        []Attachment
 	Comments           []Comment
 	SyncedDate         *time.Time
+	Partial            bool
 }
 
 type IssueLink struct {

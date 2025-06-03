@@ -6,7 +6,6 @@ import (
 	"log"
 	"mojira/api"
 	"mojira/model"
-	"time"
 )
 
 type IssueService struct {
@@ -46,9 +45,11 @@ func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, 
 		return nil, err
 	}
 
-	err = s.db.InsertIssue(ctx, issue)
-	if err != nil {
-		log.Printf("Error inserting issue %s: %v", key, err)
+	if !issue.Partial {
+		err = s.db.InsertIssue(ctx, issue)
+		if err != nil {
+			log.Printf("Error inserting issue %s: %v", key, err)
+		}
 	}
 
 	return issue, nil
@@ -59,17 +60,20 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 	if oldIssue != nil && oldIssue.IsUpToDate() {
 		return nil, nil
 	}
+
 	issue, err := s.fetchIssue(ctx, key)
 	if err != nil {
 		if oldIssue == nil {
 			return nil, err
 		}
-		err = s.db.MarkIssueRemoved(key)
-		if err != nil {
-			return nil, err
-		}
+		s.db.MarkIssueRemoved(key)
 		return nil, model.ErrIssueRemoved
 	}
+
+	if issue.Partial {
+		return nil, errors.New("cannot refresh issue")
+	}
+
 	err = s.db.InsertIssue(ctx, issue)
 	if err != nil {
 		log.Printf("Error inserting refreshed issue %s: %v", key, err)
@@ -80,8 +84,8 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 }
 
 func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue, error) {
-	var pubIssue *model.Issue
-	var sdIssue *model.Issue
+	var pubIssue *api.PublicIssue
+	var sdIssue *api.ServiceDeskIssue
 	var pubErr, sdErr error
 
 	done := make(chan struct{}, 2)
@@ -97,61 +101,48 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 	<-done
 	<-done
 
-	if pubErr != nil {
-		return nil, pubErr
-	}
 	if sdErr != nil {
-		return nil, sdErr
+		// Servicedesk API error, assume issue was removed
+		return nil, model.ErrIssueRemoved
 	}
 
-	merged := model.Issue{Key: key}
+	// Start by copying over the data from the servicedesk
+	merged := model.Issue{
+		Key:              key,
+		Summary:          sdIssue.Summary,
+		ReporterName:     sdIssue.ReporterName,
+		ReporterAvatar:   sdIssue.ReporterAvatar,
+		AssigneeName:     sdIssue.AssigneeName,
+		AssigneeAvatar:   sdIssue.AssigneeAvatar,
+		Description:      sdIssue.Description,
+		Environment:      sdIssue.Environment,
+		CreatedDate:      sdIssue.CreatedDate,
+		Status:           sdIssue.Status,
+		AffectedVersions: sdIssue.AffectedVersions,
+		Components:       sdIssue.Components,
+		RealmsPlatform:   sdIssue.RealmsPlatform,
+		Comments:         sdIssue.Comments,
+	}
+
+	if pubErr != nil {
+		merged.Partial = true
+	}
 	if pubIssue != nil {
-		merged = *pubIssue
+		merged.Labels = pubIssue.Labels
+		merged.UpdatedDate = pubIssue.UpdatedDate
+		merged.ResolvedDate = pubIssue.ResolvedDate
+		merged.ConfirmationStatus = pubIssue.ConfirmationStatus
+		merged.Resolution = pubIssue.Resolution
+		merged.FixVersions = pubIssue.FixVersions
+		merged.MojangPriority = pubIssue.MojangPriority
+		merged.Area = pubIssue.Area
+		merged.Platform = pubIssue.Platform
+		merged.OSVersion = pubIssue.OSVersion
+		merged.ADO = pubIssue.ADO
+		merged.Votes = pubIssue.Votes
+		merged.Links = pubIssue.Links
+		merged.Attachments = pubIssue.Attachments
 	}
-	if sdIssue != nil {
-		if merged.Summary == "" {
-			merged.Summary = sdIssue.Summary
-		}
-		if merged.ReporterName == "" {
-			merged.ReporterName = sdIssue.ReporterName
-		}
-		if merged.ReporterAvatar == "" {
-			merged.ReporterAvatar = sdIssue.ReporterAvatar
-		}
-		if merged.AssigneeName == "" {
-			merged.AssigneeName = sdIssue.AssigneeName
-		}
-		if merged.AssigneeAvatar == "" {
-			merged.AssigneeAvatar = sdIssue.AssigneeAvatar
-		}
-		if merged.Description == "" {
-			merged.Description = sdIssue.Description
-		}
-		if merged.Environment == "" {
-			merged.Environment = sdIssue.Environment
-		}
-		if merged.CreatedDate == nil {
-			merged.CreatedDate = sdIssue.CreatedDate
-		}
-		if merged.Status == "" {
-			merged.Status = sdIssue.Status
-		}
-		if len(merged.AffectedVersions) == 0 {
-			merged.AffectedVersions = sdIssue.AffectedVersions
-		}
-		if len(merged.Components) == 0 {
-			merged.Components = sdIssue.Components
-		}
-		if merged.RealmsPlatform == "" {
-			merged.RealmsPlatform = sdIssue.RealmsPlatform
-		}
-		if merged.Comments == nil {
-			merged.Comments = sdIssue.Comments
-		}
-	}
-
-	synced := time.Now()
-	merged.SyncedDate = &synced
 
 	return &merged, nil
 }

@@ -15,6 +15,23 @@ import (
 	"mojira/model"
 )
 
+type ServiceDeskIssue struct {
+	Key              string
+	Summary          string
+	ReporterName     string
+	ReporterAvatar   string
+	AssigneeName     string
+	AssigneeAvatar   string
+	Description      string
+	Environment      string
+	CreatedDate      *time.Time
+	Status           string
+	AffectedVersions []string
+	Components       []string
+	RealmsPlatform   string
+	Comments         []model.Comment
+}
+
 type ServiceDeskClient struct {
 	client *http.Client
 	cookie *http.Cookie
@@ -62,7 +79,7 @@ func NewServiceDeskClient(ctx context.Context) (*ServiceDeskClient, error) {
 	}, nil
 }
 
-func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
+func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceDeskIssue, error) {
 	portalId := portalIds[strings.Split(key, "-")[0]]
 	body, err := json.Marshal(map[string]any{
 		"models": []string{"reqDetails"},
@@ -204,34 +221,21 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*model.Is
 		}
 		createdDate = t
 	}
-	return &model.Issue{
-		Key:                key,
-		Summary:            apiIssue.Summary,
-		ReporterName:       SafeName(apiIssue.Reporter.DisplayName),
-		ReporterAvatar:     apiIssue.Reporter.AvatarUrl,
-		AssigneeName:       SafeName(apiIssue.Assignee.DisplayName),
-		AssigneeAvatar:     apiIssue.Assignee.AvatarUrl,
-		Description:        description,
-		Environment:        environment,
-		Labels:             []string{},
-		CreatedDate:        createdDate,
-		UpdatedDate:        nil,
-		ResolvedDate:       nil,
-		Status:             apiIssue.Status,
-		ConfirmationStatus: "",
-		Resolution:         "",
-		AffectedVersions:   strings.Split(affectedVersions, ", "),
-		FixVersions:        []string{},
-		Category:           []string{},
-		MojangPriority:     "",
-		Area:               "",
-		Components:         strings.Split(components, ", "),
-		Platform:           "",
-		OSVersion:          "",
-		RealmsPlatform:     realmsPlatform,
-		ADO:                "",
-		Votes:              0,
-		Comments:           comments,
+	return &ServiceDeskIssue{
+		Key:              key,
+		Summary:          apiIssue.Summary,
+		ReporterName:     SafeName(apiIssue.Reporter.DisplayName),
+		ReporterAvatar:   apiIssue.Reporter.AvatarUrl,
+		AssigneeName:     SafeName(apiIssue.Assignee.DisplayName),
+		AssigneeAvatar:   apiIssue.Assignee.AvatarUrl,
+		Description:      description,
+		Environment:      environment,
+		CreatedDate:      createdDate,
+		Status:           apiIssue.Status,
+		AffectedVersions: strings.Split(affectedVersions, ", "),
+		Components:       strings.Split(components, ", "),
+		RealmsPlatform:   realmsPlatform,
+		Comments:         comments,
 	}, nil
 }
 

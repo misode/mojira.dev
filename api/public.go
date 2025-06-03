@@ -12,12 +12,39 @@ import (
 	"time"
 )
 
+type PublicIssue struct {
+	Key                string
+	Summary            string
+	Description        string
+	Labels             []string
+	CreatedDate        *time.Time
+	UpdatedDate        *time.Time
+	ResolvedDate       *time.Time
+	Status             string
+	ConfirmationStatus string
+	Resolution         string
+	AffectedVersions   []string
+	FixVersions        []string
+	Category           []string
+	MojangPriority     string
+	Area               string
+	Platform           string
+	OSVersion          string
+	RealmsPlatform     string
+	ADO                string
+	Votes              int
+	Links              []model.IssueLink
+	Attachments        []model.Attachment
+}
+
 type PublicClient struct {
 	client *http.Client
 }
 
 func NewPublicClient() *PublicClient {
-	return &PublicClient{client: &http.Client{}}
+	return &PublicClient{client: &http.Client{
+		Timeout: 4 * time.Second,
+	}}
 }
 
 type publicJQLRequest struct {
@@ -27,7 +54,7 @@ type publicJQLRequest struct {
 	MaxResults int    `json:"maxResults"`
 }
 
-func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
+func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, error) {
 	body, _ := json.Marshal(publicJQLRequest{
 		Advanced:   true,
 		Project:    strings.Split(key, "-")[0],
@@ -207,15 +234,10 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 	if err != nil {
 		return nil, err
 	}
-	return &model.Issue{
+	return &PublicIssue{
 		Key:                key,
 		Summary:            f.Summary,
-		ReporterName:       "",
-		ReporterAvatar:     "",
-		AssigneeName:       "",
-		AssigneeAvatar:     "",
 		Description:        desc,
-		Environment:        "",
 		Labels:             f.Labels,
 		CreatedDate:        createdDate,
 		UpdatedDate:        updatedDate,
@@ -228,7 +250,6 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 		Category:           category,
 		MojangPriority:     f.MojangPriority.Value,
 		Area:               f.Area.Value,
-		Components:         []string{},
 		Platform:           strings.TrimSpace(f.Platform.Value),
 		OSVersion:          f.OSVersion,
 		RealmsPlatform:     f.RealmsPlatform.Value,
@@ -236,6 +257,5 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*model.Issue, 
 		Votes:              f.Votes,
 		Links:              links,
 		Attachments:        attachments,
-		Comments:           nil,
 	}, nil
 }
