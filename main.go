@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -14,7 +16,17 @@ func main() {
 	noSync := flag.Bool("nosync", false, "Disable background syncing")
 	flag.Parse()
 
-	err := godotenv.Overload()
+	err := os.MkdirAll("logs", 0755)
+	if err != nil {
+		log.Fatalf("Failed to create logs directory: %v", err)
+	}
+	file, err := os.OpenFile("logs/mojira.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	log.SetOutput(io.MultiWriter(os.Stdout, file))
+
+	err = godotenv.Overload()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
