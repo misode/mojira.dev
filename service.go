@@ -135,6 +135,7 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		merged.ConfirmationStatus = pubIssue.ConfirmationStatus
 		merged.Resolution = pubIssue.Resolution
 		merged.FixVersions = pubIssue.FixVersions
+		merged.Category = pubIssue.Category
 		merged.MojangPriority = pubIssue.MojangPriority
 		merged.Area = pubIssue.Area
 		merged.Platform = pubIssue.Platform

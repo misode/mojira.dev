@@ -186,7 +186,10 @@ func apiFilterHandler(service *IssueService) http.HandlerFunc {
 		query := r.URL.Query()
 		project := query.Get("project")
 		status := query.Get("status")
-		issues, err := service.db.FilterIssues(project, status, 100)
+		confirmation := query.Get("confirmation")
+		resolution := query.Get("resolution")
+		mojangPriority := query.Get("mojang_priority")
+		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, 100)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

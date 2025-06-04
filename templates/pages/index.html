@@ -24,6 +24,42 @@
       <option>Closed</option>
     </select>
   </label>
+  <label>
+    Confirmation:
+    <select name="confirmation" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option value="">All</option>
+      <option>Unconfirmed</option>
+      <option>Plausible</option>
+      <option>Community Consensus</option>
+      <option>Confirmed</option>
+    </select>
+  </label>
+  <label>
+    Resolution:
+    <select name="resolution" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option value="">All</option>
+      <option>Awaiting Response</option>
+      <option>Cannot Reproduce</option>
+      <option>Done</option>
+      <option>Duplicate</option>
+      <option>Fixed</option>
+      <option>Incomplete</option>
+      <option>Invalid</option>
+      <option>Won't Do</option>
+      <option>Won't Fix</option>
+      <option>Works As Intended</option>
+    </select>
+  </label>
+  <label>
+    Mojang priority:
+    <select name="mojang_priority" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option value="">All</option>
+      <option>Low</option>
+      <option>Normal</option>
+      <option>Important</option>
+      <option>Very Important</option>
+    </select>
+  </label>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   {{ range .Issues }}

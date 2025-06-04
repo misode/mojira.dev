@@ -53,13 +53,13 @@ func queueUpdatedIssues(service *IssueService) {
 			filteredKeys = append(filteredKeys, key)
 		}
 	}
-	count, err := service.db.QueueIssueKeys(filteredKeys)
+	queuedKeys, err := service.db.QueueIssueKeys(filteredKeys)
 	if err != nil {
 		log.Printf("[queue] Error queuing issues: %v\n", err)
 		return
 	}
 	t1 := time.Now()
-	log.Printf("[queue] Queued %d updated issues (%s)\n", count, t1.Sub(t0))
+	log.Printf("[queue] Queued %d updated issues in %s: %s\n", len(queuedKeys), t1.Sub(t0), strings.Join(queuedKeys, ", "))
 }
 
 func processQueuedIssues(service *IssueService) {
@@ -104,7 +104,6 @@ func runInitialSync(service *IssueService) {
 		batchSize := 10
 		start := last + 1
 		end := min(start+batchSize-1, max)
-		log.Printf("[sync] Running initial sync for %s: start=%v end=%v\n", prefix, start, end)
 		for i := start; i <= end; i++ {
 			key := fmt.Sprintf("%s-%d", prefix, i)
 			_, err := service.RefreshIssue(ctx, key)
@@ -124,5 +123,7 @@ func runInitialSync(service *IssueService) {
 		}
 	}
 	t1 := time.Now()
-	log.Printf("[sync] Initial sync %v in %s\n", count, t1.Sub(t0))
+	if count > 0 {
+		log.Printf("[sync] Initial sync %v in %s\n", count, t1.Sub(t0))
+	}
 }

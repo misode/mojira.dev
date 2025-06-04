@@ -99,8 +99,8 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
-func (c *DBClient) FilterIssues(project string, status string, limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) ORDER BY created_date DESC LIMIT $3`, project, status, limit)
+func (c *DBClient) FilterIssues(project string, status string, confirmation string, resolution string, mojangPriority string, limit int) ([]model.Issue, error) {
+	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4) AND ($5 = '' OR mojang_priority = $5) ORDER BY created_date DESC LIMIT $6`, project, status, confirmation, resolution, mojangPriority, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -260,11 +260,11 @@ func (c *DBClient) MarkIssueRemoved(key string) error {
 	return nil
 }
 
-func (c *DBClient) QueueIssueKeys(keys []string) (int, error) {
+func (c *DBClient) QueueIssueKeys(keys []string) ([]string, error) {
 	if len(keys) == 0 {
-		return 0, nil
+		return nil, nil
 	}
-	count := 0
+	var result []string
 	for _, key := range keys {
 		query := `INSERT INTO sync_queue (issue_key)
 			SELECT CAST($1 AS VARCHAR)
@@ -272,12 +272,14 @@ func (c *DBClient) QueueIssueKeys(keys []string) (int, error) {
 			AND NOT EXISTS (SELECT 1 FROM issue WHERE key = $1 AND synced_date >= NOW() - INTERVAL '5 minutes')`
 		res, err := c.db.Exec(query, key)
 		if err != nil {
-			return count, errors.New("failed to queue issue key: " + err.Error())
+			return result, errors.New("failed to queue issue key: " + err.Error())
 		}
 		rowsAffected, _ := res.RowsAffected()
-		count += int(rowsAffected)
+		if rowsAffected > 0 {
+			result = append(result, key)
+		}
 	}
-	return count, nil
+	return result, nil
 }
 
 func (c *DBClient) GetQueuedIssueKeys(ctx context.Context, limit int) ([]string, error) {
