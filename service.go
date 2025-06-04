@@ -77,9 +77,7 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 
 	err = s.db.InsertIssue(ctx, issue)
 	if err != nil {
-		log.Printf("Error inserting refreshed issue %s: %v", key, err)
-	} else {
-		log.Printf("Refreshed issue %s", key)
+		return issue, err
 	}
 	return issue, nil
 }

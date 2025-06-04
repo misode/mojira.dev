@@ -44,6 +44,7 @@ func main() {
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", indexHandler(service))
 	http.HandleFunc("/sync", syncOverviewHandler(service))
+	http.HandleFunc("/queue", queueOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))
 
 	http.HandleFunc("/api/search", apiSearchHandler(service))

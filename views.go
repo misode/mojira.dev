@@ -134,6 +134,20 @@ func syncOverviewHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
+func queueOverviewHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		queue, err := service.db.GetQueue(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		render(w, "pages/queue", map[string]any{
+			"Queue": queue,
+		})
+	}
+}
+
 func apiSearchHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()

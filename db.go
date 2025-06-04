@@ -8,6 +8,7 @@ import (
 	"mojira/model"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -242,15 +243,6 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	return nil
 }
 
-func (c *DBClient) InsertUnknownIssue(key string) error {
-	query := `INSERT INTO issue (key, synced_date, state) VALUES ($1, NOW(), 'unknown') ON CONFLICT (key) DO NOTHING`
-	_, err := c.db.Exec(query, key)
-	if err != nil {
-		return errors.New("failed to insert unknown issue: " + err.Error())
-	}
-	return nil
-}
-
 func (c *DBClient) MarkIssueRemoved(key string) error {
 	query := `UPDATE issue SET state = 'removed' WHERE key = $1`
 	_, err := c.db.Exec(query, key)
@@ -264,20 +256,30 @@ func (c *DBClient) QueueIssueKeys(keys []string) ([]string, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
+	query := `
+		WITH new_keys AS (
+			SELECT k AS issue_key
+			FROM UNNEST($1::text[]) AS k
+			WHERE
+				NOT EXISTS (SELECT 1 FROM sync_queue q WHERE q.issue_key = k)
+				AND NOT EXISTS (SELECT 1 FROM issue i WHERE i.key = k AND i.synced_date >= NOW() - INTERVAL '5 minutes')
+		)
+		INSERT INTO sync_queue (issue_key)
+		SELECT issue_key FROM new_keys
+		RETURNING issue_key;
+	`
+	rows, err := c.db.Query(query, pq.Array(keys))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	var result []string
-	for _, key := range keys {
-		query := `INSERT INTO sync_queue (issue_key)
-			SELECT CAST($1 AS VARCHAR)
-			WHERE NOT EXISTS (SELECT 1 FROM sync_queue WHERE issue_key = $1)
-			AND NOT EXISTS (SELECT 1 FROM issue WHERE key = $1 AND synced_date >= NOW() - INTERVAL '5 minutes')`
-		res, err := c.db.Exec(query, key)
-		if err != nil {
-			return result, errors.New("failed to queue issue key: " + err.Error())
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
 		}
-		rowsAffected, _ := res.RowsAffected()
-		if rowsAffected > 0 {
-			result = append(result, key)
-		}
+		result = append(result, key)
 	}
 	return result, nil
 }
@@ -332,12 +334,14 @@ func (c *DBClient) SetSyncState(ctx context.Context, prefix string, last int) er
 	return err
 }
 
-func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
+type SyncStateRow struct {
 	Project   string
 	MaxKeyNum int
 	Count     int
 	Percent   float64
-}, error) {
+}
+
+func (c *DBClient) GetSyncStats(ctx context.Context) ([]SyncStateRow, error) {
 	rows, err := c.db.QueryContext(ctx, `
 		SELECT project, COALESCE(MAX(key_num),0) AS max_key_num, COUNT(*) AS count
 		FROM issue
@@ -347,19 +351,9 @@ func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
 		return nil, err
 	}
 	defer rows.Close()
-	var stats []struct {
-		Project   string
-		MaxKeyNum int
-		Count     int
-		Percent   float64
-	}
+	var stats []SyncStateRow
 	for rows.Next() {
-		var s struct {
-			Project   string
-			MaxKeyNum int
-			Count     int
-			Percent   float64
-		}
+		var s SyncStateRow
 		if err := rows.Scan(&s.Project, &s.MaxKeyNum, &s.Count); err != nil {
 			return nil, err
 		}
@@ -371,4 +365,26 @@ func (c *DBClient) GetSyncStats(ctx context.Context) ([]struct {
 		stats = append(stats, s)
 	}
 	return stats, nil
+}
+
+type QueueRow struct {
+	Key        string
+	QueuedDate *time.Time
+}
+
+func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, error) {
+	rows, err := c.db.QueryContext(ctx, `SELECT issue_key, queued_date FROM sync_queue`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var queue []QueueRow
+	for rows.Next() {
+		var q QueueRow
+		if err := rows.Scan(&q.Key, &q.QueuedDate); err != nil {
+			return nil, err
+		}
+		queue = append(queue, q)
+	}
+	return queue, nil
 }

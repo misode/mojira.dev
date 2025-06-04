@@ -481,17 +481,17 @@ footer {
 
 /* OTHER */
 
-.sync-table {
+.simple-table {
   margin: 1rem auto;
   min-width: 400px;
 }
 
-.sync-table th, .sync-table td {
+.simple-table th, .simple-table td {
   padding: 0.25rem 0.5rem;
   text-align: right;
 }
 
-.sync-table th:first-child, .sync-table td:first-child {
+.simple-table th:first-child, .simple-table td:first-child {
   text-align: left;
 }
 

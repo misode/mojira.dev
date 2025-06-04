@@ -1,0 +1,22 @@
+{{define "title"}}Queue Overview | mojira.dev{{end}}
+
+{{define "content"}}
+<table class="simple-table">
+  <thead>
+    <tr>
+      <th>Key ({{len .Queue}})</th>
+      <th>Queued at</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Queue}}
+    <tr>
+      <td>{{.Key}}</td>
+      <td><time datetime="{{formatTime .QueuedDate}}">{{formatTime .QueuedDate}}</time></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+{{template "base" .}}
