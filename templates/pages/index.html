@@ -60,6 +60,15 @@
       <option>Very Important</option>
     </select>
   </label>
+  <label>
+    Sort:
+    <select name="sort" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
+      <option selected>Created</option>
+      <option>Updated</option>
+      <option>Resolved</option>
+      <option>Votes</option>
+    </select>
+  </label>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   {{ range .Issues }}
@@ -69,8 +78,6 @@
       <img src="/static/icons/bug.svg" width="16" height="16" alt="">
       <span class="issue-card-key">{{.Key}}</span>
       <span>{{.ReporterName}}</span>
-      •
-      <time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time>
     </div>
   </a>
   {{ end }}

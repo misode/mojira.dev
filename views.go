@@ -203,7 +203,8 @@ func apiFilterHandler(service *IssueService) http.HandlerFunc {
 		confirmation := query.Get("confirmation")
 		resolution := query.Get("resolution")
 		mojangPriority := query.Get("mojang_priority")
-		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, 100)
+		sort := query.Get("sort")
+		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, sort, 100)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
