@@ -8,7 +8,6 @@ import (
 	"mojira/model"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/lib/pq"
 )
@@ -68,13 +67,20 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 		return []model.Issue{}, nil
 	}
 
-	query := `SELECT key, summary FROM issue
-		WHERE
-			state = 'present' AND
-			to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)
-		ORDER BY
-			to_tsvector('english', summary) @@ websearch_to_tsquery('english', $1) DESC,
-			created_date DESC
+	query := `(
+			SELECT key, summary, created_date
+			FROM issue
+			WHERE state = 'present' AND to_tsvector('english', summary) @@ websearch_to_tsquery('english', $1)
+			LIMIT $2
+		)
+		UNION
+		(
+			SELECT key, summary, created_date
+			FROM issue
+			WHERE state = 'present' AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)
+			LIMIT $2
+		)
+		ORDER BY created_date DESC
 		LIMIT $2;`
 	rows, err := c.db.Query(query, text, limit)
 	if err != nil {
@@ -85,7 +91,7 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.CreatedDate); err != nil {
 			return nil, err
 		}
 		issues = append(issues, issue)
@@ -174,6 +180,9 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 }
 
 func (c *DBClient) InsertIssue(ctx context.Context, issue *model.Issue) error {
+	if issue.Partial {
+		return errors.New("tried to insert a partial issue")
+	}
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -208,7 +217,7 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 		return err
 	}
 	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, 'present')`
-	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, time.Now())
+	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, issue.SyncedDate)
 	if err != nil {
 		return errors.New("failed to insert issue: " + err.Error())
 	}

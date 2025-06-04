@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"mojira/model"
 	"net/http"
 	"os"
@@ -141,6 +142,7 @@ func apiSearchHandler(service *IssueService) http.HandlerFunc {
 		}
 		issues, err := service.db.SearchIssues(search, 10)
 		if err != nil {
+			log.Printf("Failed searching for '%s': %s", search, err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

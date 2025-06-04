@@ -6,6 +6,7 @@ import (
 	"log"
 	"mojira/api"
 	"mojira/model"
+	"time"
 )
 
 type IssueService struct {
@@ -142,6 +143,8 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		merged.Votes = pubIssue.Votes
 		merged.Links = pubIssue.Links
 		merged.Attachments = pubIssue.Attachments
+		now := time.Now()
+		merged.SyncedDate = &now
 	}
 
 	return &merged, nil
