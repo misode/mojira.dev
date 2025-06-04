@@ -72,7 +72,7 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 	}
 
 	if issue.Partial {
-		return nil, errors.New("cannot refresh issue")
+		return oldIssue, errors.New("cannot refresh issue")
 	}
 
 	err = s.db.InsertIssue(ctx, issue)

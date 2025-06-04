@@ -96,7 +96,9 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 				})
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			render(w, "pages/issue_not_found", map[string]any{
+				"Key": key,
+			})
 			return
 		}
 		render(w, "pages/issue", map[string]any{
@@ -163,7 +165,10 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 				})
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("Failed refreshing %s: %s", key, err.Error())
+			render(w, "partials/sync_failed", map[string]any{
+				"SyncedDate": issue.SyncedDate,
+			})
 			return
 		}
 		if issue == nil {

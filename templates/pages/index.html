@@ -33,6 +33,8 @@
       <img src="/static/icons/bug.svg" width="16" height="16" alt="">
       <span class="issue-card-key">{{.Key}}</span>
       <span>{{.ReporterName}}</span>
+      •
+      <time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time>
     </div>
   </a>
   {{ end }}

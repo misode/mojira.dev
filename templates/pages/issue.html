@@ -144,7 +144,7 @@
       <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
       {{end}}
-      <p class="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
+      <p class="sync-note" id="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
         {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}
         Retrieved <time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
       </p>

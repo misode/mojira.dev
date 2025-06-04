@@ -587,7 +587,8 @@ footer {
 }
 
 .error-page {
-  margin: 2rem 0;
+  max-width: 600px;
+  margin: 2rem auto;
   padding: 1rem;
   display: flex;
   flex-direction: column;

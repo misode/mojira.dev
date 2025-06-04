@@ -44,7 +44,7 @@ func (c *DBClient) RunMigration(filepath string) error {
 }
 
 func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query("SELECT key, summary, reporter_name FROM issue WHERE state = 'present' ORDER BY created_date DESC LIMIT $1", limit)
+	rows, err := c.db.Query("SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' ORDER BY created_date DESC LIMIT $1", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.CreatedDate); err != nil {
 			return nil, err
 		}
 		issues = append(issues, issue)
@@ -100,7 +100,7 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 }
 
 func (c *DBClient) FilterIssues(project string, status string, limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query(`SELECT key, summary, reporter_name FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) ORDER BY created_date DESC LIMIT $3`, project, status, limit)
+	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) ORDER BY created_date DESC LIMIT $3`, project, status, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *DBClient) FilterIssues(project string, status string, limit int) ([]mod
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.CreatedDate); err != nil {
 			return nil, err
 		}
 		issues = append(issues, issue)
