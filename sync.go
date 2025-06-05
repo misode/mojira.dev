@@ -61,22 +61,24 @@ func updateListener(service *IssueService) {
 
 func queueProcessor(service *IssueService) {
 	ctx := context.Background()
-	rows, err := service.db.PopQueuedIssues(ctx, 10)
+	keys, err := service.db.PeekQueuedIssues(ctx, 10)
 	if err != nil {
 		log.Printf("[queue] Error getting queued keys: %v", err)
 		return
 	}
-	for _, row := range rows {
-		_, err := service.RefreshIssue(ctx, row.Key)
+	for _, key := range keys {
+		_, err := service.RefreshIssue(ctx, key)
 		if err != nil {
 			if errors.Is(err, model.ErrIssueRemoved) {
-				log.Printf("[queue] Detected removed issue %s", row.Key)
-				service.db.MarkIssueRemoved(row.Key)
+				log.Printf("[queue] Detected removed issue %s", key)
+				service.db.MarkIssueRemoved(key)
 			} else {
-				service.db.RetryQueuedIssue(ctx, row)
+				service.db.RetryQueuedIssue(ctx, key)
+				continue
 			}
 		} else {
-			log.Printf("[queue] Refreshed issue %s", row.Key)
+			log.Printf("[queue] Refreshed issue %s", key)
 		}
+		service.db.DeleteQueuedIssue(ctx, key)
 	}
 }

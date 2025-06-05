@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"math"
 	"mojira/model"
 	"os"
 	"strings"
@@ -287,7 +286,7 @@ func (c *DBClient) QueueIssueKeys(keys []string, priority int, reason string) ([
 		)
 		INSERT INTO sync_queue (issue_key, priority, reason)
 		SELECT issue_key, $2, $3 FROM new_keys
-		RETURNING issue_key;
+		RETURNING issue_key
 	`
 	rows, err := c.db.Query(query, pq.Array(keys), priority, reason)
 	if err != nil {
@@ -305,6 +304,54 @@ func (c *DBClient) QueueIssueKeys(keys []string, priority int, reason string) ([
 	return result, nil
 }
 
+func (c *DBClient) PeekQueuedIssues(ctx context.Context, limit int) ([]string, error) {
+	query := `SELECT issue_key
+		FROM sync_queue
+		WHERE retry_after <= NOW()
+		ORDER BY priority DESC, failed_count ASC, queued_date ASC
+		LIMIT $1`
+	rows, err := c.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var keys []string
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+func (c *DBClient) RetryQueuedIssue(ctx context.Context, key string) error {
+	// Delay will be: 5m, 25m, 2h5m, 10h25m
+	query := `
+		WITH updated AS (
+			UPDATE sync_queue
+			SET 
+				failed_count = failed_count + 1,
+				queued_date = NOW(),
+				retry_after = NOW() + (POWER(5, failed_count + 1) * INTERVAL '1 minute')
+			WHERE issue_key = $1
+			RETURNING issue_key, failed_count
+		)
+		DELETE FROM sync_queue
+		WHERE issue_key IN (
+			SELECT issue_key FROM updated WHERE failed_count > 4
+		)`
+	_, err := c.db.ExecContext(ctx, query, key)
+	return err
+}
+
+func (c *DBClient) DeleteQueuedIssue(ctx context.Context, key string) error {
+	query := `DELETE FROM sync_queue WHERE issue_key = $1`
+	_, err := c.db.ExecContext(ctx, query, key)
+	return err
+}
+
 type QueueRow struct {
 	Key         string
 	QueuedDate  *time.Time
@@ -312,44 +359,6 @@ type QueueRow struct {
 	Reason      string
 	FailedCount int
 	RetryAfter  *time.Time
-}
-
-func (c *DBClient) PopQueuedIssues(ctx context.Context, limit int) ([]QueueRow, error) {
-	query := `DELETE FROM sync_queue
-		WHERE ctid IN (
-			SELECT ctid FROM sync_queue
-			WHERE retry_after <= NOW()
-			ORDER BY priority DESC, queued_date ASC
-			LIMIT $1
-		)
-		RETURNING issue_key, priority, reason, failed_count;`
-	rows, err := c.db.QueryContext(ctx, query, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var issues []QueueRow
-	for rows.Next() {
-		var issue QueueRow
-		if err := rows.Scan(&issue.Key, &issue.Priority, &issue.Reason, &issue.FailedCount); err != nil {
-			return nil, err
-		}
-		issues = append(issues, issue)
-	}
-	return issues, nil
-}
-
-func (c *DBClient) RetryQueuedIssue(ctx context.Context, row QueueRow) error {
-	row.FailedCount += 1
-	if row.FailedCount > 6 {
-		return nil
-	}
-	// Delays will be: 4m, 16m, 1h4m, 4h16m, 17h4m
-	delay := time.Duration(math.Pow(4, float64(row.FailedCount))) * time.Minute
-	retryAfter := time.Now().Add(delay)
-	query := `INSERT INTO sync_queue (issue_key, priority, reason, failed_count, retry_after) VALUES ($1, $2, $3, $4, $5)`
-	_, err := c.db.ExecContext(ctx, query, row.Key, row.Priority, row.Reason, row.FailedCount, retryAfter)
-	return err
 }
 
 func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, int, error) {
