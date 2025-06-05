@@ -33,9 +33,7 @@ func main() {
 		}
 		return
 	}
-	if !*noSync {
-		StartSync(service)
-	}
+	StartSync(service, *noSync)
 
 	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
@@ -43,7 +41,6 @@ func main() {
 	})
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", indexHandler(service))
-	http.HandleFunc("/sync", syncOverviewHandler(service))
 	http.HandleFunc("/queue", queueOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))
 

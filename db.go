@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"math"
 	"mojira/model"
 	"os"
 	"strings"
@@ -36,7 +37,16 @@ func (c *DBClient) RunMigration(filepath string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.db.Exec(string(sqlBytes))
+	tx, err := c.db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(string(sqlBytes))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -130,7 +140,7 @@ func (c *DBClient) FilterIssues(project string, status string, confirmation stri
 }
 
 func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT synced_date FROM issue WHERE key = $1 AND state != 'unknown'", key)
+	row := c.db.QueryRow("SELECT synced_date FROM issue WHERE key = $1", key)
 	var issue model.Issue
 	issue.Key = key
 	err := row.Scan(&issue.SyncedDate)
@@ -141,7 +151,7 @@ func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date, state FROM issue WHERE key = $1 AND state != 'unknown'", key)
+	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date, state FROM issue WHERE key = $1", key)
 	var state string
 	var issue model.Issue
 	issue.Key = key
@@ -263,7 +273,7 @@ func (c *DBClient) MarkIssueRemoved(key string) error {
 	return nil
 }
 
-func (c *DBClient) QueueIssueKeys(keys []string) ([]string, error) {
+func (c *DBClient) QueueIssueKeys(keys []string, priority int, reason string) ([]string, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
@@ -275,11 +285,11 @@ func (c *DBClient) QueueIssueKeys(keys []string) ([]string, error) {
 				NOT EXISTS (SELECT 1 FROM sync_queue q WHERE q.issue_key = k)
 				AND NOT EXISTS (SELECT 1 FROM issue i WHERE i.key = k AND i.synced_date >= NOW() - INTERVAL '5 minutes')
 		)
-		INSERT INTO sync_queue (issue_key)
-		SELECT issue_key FROM new_keys
+		INSERT INTO sync_queue (issue_key, priority, reason)
+		SELECT issue_key, $2, $3 FROM new_keys
 		RETURNING issue_key;
 	`
-	rows, err := c.db.Query(query, pq.Array(keys))
+	rows, err := c.db.Query(query, pq.Array(keys), priority, reason)
 	if err != nil {
 		return nil, err
 	}
@@ -295,107 +305,72 @@ func (c *DBClient) QueueIssueKeys(keys []string) ([]string, error) {
 	return result, nil
 }
 
-func (c *DBClient) GetQueuedIssueKeys(ctx context.Context, limit int) ([]string, error) {
-	rows, err := c.db.QueryContext(ctx, `SELECT issue_key FROM sync_queue ORDER BY queued_date ASC LIMIT $1`, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var keys []string
-	for rows.Next() {
-		var key string
-		if err := rows.Scan(&key); err != nil {
-			return nil, err
-		}
-		keys = append(keys, key)
-	}
-	return keys, nil
-}
-
-func (c *DBClient) RemoveQueuedIssueKey(ctx context.Context, key string) error {
-	_, err := c.db.ExecContext(ctx, `DELETE FROM sync_queue WHERE issue_key = $1`, key)
-	return err
-}
-
-func (c *DBClient) ReQueueIssueKey(ctx context.Context, key string) error {
-	_, err := c.db.ExecContext(ctx, `UPDATE sync_queue SET queued_date = NOW() WHERE issue_key = $1`, key)
-	return err
-}
-
-func (c *DBClient) GetMaxIssueNumberForPrefix(ctx context.Context, prefix string) (int, error) {
-	var max int
-	row := c.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(key_num), 0) FROM issue WHERE project = $1 AND state != 'unknown'`, prefix)
-	err := row.Scan(&max)
-	return max, err
-}
-
-func (c *DBClient) GetSyncState(ctx context.Context, prefix string) (int, error) {
-	var last int
-	row := c.db.QueryRowContext(ctx, `SELECT last_processed FROM sync_state WHERE prefix = $1`, prefix)
-	err := row.Scan(&last)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
-	return last, err
-}
-
-func (c *DBClient) SetSyncState(ctx context.Context, prefix string, last int) error {
-	_, err := c.db.ExecContext(ctx, `INSERT INTO sync_state (prefix, last_processed) VALUES ($1, $2)
-		ON CONFLICT (prefix) DO UPDATE SET last_processed = EXCLUDED.last_processed`, prefix, last)
-	return err
-}
-
-type SyncStateRow struct {
-	Project   string
-	MaxKeyNum int
-	Count     int
-	Percent   float64
-}
-
-func (c *DBClient) GetSyncStats(ctx context.Context) ([]SyncStateRow, error) {
-	rows, err := c.db.QueryContext(ctx, `
-		SELECT project, COALESCE(MAX(key_num),0) AS max_key_num, COUNT(*) AS count
-		FROM issue
-		GROUP BY project
-		ORDER BY project`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var stats []SyncStateRow
-	for rows.Next() {
-		var s SyncStateRow
-		if err := rows.Scan(&s.Project, &s.MaxKeyNum, &s.Count); err != nil {
-			return nil, err
-		}
-		if s.MaxKeyNum > 0 {
-			s.Percent = float64(s.Count) / float64(s.MaxKeyNum) * 100
-		} else {
-			s.Percent = 0
-		}
-		stats = append(stats, s)
-	}
-	return stats, nil
-}
-
 type QueueRow struct {
-	Key        string
-	QueuedDate *time.Time
+	Key         string
+	QueuedDate  *time.Time
+	Priority    int
+	Reason      string
+	FailedCount int
+	RetryAfter  *time.Time
 }
 
-func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, error) {
-	rows, err := c.db.QueryContext(ctx, `SELECT issue_key, queued_date FROM sync_queue`)
+func (c *DBClient) PopQueuedIssues(ctx context.Context, limit int) ([]QueueRow, error) {
+	query := `DELETE FROM sync_queue
+		WHERE ctid IN (
+			SELECT ctid FROM sync_queue
+			WHERE retry_after <= NOW()
+			ORDER BY priority DESC, queued_date ASC
+			LIMIT $1
+		)
+		RETURNING issue_key, priority, reason, failed_count;`
+	rows, err := c.db.QueryContext(ctx, query, limit)
 	if err != nil {
 		return nil, err
+	}
+	defer rows.Close()
+	var issues []QueueRow
+	for rows.Next() {
+		var issue QueueRow
+		if err := rows.Scan(&issue.Key, &issue.Priority, &issue.Reason, &issue.FailedCount); err != nil {
+			return nil, err
+		}
+		issues = append(issues, issue)
+	}
+	return issues, nil
+}
+
+func (c *DBClient) RetryQueuedIssue(ctx context.Context, row QueueRow) error {
+	row.FailedCount += 1
+	if row.FailedCount > 6 {
+		return nil
+	}
+	// Delays will be: 4m, 16m, 1h4m, 4h16m, 17h4m
+	delay := time.Duration(math.Pow(4, float64(row.FailedCount))) * time.Minute
+	retryAfter := time.Now().Add(delay)
+	query := `INSERT INTO sync_queue (issue_key, priority, reason, failed_count, retry_after) VALUES ($1, $2, $3, $4, $5)`
+	_, err := c.db.ExecContext(ctx, query, row.Key, row.Priority, row.Reason, row.FailedCount, retryAfter)
+	return err
+}
+
+func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, int, error) {
+	rows, err := c.db.QueryContext(ctx, `SELECT issue_key, queued_date, priority, reason, failed_count, retry_after FROM sync_queue ORDER BY priority DESC, queued_date ASC LIMIT 100`)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 	var queue []QueueRow
 	for rows.Next() {
 		var q QueueRow
-		if err := rows.Scan(&q.Key, &q.QueuedDate); err != nil {
-			return nil, err
+		if err := rows.Scan(&q.Key, &q.QueuedDate, &q.Priority, &q.Reason, &q.FailedCount, &q.RetryAfter); err != nil {
+			return nil, 0, err
 		}
 		queue = append(queue, q)
 	}
-	return queue, nil
+	countRow := c.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sync_queue`)
+	var count int
+	err = countRow.Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+	return queue, count, nil
 }

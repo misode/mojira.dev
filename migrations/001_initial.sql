@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS issue (
   key VARCHAR(32) PRIMARY KEY,
   project VARCHAR(16) GENERATED ALWAYS AS (substring(key from '^(.*?)-')) STORED,
@@ -77,5 +75,3 @@ CREATE TABLE IF NOT EXISTS sync_state (
   prefix VARCHAR(16) PRIMARY KEY,
   last_processed INTEGER NOT NULL
 );
-
-COMMIT;

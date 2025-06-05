@@ -111,43 +111,17 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
-func syncOverviewHandler(service *IssueService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		stats, err := service.db.GetSyncStats(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		total := struct {
-			MaxKeyNum int
-			Count     int
-			Percent   float64
-		}{0, 0, 0}
-		for _, s := range stats {
-			total.MaxKeyNum += s.MaxKeyNum
-			total.Count += s.Count
-		}
-		if total.MaxKeyNum > 0 {
-			total.Percent = float64(total.Count) / float64(total.MaxKeyNum) * 100
-		}
-		render(w, "pages/sync", map[string]any{
-			"Stats": stats,
-			"Total": total,
-		})
-	}
-}
-
 func queueOverviewHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		queue, err := service.db.GetQueue(ctx)
+		queue, count, err := service.db.GetQueue(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		render(w, "pages/queue", map[string]any{
 			"Queue": queue,
+			"Count": count,
 		})
 	}
 }

@@ -4,15 +4,23 @@
 <table class="simple-table">
   <thead>
     <tr>
-      <th>Key ({{len .Queue}})</th>
+      <th>Key ({{.Count}})</th>
+      <th>Priority</th>
+      <th>Reason</th>
+      <th>Failed count</th>
       <th>Queued at</th>
+      <th>Retry after</th>
     </tr>
   </thead>
   <tbody>
     {{range .Queue}}
     <tr>
       <td>{{.Key}}</td>
+      <td>{{.Priority}}</td>
+      <td>{{.Reason}}</td>
+      <td>{{.FailedCount}}</td>
       <td><time datetime="{{formatTime .QueuedDate}}">{{formatTime .QueuedDate}}</time></td>
+      <td><time datetime="{{formatTime .RetryAfter}}">{{formatTime .RetryAfter}}</time></td>
     </tr>
     {{end}}
   </tbody>

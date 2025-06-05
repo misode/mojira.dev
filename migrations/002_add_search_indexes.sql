@@ -1,15 +1,11 @@
-BEGIN;
-
+-- Create text vector indexes
 CREATE INDEX IF NOT EXISTS idx_issue_summary ON issue USING GIN (to_tsvector('english', summary));
-
 CREATE INDEX IF NOT EXISTS idx_issue_text ON issue USING GIN (to_tsvector('english', text));
 
+-- Create indexes for timestamps
 CREATE INDEX IF NOT EXISTS idx_issue_created_date ON issue(created_date DESC);
-
 CREATE INDEX IF NOT EXISTS idx_issue_updated_date ON issue(updated_date DESC);
-
 CREATE INDEX IF NOT EXISTS idx_issue_resolved_date ON issue(resolved_date DESC);
-
 CREATE INDEX IF NOT EXISTS idx_issue_synced_date ON issue(synced_date DESC);
 
 -- Convert `labels` column from TEXT to TEXT[]
@@ -56,5 +52,3 @@ UPDATE issue
   WHERE fix_versions_text IS NOT NULL AND trim(both from fix_versions_text) <> '';
 ALTER TABLE issue DROP COLUMN fix_versions_text;
 CREATE INDEX idx_issue_fix_versions ON issue USING GIN (fix_versions);
-
-COMMIT;
