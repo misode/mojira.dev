@@ -69,6 +69,10 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.HasSuffix(r.URL.Path, ".png") || strings.HasSuffix(r.URL.Path, ".svg") {
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+	}
+
 	http.ServeContent(w, r, fi.Name(), fi.ModTime(), f)
 }
 
