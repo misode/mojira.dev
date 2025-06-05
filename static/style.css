@@ -47,6 +47,7 @@ svg {
 
 header {
   position: fixed;
+  z-index: 10;
   height: 56px;
   width: 100%;
   padding: 0 1rem;
@@ -94,8 +95,8 @@ header {
   width: 100%;
   margin-top: 0.25rem;
   border-radius: 0.25rem;
-  background-color: var(--gray-100);
-  box-shadow: 0 4px 8px var(--shadow);
+  background-color: var(--gray-50);
+  box-shadow: 0 2px 8px var(--shadow);
   overflow: hidden;
   display: none;
 }
@@ -219,12 +220,19 @@ footer {
   gap: 0.5rem;
 }
 
+@media (min-width: 720px) {
+  .issue-actions {
+    flex-direction: row-reverse;
+  }
+}
+
 .issue-action {
+  height: 28px;
   display: flex;
   gap: 0.25rem;
   align-items: center;
   white-space: nowrap;
-  padding: 0.25rem 0.5rem;
+  padding: 0.1rem 0.5rem;
   font-weight: 600;
   font-size: 14px;
   border-radius: 0.25rem;
@@ -239,10 +247,37 @@ footer {
   background-color: var(--resolved);
 }
 
+.issue-menu-button {
+  background-color: var(--gray-300);
+  cursor: pointer;
+  position: relative;
+}
+
+.issue-menu {
+  display: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  background-color: var(--gray-50);
+  box-shadow: 0 2px 8px var(--shadow);
+  font-weight: normal;
+  align-items: flex-start;
+}
+
 @media (min-width: 720px) {
-  .issue-actions {
-    flex-direction: row-reverse;
+  .issue-menu {
+    left: unset;
+    right: 0;
   }
+}
+
+.issue-menu-button:focus-within .issue-menu {
+  display: flex;
 }
 
 .issue-split {

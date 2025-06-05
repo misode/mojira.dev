@@ -70,6 +70,19 @@ func (i *Issue) Project() string {
 	return strings.Split(i.Key, "-")[0]
 }
 
+var PortalIds = map[string]int{
+	"MC":     2,
+	"MCPE":   6,
+	"MCL":    7,
+	"REALMS": 9,
+	"WEB":    10,
+	"BDS":    4,
+}
+
+func (i *Issue) PortalId() int {
+	return PortalIds[i.Project()]
+}
+
 func (i *Issue) IsProject(projects ...string) bool {
 	return slices.Contains(projects, i.Project())
 }

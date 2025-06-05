@@ -32,6 +32,15 @@
       </h1>
     </div>
     <div class="issue-actions">
+      <button class="issue-action issue-menu-button">
+        {{icon "link-external"}}
+        <div class="issue-menu">
+          <a href="https://bugs-legacy.mojang.com/browse/{{.Issue.Key}}">bugs-legacy.mojang.com</a>
+          <a href="https://bugs.mojang.com/browse/{{.Issue.Key}}">bugs.mojang.com</a>
+          <a href="https://report.bugs.mojang.com/servicedesk/customer/portal/{{.Issue.PortalId}}/{{.Issue.Key}}">report.bugs.mojang.com</a>
+          <a href="https://mojira.atlassian.net/browse/{{.Issue.Key}}">mojira.atlassian.net</a>
+        </div>
+      </button>
       <div class="issue-action {{if .Issue.IsResolved}}issue-resolved{{else}}issue-open{{end}}">
         {{.Issue.Status}}
       </div>

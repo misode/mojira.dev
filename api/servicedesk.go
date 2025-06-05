@@ -37,15 +37,6 @@ type ServiceDeskClient struct {
 	cookie *http.Cookie
 }
 
-var portalIds = map[string]int{
-	"MC":     2,
-	"MCPE":   6,
-	"MCL":    7,
-	"REALMS": 9,
-	"WEB":    10,
-	"BDS":    4,
-}
-
 func NewServiceDeskClient(ctx context.Context) (*ServiceDeskClient, error) {
 	body, err := json.Marshal(map[string]string{
 		"email":    os.Getenv("JIRA_EMAIL"),
@@ -80,7 +71,7 @@ func NewServiceDeskClient(ctx context.Context) (*ServiceDeskClient, error) {
 }
 
 func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceDeskIssue, error) {
-	portalId := portalIds[strings.Split(key, "-")[0]]
+	portalId := model.PortalIds[strings.Split(key, "-")[0]]
 	body, err := json.Marshal(map[string]any{
 		"models": []string{"reqDetails"},
 		"options": map[string]any{
