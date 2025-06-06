@@ -327,23 +327,38 @@ func (c *DBClient) PeekQueuedIssues(ctx context.Context, limit int) ([]string, e
 }
 
 func (c *DBClient) RetryQueuedIssue(ctx context.Context, key string) error {
-	// Delay will be: 5m, 25m, 2h5m, 10h25m
-	query := `
-		WITH updated AS (
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var failedCount int
+	query := `SELECT failed_count FROM sync_queue WHERE issue_key = $1 FOR UPDATE`
+	err = tx.QueryRowContext(ctx, query, key).Scan(&failedCount)
+	if err != nil {
+		return err
+	}
+
+	failedCount += 1
+	if failedCount > 4 {
+		_, err = tx.ExecContext(ctx, `DELETE FROM sync_queue WHERE issue_key = $1`, key)
+	} else {
+		// Delay will be: 5m, 25m, 2h5m, 10h25m
+		_, err = tx.ExecContext(ctx, `
 			UPDATE sync_queue
 			SET 
-				failed_count = failed_count + 1,
+				failed_count = $2,
 				queued_date = NOW(),
-				retry_after = NOW() + (POWER(5, failed_count + 1) * INTERVAL '1 minute')
+				retry_after = NOW() + (POWER(5, $2) * INTERVAL '1 minute')
 			WHERE issue_key = $1
-			RETURNING issue_key, failed_count
-		)
-		DELETE FROM sync_queue
-		WHERE issue_key IN (
-			SELECT issue_key FROM updated WHERE failed_count > 4
-		)`
-	_, err := c.db.ExecContext(ctx, query, key)
-	return err
+		`, key, failedCount)
+	}
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (c *DBClient) DeleteQueuedIssue(ctx context.Context, key string) error {
