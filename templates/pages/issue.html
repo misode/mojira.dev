@@ -1,18 +1,18 @@
 {{define "meta"}}
+<meta name="title" content="[{{.Issue.Key}}] {{.Issue.Summary}}" />
 <meta property="og:title" content="[{{.Issue.Key}}] {{.Issue.Summary}}" />
-<meta property="og:description" name="description" content="{{previewADF .Issue.Description}}"/>
-<meta property="og:image" content="/static/bug.png" />
-<meta property="og:image:type" content="image/png" />
-<meta property="og:image:width" content="48" />
-<meta property="og:image:height" content="48" />
-<meta property="og:image:alt" content="Bug Report" />
+<meta property="twitter:title" content="[{{.Issue.Key}}] {{.Issue.Summary}}">
+<meta name="description" content="{{previewADF .Issue.Description}}"/>
+<meta property="og:description" content="{{previewADF .Issue.Description}}"/>
+<meta property="twitter:description" content="{{previewADF .Issue.Description}}">
+{{if .Issue.FirstImage}}
+<meta property="og:image" content="{{.Issue.FirstImage.GetUrl}}" />
+<meta property="twitter:image" content="{{.Issue.FirstImage.GetUrl}}">
+{{end}}
 <meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary">
 <meta property="twitter:domain" content="mojira.dev">
+<meta property="og:url" content="https://mojira.dev/{{.Issue.Key}}">
 <meta property="twitter:url" content="https://mojira.dev/{{.Issue.Key}}">
-<meta name="twitter:title" content="[{{.Issue.Key}}] {{.Issue.Summary}}">
-<meta name="twitter:description" content="{{previewADF .Issue.Description}}">
-<meta name="twitter:image" content="https://mojira.dev/static/bug.png">
 {{end}}
 
 {{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}
@@ -77,9 +77,9 @@
         <h2>Attachments</h2>
         <div class="attachments">
           {{range .Issue.Attachments}}
-            <a class="attachment" href="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
+            <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
               {{if .IsImage}}
-                <img src="https://bugs.mojang.com/api/issue-attachment-get?attachmentId={{.Id}}" alt="{{.Filename}}" loading="lazy" />
+                <img src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy" />
               {{else}}
                 <div class="attachment-nopreview">{{.Filename}}</div>
               {{end}}

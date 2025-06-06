@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -128,6 +129,19 @@ func (i *Issue) IsUpToDate() bool {
 	return i.SyncedDate.After(time.Now().Add(offset))
 }
 
+func (i *Issue) FirstImage() *Attachment {
+	for _, a := range i.Attachments {
+		if a.IsImage() {
+			return &a
+		}
+	}
+	return nil
+}
+
 func (a *Attachment) IsImage() bool {
 	return strings.HasPrefix(a.MimeType, "image/")
+}
+
+func (a *Attachment) GetUrl() string {
+	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
 }

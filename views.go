@@ -23,8 +23,8 @@ func render(w http.ResponseWriter, name string, data any) {
 		"renderADF":  model.RenderADF,
 		"previewADF": func(adf string) string {
 			text := model.ExtractPlainTextFromADF(adf)
-			if len(text) > 250 {
-				return text[:250] + "..."
+			if len(text) > 200 {
+				return text[:200] + "..."
 			}
 			return text
 		},
