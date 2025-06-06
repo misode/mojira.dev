@@ -12,6 +12,7 @@
   --gray-950: #030712;
   --resolved: #00875a;
   --link: #0C66E4;
+  --link-hover: #0f3873;
   --border: #091E4224;
   --shadow: #091E4240;
   --backdrop: #000000d9;
@@ -39,6 +40,10 @@ a {
   text-decoration: underline;
 }
 
+a:hover {
+  color: var(--link-hover);
+}
+
 svg {
   fill: currentColor;
 }
@@ -64,8 +69,12 @@ header {
   margin: 0;
   letter-spacing: 1px;
   text-decoration: none;
-  color: inherit;
+  color: var(--gray-950);
   font-weight: bold;
+}
+
+.header-main:hover {
+  color: var(--gray-950);
 }
 
 .search {
@@ -82,7 +91,7 @@ header {
 }
 
 .search input {
-  padding: 0.125rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: 0.25rem;
   width: 100%;
@@ -139,7 +148,7 @@ footer {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
-  padding: 1rem 2rem;
+  padding: 1rem;
 }
 
 .issue-controls select {
@@ -149,7 +158,7 @@ footer {
 
 .issue-list {
   display: grid;
-  padding: 0 2rem 2rem;
+  padding: 0 1rem 1rem;
 }
 
 .issue-card {
@@ -166,6 +175,7 @@ footer {
 
 .issue-card:hover {
   background-color: var(--gray-200);
+  color: var(--gray-950);
 }
 
 .issue-card-details {
@@ -218,6 +228,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 @media (min-width: 720px) {
@@ -227,12 +238,12 @@ footer {
 }
 
 .issue-action {
-  height: 28px;
+  height: 2rem;
   display: flex;
   gap: 0.25rem;
   align-items: center;
   white-space: nowrap;
-  padding: 0.1rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   font-weight: 600;
   font-size: 14px;
   border-radius: 0.25rem;
@@ -267,6 +278,7 @@ footer {
   box-shadow: 0 2px 8px var(--shadow);
   font-weight: normal;
   align-items: flex-start;
+  cursor: default;
 }
 
 @media (min-width: 720px) {
@@ -281,7 +293,7 @@ footer {
 }
 
 .issue-split {
-  padding-top: 0.5rem;
+  padding-top: 1rem;
   display: flex;
   flex-direction: column-reverse;
   gap: 1rem 2rem;
