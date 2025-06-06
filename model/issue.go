@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 )
@@ -140,6 +141,9 @@ func (i *Issue) GroupedLinks() []IssueLinkGroup {
 	for typ, links := range groupsMap {
 		groupedLinks = append(groupedLinks, IssueLinkGroup{Type: typ, Links: links})
 	}
+	sort.Slice(groupedLinks, func(a, b int) bool {
+		return groupedLinks[a].Type < groupedLinks[b].Type
+	})
 	return groupedLinks
 }
 
