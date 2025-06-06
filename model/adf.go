@@ -208,17 +208,25 @@ func extractPlainTextFromADFNode(node map[string]any) string {
 		return text
 	case "hardBreak":
 		return "\n"
+	case "heading":
+		return extractPlainTextFromADFChildren(node) + "\n"
+	case "paragraph":
+		return extractPlainTextFromADFChildren(node) + "\n"
 	default:
-		content, ok := node["content"].([]any)
-		if !ok {
-			return ""
-		}
-		var sb strings.Builder
-		for _, c := range content {
-			if child, ok := c.(map[string]any); ok {
-				sb.WriteString(extractPlainTextFromADFNode(child))
-			}
-		}
-		return sb.String()
+		return extractPlainTextFromADFChildren(node)
 	}
+}
+
+func extractPlainTextFromADFChildren(node map[string]any) string {
+	content, ok := node["content"].([]any)
+	if !ok {
+		return ""
+	}
+	var sb strings.Builder
+	for _, c := range content {
+		if child, ok := c.(map[string]any); ok {
+			sb.WriteString(extractPlainTextFromADFNode(child))
+		}
+	}
+	return sb.String()
 }
