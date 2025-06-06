@@ -1,74 +1,57 @@
 {{define "content"}}
 <div class="issue-controls">
-  <label>
-    Project:
-    <select name="project" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option value="">All</option>
-      <option>MC</option>
-      <option>MCPE</option>
-      <option>MCL</option>
-      <option>REALMS</option>
-      <option>WEB</option>
-      <option>BDS</option>
-    </select>
-  </label>
-  <label>
-    Status:
-    <select name="status" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option value="">All</option>
-      <option>Open</option>
-      <option>Reopened</option>
-      <option>Postponed</option>
-      <option>In Progress</option>
-      <option>Resolved</option>
-      <option>Closed</option>
-    </select>
-  </label>
-  <label>
-    Confirmation:
-    <select name="confirmation" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option value="">All</option>
-      <option>Unconfirmed</option>
-      <option>Plausible</option>
-      <option>Community Consensus</option>
-      <option>Confirmed</option>
-    </select>
-  </label>
-  <label>
-    Resolution:
-    <select name="resolution" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option value="">All</option>
-      <option>Awaiting Response</option>
-      <option>Cannot Reproduce</option>
-      <option>Done</option>
-      <option>Duplicate</option>
-      <option>Fixed</option>
-      <option>Incomplete</option>
-      <option>Invalid</option>
-      <option>Won't Do</option>
-      <option>Won't Fix</option>
-      <option>Works As Intended</option>
-    </select>
-  </label>
-  <label>
-    Mojang priority:
-    <select name="mojang_priority" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option value="">All</option>
-      <option>Low</option>
-      <option>Normal</option>
-      <option>Important</option>
-      <option>Very Important</option>
-    </select>
-  </label>
-  <label>
-    Sort:
-    <select name="sort" hx-get="/api/filter" hx-include=".issue-controls [name]" hx-swap="none">
-      <option selected>Created</option>
-      <option>Updated</option>
-      <option>Resolved</option>
-      <option>Votes</option>
-    </select>
-  </label>
+  <select name="project" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Project</option>
+    <option value="MC" {{if eq .Query.project "MC"}}selected{{end}}>MC</option>
+    <option value="MCPE" {{if eq .Query.project "MCPE"}}selected{{end}}>MCPE</option>
+    <option value="MCL" {{if eq .Query.project "MCL"}}selected{{end}}>MCL</option>
+    <option value="REALMS" {{if eq .Query.project "REALMS"}}selected{{end}}>REALMS</option>
+    <option value="WEB" {{if eq .Query.project "WEB"}}selected{{end}}>WEB</option>
+    <option value="BDS" {{if eq .Query.project "BDS"}}selected{{end}}>BDS</option>
+  </select>
+  <select name="status" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Status</option>
+    <option value="Open" {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
+    <option value="Reopened" {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
+    <option value="Postponed" {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
+    <option value="In Progress" {{if eq .Query.status "In Progress"}}selected{{end}}>In Progress</option>
+    <option value="Resolved" {{if eq .Query.status "Resolved"}}selected{{end}}>Resolved</option>
+    <option value="Closed" {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
+  </select>
+  <select name="confirmation" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Confirmation</option>
+    <option value="Unconfirmed" {{if eq .Query.confirmation "Unconfirmed"}}selected{{end}}>Unconfirmed</option>
+    <option value="Plausible" {{if eq .Query.confirmation "Plausible"}}selected{{end}}>Plausible</option>
+    <option value="Community Consensus" {{if eq .Query.confirmation "Community Consensus"}}selected{{end}}>Community Consensus</option>
+    <option value="Confirmed" {{if eq .Query.confirmation "Confirmed"}}selected{{end}}>Confirmed</option>
+  </select>
+  <select name="resolution" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Resolution</option>
+    <option value="Awaiting Response" {{if eq .Query.resolution "Awaiting Response"}}selected{{end}}>Awaiting Response</option>
+    <option value="Cannot Reproduce" {{if eq .Query.resolution "Cannot Reproduce"}}selected{{end}}>Cannot Reproduce</option>
+    <option value="Done" {{if eq .Query.resolution "Done"}}selected{{end}}>Done</option>
+    <option value="Duplicate" {{if eq .Query.resolution "Duplicate"}}selected{{end}}>Duplicate</option>
+    <option value="Fixed" {{if eq .Query.resolution "Fixed"}}selected{{end}}>Fixed</option>
+    <option value="Incomplete" {{if eq .Query.resolution "Incomplete"}}selected{{end}}>Incomplete</option>
+    <option value="Invalid" {{if eq .Query.resolution "Invalid"}}selected{{end}}>Invalid</option>
+    <option value="Unresolved" {{if eq .Query.resolution "Unresolved"}}selected{{end}}>Unresolved</option>
+    <option value="Won't Do" {{if eq .Query.resolution "Won't Do"}}selected{{end}}>Won't Do</option>
+    <option value="Won't Fix" {{if eq .Query.resolution "Won't Fix"}}selected{{end}}>Won't Fix</option>
+    <option value="Works As Intended" {{if eq .Query.resolution "Works As Intended"}}selected{{end}}>Works As Intended</option>
+  </select>
+  <select name="mojang_priority" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Priority</option>
+    <option value="Low" {{if eq .Query.mojang_priority "Low"}}selected{{end}}>Low</option>
+    <option value="Normal" {{if eq .Query.mojang_priority "Normal"}}selected{{end}}>Normal</option>
+    <option value="Important" {{if eq .Query.mojang_priority "Important"}}selected{{end}}>Important</option>
+    <option value="Very Important" {{if eq .Query.mojang_priority "Very Important"}}selected{{end}}>Very Important</option>
+  </select>
+  <select name="sort" hx-get="/" hx-include=".issue-controls [name]" hx-swap="none">
+    <option value="">Sort by: Created</option>
+    <option value="Updated" {{if eq .Query.sort "Updated"}}selected{{end}}>Sort by: Updated</option>
+    <option value="Resolved" {{if eq .Query.sort "Resolved"}}selected{{end}}>Sort by: Resolved</option>
+    <option value="Votes" {{if eq .Query.sort "Votes"}}selected{{end}}>Sort by: Votes</option>
+  </select>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   {{ range .Issues }}

@@ -46,7 +46,6 @@ func main() {
 
 	http.HandleFunc("/api/search", apiSearchHandler(service))
 	http.HandleFunc("/api/issues/{key}/refresh", apiRefreshHandler(service))
-	http.HandleFunc("/api/filter", apiFilterHandler(service))
 
 	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))

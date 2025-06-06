@@ -7,6 +7,7 @@ import (
 	"log"
 	"mojira/model"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,13 +79,38 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		issues, err := service.db.GetAllIssues(100)
+		query := r.URL.Query()
+		project := query.Get("project")
+		status := query.Get("status")
+		confirmation := query.Get("confirmation")
+		resolution := query.Get("resolution")
+		mojangPriority := query.Get("mojang_priority")
+		sort := query.Get("sort")
+		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, sort, 50)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		if r.Header.Get("Hx-Request") != "" {
+			filtered := url.Values{}
+			for k, v := range query {
+				if len(v) > 0 && v[0] != "" {
+					filtered[k] = v
+				}
+			}
+			u := *r.URL
+			u.RawQuery = filtered.Encode()
+			w.Header().Add("Hx-Replace-Url", u.String())
+		}
+		queryMap := make(map[string]string)
+		for k, v := range query {
+			if len(v) > 0 {
+				queryMap[k] = v[0]
+			}
+		}
 		render(w, "pages/index", map[string]any{
 			"Issues": issues,
+			"Query":  queryMap,
 		})
 	}
 }
@@ -169,26 +195,6 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 		render(w, "pages/issue", map[string]any{
 			"Issue":     issue,
 			"IsRefresh": true,
-		})
-	}
-}
-
-func apiFilterHandler(service *IssueService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-		project := query.Get("project")
-		status := query.Get("status")
-		confirmation := query.Get("confirmation")
-		resolution := query.Get("resolution")
-		mojangPriority := query.Get("mojang_priority")
-		sort := query.Get("sort")
-		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, sort, 100)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		render(w, "pages/index", map[string]any{
-			"Issues": issues,
 		})
 	}
 }

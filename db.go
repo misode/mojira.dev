@@ -121,7 +121,7 @@ func (c *DBClient) FilterIssues(project string, status string, confirmation stri
 	} else if sort == "Votes" {
 		sortStr = `votes DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4) AND ($5 = '' OR mojang_priority = $5)`+filterStr+` ORDER BY `+sortStr+` LIMIT $6`, project, status, confirmation, resolution, mojangPriority, limit)
+	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved')) AND ($5 = '' OR mojang_priority = $5)`+filterStr+` ORDER BY `+sortStr+` LIMIT $6`, project, status, confirmation, resolution, mojangPriority, limit)
 	if err != nil {
 		return nil, err
 	}
