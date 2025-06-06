@@ -42,9 +42,9 @@ type PublicClient struct {
 }
 
 func NewPublicClient() *PublicClient {
-	return &PublicClient{client: &http.Client{
-		Timeout: 4 * time.Second,
-	}}
+	return &PublicClient{
+		client: &http.Client{Timeout: 4 * time.Second},
+	}
 }
 
 type publicJQLRequest struct {

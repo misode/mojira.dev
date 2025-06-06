@@ -37,40 +37,47 @@ type ServiceDeskClient struct {
 	cookie *http.Cookie
 }
 
-func NewServiceDeskClient(ctx context.Context) (*ServiceDeskClient, error) {
+func NewServiceDeskClient() *ServiceDeskClient {
+	return &ServiceDeskClient{
+		client: &http.Client{},
+		cookie: nil,
+	}
+}
+
+func (s *ServiceDeskClient) Authenticate() error {
 	body, err := json.Marshal(map[string]string{
 		"email":    os.Getenv("JIRA_EMAIL"),
 		"password": os.Getenv("JIRA_PASSWORD"),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://report.bugs.mojang.com/jsd-login/v1/authentication/authenticate", bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", "https://report.bugs.mojang.com/jsd-login/v1/authentication/authenticate", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	cookies := resp.Cookies()
 	if len(cookies) == 0 {
-		return nil, errors.New("no session cookie returned")
+		return errors.New("no session cookie returned")
 	}
-
-	return &ServiceDeskClient{
-		client: client,
-		cookie: cookies[0],
-	}, nil
+	s.cookie = cookies[0]
+	return nil
 }
 
 func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceDeskIssue, error) {
+	if s.cookie == nil {
+		return nil, errors.New("no connection to servicedesk")
+	}
+
 	portalId := model.PortalIds[strings.Split(key, "-")[0]]
 	body, err := json.Marshal(map[string]any{
 		"models": []string{"reqDetails"},
@@ -138,7 +145,7 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 		return nil, err
 	}
 	if parsed.ReqDetails.Issue.Key == "" {
-		return nil, errors.New("issue not found on servicedesk API")
+		return nil, model.ErrIssueNotFound
 	}
 
 	apiIssue := parsed.ReqDetails.Issue

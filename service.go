@@ -18,15 +18,15 @@ type IssueService struct {
 func NewIssueService() *IssueService {
 	dbClient, err := NewDBClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	pubClient := api.NewPublicClient()
 
-	ctx := context.Background()
-	sdClient, err := api.NewServiceDeskClient(ctx)
+	sdClient := api.NewServiceDeskClient()
+	err = sdClient.Authenticate()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to authenticate to service desk: %v", err)
 	}
 
 	return &IssueService{db: dbClient, publicAPI: *pubClient, serviceDesk: *sdClient}
@@ -64,11 +64,11 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 
 	issue, err := s.fetchIssue(ctx, key)
 	if err != nil {
-		if oldIssue == nil {
-			return nil, err
+		if oldIssue != nil && errors.Is(err, model.ErrIssueNotFound) {
+			s.db.MarkIssueRemoved(key)
+			return nil, model.ErrIssueRemoved
 		}
-		s.db.MarkIssueRemoved(key)
-		return nil, model.ErrIssueRemoved
+		return oldIssue, err
 	}
 
 	if issue.Partial {
@@ -101,7 +101,7 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 	<-done
 
 	if sdErr != nil {
-		// Servicedesk API error, assume issue was removed
+		// Servicedesk API error
 		return nil, sdErr
 	}
 
