@@ -67,11 +67,20 @@
       {{end}}
       {{if .Issue.Links}}
         <h2>Related issues</h2>
-        <div>
-          {{range .Issue.Links}}
-            <div class="issue-link">{{.Type}} <a href="/{{.OtherKey}}">{{.OtherKey}}</a>: {{.OtherSummary}}</div>
-          {{end}}
-        </div>
+        {{range .Issue.GroupedLinks}}
+          <div>
+            <h3 class="issue-link-type">{{.Type}}</h3>
+            <div>
+              {{range .Links}}
+                <a class="issue-link {{if .IsResolved}}issue-link-resolved{{end}}" href="/{{.OtherKey}}">
+                  <img src="/static/icons/bug.svg" width="16" height="16" alt="">
+                  <span class="issue-link-key" >{{.OtherKey}}</span>
+                  <span class="issue-link-summary">{{.OtherSummary}}</span>
+                </a>
+              {{end}}
+            </div>
+          </div>
+        {{end}}
       {{end}}
       {{if .Issue.Attachments}}
         <h2>Attachments</h2>

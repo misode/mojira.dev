@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -93,19 +92,7 @@ func (i *Issue) IsResolved() bool {
 }
 
 func (i *Issue) HasEnvironment() bool {
-	if i.Environment == "" {
-		return false
-	}
-	var node map[string]any
-	err := json.Unmarshal([]byte(i.Environment), &node)
-	if err != nil {
-		return false
-	}
-	content, ok := node["content"].([]any)
-	if !ok {
-		return false
-	}
-	return len(content) > 0
+	return i.Environment != "" && !IsEmptyADF(i.Environment)
 }
 
 func (i *Issue) ShortAffectedVersions() string {
@@ -136,6 +123,28 @@ func (i *Issue) FirstImage() *Attachment {
 		}
 	}
 	return nil
+}
+
+type IssueLinkGroup struct {
+	Type       string
+	Links      []IssueLink
+	IsResolved bool
+}
+
+func (i *Issue) GroupedLinks() []IssueLinkGroup {
+	groupsMap := make(map[string][]IssueLink)
+	for _, link := range i.Links {
+		groupsMap[link.Type] = append(groupsMap[link.Type], link)
+	}
+	var groupedLinks []IssueLinkGroup
+	for typ, links := range groupsMap {
+		groupedLinks = append(groupedLinks, IssueLinkGroup{Type: typ, Links: links})
+	}
+	return groupedLinks
+}
+
+func (l *IssueLink) IsResolved() bool {
+	return l.OtherStatus == "Resolved" || l.OtherStatus == "Closed"
 }
 
 func (a *Attachment) IsImage() bool {

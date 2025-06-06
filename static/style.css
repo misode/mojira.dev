@@ -129,7 +129,8 @@ header {
 .search-result:focus,
 .search-result:hover {
   outline: none;
-  background-color: var(--gray-300);
+  color: var(--gray-950);
+  background-color: var(--gray-200);
 }
 
 /* FOOTER */
@@ -362,8 +363,53 @@ footer {
   margin-top: 1rem;
 }
 
+.issue-link-type {
+  font-weight: 600;
+  font-size: 12px;
+}
+
 .issue-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.25rem;
+  color: var(--gray-950);
   font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.issue-link:hover {
+  background-color: var(--gray-200);
+  color: var(--gray-950);
+}
+
+.issue-link:not(:first-child) {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: none;
+}
+
+.issue-link:not(:last-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.issue-link-key {
+  color: var(--link);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.issue-link-resolved .issue-link-key {
+  text-decoration: line-through;
+}
+
+.issue-link-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .attachments {
@@ -503,6 +549,7 @@ footer {
   padding: 0.5rem;
   background-color: var(--gray-200);
   border-radius: 0.25rem;
+  line-height: 1.2;
 }
 
 .adf code {

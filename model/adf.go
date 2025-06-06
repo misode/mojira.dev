@@ -230,3 +230,26 @@ func extractPlainTextFromADFChildren(node map[string]any) string {
 	}
 	return sb.String()
 }
+
+func IsEmptyADF(adf string) bool {
+	var node map[string]any
+	err := json.Unmarshal([]byte(adf), &node)
+	if err != nil {
+		return true
+	}
+	content, ok := node["content"].([]any)
+	if !ok {
+		return true
+	}
+	for _, item := range content {
+		block, ok := item.(map[string]any)
+		if !ok || block["type"] != "paragraph" {
+			return false
+		}
+		children, ok := block["content"].([]any)
+		if ok && len(children) > 0 {
+			return false
+		}
+	}
+	return true
+}
