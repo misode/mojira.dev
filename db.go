@@ -123,7 +123,7 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 		sortStr = `resolved_date DESC`
 		filterStr += ` AND (resolved_date IS NOT NULL)`
 	} else if sort == "Votes" {
-		sortStr = `votes DESC`
+		sortStr = `votes DESC, created_date DESC`
 	}
 	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
 	if err != nil {

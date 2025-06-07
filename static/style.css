@@ -695,7 +695,7 @@ tbody .issue-table-key {
 
 .adf pre {
   padding: 0.5rem;
-  background-color: var(--gray-200);
+  background-color: var(--gray-100);
   border-radius: 0.25rem;
   line-height: 1.2;
 }
@@ -703,7 +703,7 @@ tbody .issue-table-key {
 .adf code {
   font-family: ui-monospace, Menlo, "Segoe UI Mono", "Ubuntu Mono", monospace;
   padding: 2px;
-  background-color: var(--gray-200);
+  background-color: var(--gray-100);
   border-radius: 0.25rem;
   word-break: break-word;
   white-space: break-spaces;

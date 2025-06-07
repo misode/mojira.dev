@@ -1,12 +1,17 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"regexp"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/kyokomi/emoji/v2"
 )
 
@@ -48,7 +53,33 @@ func renderADFNode(node map[string]any) string {
 	case "listItem":
 		return "<li>" + renderADFChildren(node) + "</li>"
 	case "codeBlock":
-		return "<pre><code>" + renderADFChildren(node) + "</code></pre>"
+		text := extractPlainTextFromADFChildren(node)
+		lang := "mcfunction"
+		if attrs, ok := node["attrs"].(map[string]any); ok {
+			if p, ok := attrs["language"].(string); ok {
+				lang = p
+			}
+		}
+		lexer := lexers.Get(lang)
+		if lexer == nil {
+			lexer = lexers.Fallback
+		}
+		iterator, err := lexer.Tokenise(nil, text)
+		if err != nil {
+			log.Printf("[WARNING] Error during code tokenizing: %s", err)
+			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+		}
+		formatter := html.New(
+			html.PreventSurroundingPre(true),
+			html.TabWidth(4),
+		)
+		var buf bytes.Buffer
+		err = formatter.Format(&buf, styles.Get("vs"), iterator)
+		if err != nil {
+			log.Printf("[WARNING] Error during code highlighting: %s", err)
+			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+		}
+		return fmt.Sprintf("<pre><code>%s</code></pre>", buf.String())
 	case "rule":
 		return "<hr>"
 	case "panel":
