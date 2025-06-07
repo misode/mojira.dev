@@ -87,10 +87,14 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		resolution := query.Get("resolution")
 		priority := query.Get("priority")
 		sort := query.Get("sort")
+		t0 := time.Now()
 		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, 50)
+		t1 := time.Now()
+		if t1.Sub(t0) > time.Duration(4)*time.Second {
+			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
+		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			issues = []model.Issue{}
 		}
 		if r.Header.Get("Hx-Request") != "" {
 			filtered := url.Values{}
@@ -162,9 +166,14 @@ func apiSearchHandler(service *IssueService) http.HandlerFunc {
 			w.Write([]byte(""))
 			return
 		}
+		t0 := time.Now()
 		issues, err := service.db.SearchIssues(search, 10)
+		t1 := time.Now()
+		if t1.Sub(t0) > time.Duration(4)*time.Second {
+			log.Printf("[WARNING] Slow search! %s: search=%s", t1.Sub(t0), search)
+		}
 		if err != nil {
-			log.Printf("Failed searching for '%s': %s", search, err.Error())
+			log.Printf("[ERROR] Failed searching for '%s': %s", search, err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

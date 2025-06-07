@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -27,7 +28,7 @@ func NewFileLogger(filename string) io.Writer {
 
 type LokiLogger struct {
 	mu     sync.Mutex
-	buffer [][2]string // [timestamp, message]
+	buffer [][3]string // [timestamp, level, message]
 	ticker *time.Ticker
 	client *http.Client
 	token  string
@@ -50,19 +51,28 @@ func (l *LokiLogger) Write(p []byte) (int, error) {
 		return len(p), nil
 	}
 	ts := strconv.FormatInt(time.Now().UnixNano(), 10)
-	msg := l.formatMessage(p)
+	level, msg := l.parseLog(p)
 	l.mu.Lock()
-	l.buffer = append(l.buffer, [2]string{ts, msg})
+	l.buffer = append(l.buffer, [3]string{ts, level, msg})
 	l.mu.Unlock()
 	return len(p), nil
 }
 
-func (l *LokiLogger) formatMessage(p []byte) string {
+func (l *LokiLogger) parseLog(p []byte) (string, string) {
 	parts := bytes.SplitN(p, []byte(" "), 3)
-	if len(parts) < 3 {
-		return string(bytes.TrimRight(p, "\n"))
+	msg := bytes.TrimRight(p, "\n")
+	if len(parts) >= 3 {
+		msg = parts[2]
 	}
-	return string(bytes.TrimRight(parts[2], "\n"))
+	level := "info"
+	if strings.HasPrefix(string(msg), "[WARNING] ") {
+		level = "warning"
+		msg = bytes.TrimLeft(msg, "[WARNING] ")
+	} else if strings.HasPrefix(string(msg), "[ERROR] ") {
+		level = "error"
+		msg = bytes.TrimLeft(msg, "[ERROR] ")
+	}
+	return level, string(msg)
 }
 
 func (l *LokiLogger) run() {
@@ -78,23 +88,21 @@ func (l *LokiLogger) flush() {
 		return
 	}
 
-	values := make([][]string, len(l.buffer))
+	streams := make([]map[string]any, len(l.buffer))
 	for i, pair := range l.buffer {
-		values[i] = []string{pair[0], pair[1]}
+		streams[i] = map[string]any{
+			"stream": map[string]string{
+				"service_name": "mojira",
+				"level":        pair[1],
+			},
+			"values": [][]string{{pair[0], pair[2]}},
+		}
 	}
 	l.buffer = nil
 	l.mu.Unlock()
 
 	body := map[string]any{
-		"streams": []map[string]any{
-			{
-				"stream": map[string]string{
-					"service_name": "mojira",
-					"level":        "info",
-				},
-				"values": values,
-			},
-		},
+		"streams": streams,
 	}
 	jsonBody, _ := json.Marshal(body)
 
