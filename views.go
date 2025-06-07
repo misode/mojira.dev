@@ -87,7 +87,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		resolution := query.Get("resolution")
 		priority := query.Get("priority")
 		sort := query.Get("sort")
-		issues, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, 50)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, 50)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -111,6 +111,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		}
 		render(w, "pages/index", map[string]any{
 			"Issues": issues,
+			"Count":  count,
 			"Query":  queryMap,
 		})
 	}

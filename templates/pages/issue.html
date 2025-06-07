@@ -6,8 +6,8 @@
 <meta property="og:description" content="{{previewADF .Issue.Description}}"/>
 <meta property="twitter:description" content="{{previewADF .Issue.Description}}">
 {{if .Issue.FirstImage}}
-<meta property="og:image" content="{{.Issue.FirstImage.GetUrl}}" />
-<meta property="twitter:image" content="{{.Issue.FirstImage.GetUrl}}">
+  <meta property="og:image" content="{{.Issue.FirstImage.GetUrl}}" />
+  <meta property="twitter:image" content="{{.Issue.FirstImage.GetUrl}}">
 {{end}}
 <meta property="og:type" content="website" />
 <meta property="twitter:domain" content="mojira.dev">
@@ -62,8 +62,8 @@
         <div class="adf">{{renderADF .Issue.Description}}</div>
       </div>
       {{if .Issue.HasEnvironment}}
-      <h2>Environment</h2>
-      <div class="adf">{{renderADF .Issue.Environment}}</div>
+        <h2>Environment</h2>
+        <div class="adf">{{renderADF .Issue.Environment}}</div>
       {{end}}
       {{if .Issue.Links}}
         <h2>Related issues</h2>
@@ -101,11 +101,10 @@
         <div>
           <div>
             {{if .AuthorAvatar}}
-            <img class="avatar" src="{{.AuthorAvatar}}" alt="">
+              <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
             {{end}}
             <strong>{{.AuthorName}}</strong>
             <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
-            <!-- <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button> -->
           </div>
           <div class="comment-body adf">{{renderADF .AdfComment}}</div>
         </div>
@@ -117,18 +116,18 @@
     <div class="issue-details">
       <p><label>Reporter:</label>
         {{if .Issue.ReporterAvatar}}
-          <img class="avatar" src="{{.Issue.ReporterAvatar}}" alt="">
+          <img class="avatar" src="{{.Issue.ReporterAvatar}}" alt="" width="24" height="24">
         {{end}}
         {{.Issue.ReporterName}}
       </p>
       <p><label>Assignee:</label>
         {{if .Issue.AssigneeAvatar}}
-          <img class="avatar" src="{{.Issue.AssigneeAvatar}}" alt="">
+          <img class="avatar" src="{{.Issue.AssigneeAvatar}}" alt="" width="24" height="24">
         {{end}}
         {{if .Issue.AssigneeName}}
-        {{.Issue.AssigneeName}}
+          {{.Issue.AssigneeName}}
         {{else}}
-        (Unassigned)
+          (Unassigned)
         {{end}}
       </p>
       <p><label>Created:</label> <time datetime="{{formatTime .Issue.CreatedDate}}">{{formatTime .Issue.CreatedDate}}</time></p>

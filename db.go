@@ -109,10 +109,10 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
-func (c *DBClient) FilterIssues(search string, project string, status string, confirmation string, resolution string, priority string, sort string, limit int) ([]model.Issue, error) {
+func (c *DBClient) FilterIssues(search string, project string, status string, confirmation string, resolution string, priority string, sort string, limit int) ([]model.Issue, int, error) {
 	// Disallow queries starting with "-" for performance reasons
 	if strings.HasPrefix(strings.TrimSpace(search), "-") {
-		return []model.Issue{}, nil
+		return []model.Issue{}, 0, nil
 	}
 	sortStr := `created_date DESC`
 	filterStr := ``
@@ -125,21 +125,28 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	} else if sort == "Votes" {
 		sortStr = `votes DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.ReporterName, &issue.CreatedDate); err != nil {
-			return nil, err
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate); err != nil {
+			return nil, 0, err
 		}
 		issues = append(issues, issue)
 	}
-	return issues, nil
+
+	countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority)
+	var count int
+	err = countRow.Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+	return issues, count, nil
 }
 
 func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {

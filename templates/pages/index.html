@@ -1,51 +1,53 @@
+{{define "content-class"}}full-page{{end}}
+
 {{define "content"}}
 <div class="filters">
   <input name="search" type="text" placeholder="Search" value="{{.Query.search}}" hx-get="/" hx-trigger="input[this.value.length >= 3 || this.value.length === 0] delay:0.3s" hx-include=".filters [name]" hx-swap="none">
   <select name="project" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Project</option>
-    <option value="MC" {{if eq .Query.project "MC"}}selected{{end}}>MC</option>
-    <option value="MCPE" {{if eq .Query.project "MCPE"}}selected{{end}}>MCPE</option>
-    <option value="MCL" {{if eq .Query.project "MCL"}}selected{{end}}>MCL</option>
-    <option value="REALMS" {{if eq .Query.project "REALMS"}}selected{{end}}>REALMS</option>
-    <option value="WEB" {{if eq .Query.project "WEB"}}selected{{end}}>WEB</option>
-    <option value="BDS" {{if eq .Query.project "BDS"}}selected{{end}}>BDS</option>
+    <option {{if eq .Query.project "MC"}}selected{{end}}>MC</option>
+    <option {{if eq .Query.project "MCPE"}}selected{{end}}>MCPE</option>
+    <option {{if eq .Query.project "MCL"}}selected{{end}}>MCL</option>
+    <option {{if eq .Query.project "REALMS"}}selected{{end}}>REALMS</option>
+    <option {{if eq .Query.project "WEB"}}selected{{end}}>WEB</option>
+    <option {{if eq .Query.project "BDS"}}selected{{end}}>BDS</option>
   </select>
   <select name="status" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Status</option>
-    <option value="Open" {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
-    <option value="Reopened" {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
-    <option value="Postponed" {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
-    <option value="In Progress" {{if eq .Query.status "In Progress"}}selected{{end}}>In Progress</option>
-    <option value="Resolved" {{if eq .Query.status "Resolved"}}selected{{end}}>Resolved</option>
-    <option value="Closed" {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
+    <option {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
+    <option {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
+    <option {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
+    <option {{if eq .Query.status "In Progress"}}selected{{end}}>In Progress</option>
+    <option {{if eq .Query.status "Resolved"}}selected{{end}}>Resolved</option>
+    <option {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
   </select>
   <select name="confirmation" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Confirmation</option>
-    <option value="Unconfirmed" {{if eq .Query.confirmation "Unconfirmed"}}selected{{end}}>Unconfirmed</option>
-    <option value="Plausible" {{if eq .Query.confirmation "Plausible"}}selected{{end}}>Plausible</option>
-    <option value="Community Consensus" {{if eq .Query.confirmation "Community Consensus"}}selected{{end}}>Community Consensus</option>
-    <option value="Confirmed" {{if eq .Query.confirmation "Confirmed"}}selected{{end}}>Confirmed</option>
+    <option {{if eq .Query.confirmation "Unconfirmed"}}selected{{end}}>Unconfirmed</option>
+    <option {{if eq .Query.confirmation "Plausible"}}selected{{end}}>Plausible</option>
+    <option {{if eq .Query.confirmation "Community Consensus"}}selected{{end}}>Community Consensus</option>
+    <option {{if eq .Query.confirmation "Confirmed"}}selected{{end}}>Confirmed</option>
   </select>
   <select name="resolution" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Resolution</option>
-    <option value="Awaiting Response" {{if eq .Query.resolution "Awaiting Response"}}selected{{end}}>Awaiting Response</option>
-    <option value="Cannot Reproduce" {{if eq .Query.resolution "Cannot Reproduce"}}selected{{end}}>Cannot Reproduce</option>
-    <option value="Done" {{if eq .Query.resolution "Done"}}selected{{end}}>Done</option>
-    <option value="Duplicate" {{if eq .Query.resolution "Duplicate"}}selected{{end}}>Duplicate</option>
-    <option value="Fixed" {{if eq .Query.resolution "Fixed"}}selected{{end}}>Fixed</option>
-    <option value="Incomplete" {{if eq .Query.resolution "Incomplete"}}selected{{end}}>Incomplete</option>
-    <option value="Invalid" {{if eq .Query.resolution "Invalid"}}selected{{end}}>Invalid</option>
-    <option value="Unresolved" {{if eq .Query.resolution "Unresolved"}}selected{{end}}>Unresolved</option>
-    <option value="Won't Do" {{if eq .Query.resolution "Won't Do"}}selected{{end}}>Won't Do</option>
-    <option value="Won't Fix" {{if eq .Query.resolution "Won't Fix"}}selected{{end}}>Won't Fix</option>
-    <option value="Works As Intended" {{if eq .Query.resolution "Works As Intended"}}selected{{end}}>Works As Intended</option>
+    <option {{if eq .Query.resolution "Awaiting Response"}}selected{{end}}>Awaiting Response</option>
+    <option {{if eq .Query.resolution "Cannot Reproduce"}}selected{{end}}>Cannot Reproduce</option>
+    <option {{if eq .Query.resolution "Done"}}selected{{end}}>Done</option>
+    <option {{if eq .Query.resolution "Duplicate"}}selected{{end}}>Duplicate</option>
+    <option {{if eq .Query.resolution "Fixed"}}selected{{end}}>Fixed</option>
+    <option {{if eq .Query.resolution "Incomplete"}}selected{{end}}>Incomplete</option>
+    <option {{if eq .Query.resolution "Invalid"}}selected{{end}}>Invalid</option>
+    <option {{if eq .Query.resolution "Unresolved"}}selected{{end}}>Unresolved</option>
+    <option {{if eq .Query.resolution "Won't Do"}}selected{{end}}>Won't Do</option>
+    <option {{if eq .Query.resolution "Won't Fix"}}selected{{end}}>Won't Fix</option>
+    <option {{if eq .Query.resolution "Works As Intended"}}selected{{end}}>Works As Intended</option>
   </select>
   <select name="priority" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Priority</option>
-    <option value="Low" {{if eq .Query.priority "Low"}}selected{{end}}>Low</option>
-    <option value="Normal" {{if eq .Query.priority "Normal"}}selected{{end}}>Normal</option>
-    <option value="Important" {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
-    <option value="Very Important" {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
+    <option {{if eq .Query.priority "Low"}}selected{{end}}>Low</option>
+    <option {{if eq .Query.priority "Normal"}}selected{{end}}>Normal</option>
+    <option {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
+    <option {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
   </select>
   <select name="sort" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Sort by: Created</option>
@@ -55,16 +57,49 @@
   </select>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
-  {{ range .Issues }}
-  <a class="issue-card" href="/{{.Key}}">
-    <span>{{ .Summary }}</span>
-    <div class="issue-card-details">
-      <img src="/static/icons/bug.svg" width="16" height="16" alt="">
-      <span class="issue-card-key">{{.Key}}</span>
-      <span>{{.ReporterName}}</span>
-    </div>
-  </a>
-  {{ end }}
+  <div class="issue-count">
+    {{len .Issues}} of {{.Count}}
+  </div>
+  <div class="issue-table-container">
+    <table class="issue-table">
+      <thead>
+        <tr>
+          <th><div class="issue-table-key">Key</div></th>
+          <th><div class="issue-table-summary">Summary</div></th>
+          <th><div class="issue-table-status">Status</div></th>
+          <th><div class="issue-table-user">Reporter</div></th>
+          <th><div class="issue-table-user">Assignee</div></th>
+          <th><div class="issue-table-time">Created</div></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Issues}}
+          <tr {{if .IsResolved}}class="issue-resolved"{{end}}>
+            <td><a class="issue-table-key" href="/{{.Key}}">{{.Key}}</a></td>
+            <td><div class="issue-table-summary" title="{{.Summary}}">{{.Summary}}</div></td>
+            <td><div class="issue-table-status">
+              <div class="issue-table-status-badge">
+                {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
+              </div>
+            </div></td>
+            <td><div class="issue-table-user">
+              {{if .ReporterAvatar}}
+                <img class="avatar" src="{{.ReporterAvatar}}" alt="" width="24" height="24">
+              {{end}}
+              {{.ReporterName}}
+            </div></td>
+            <td><div class="issue-table-user">
+              {{if .AssigneeAvatar}}
+                <img class="avatar" src="{{.AssigneeAvatar}}" alt="" width="24" height="24">
+              {{end}}
+              {{.AssigneeName}}
+            </div></td>
+            <td><time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time></td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
 </div>
 {{end}}
 
