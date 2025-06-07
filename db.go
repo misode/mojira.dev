@@ -109,19 +109,23 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 	return issues, nil
 }
 
-func (c *DBClient) FilterIssues(project string, status string, confirmation string, resolution string, mojangPriority string, sort string, limit int) ([]model.Issue, error) {
+func (c *DBClient) FilterIssues(search string, project string, status string, confirmation string, resolution string, priority string, sort string, limit int) ([]model.Issue, error) {
+	// Disallow queries starting with "-" for performance reasons
+	if strings.HasPrefix(strings.TrimSpace(search), "-") {
+		return []model.Issue{}, nil
+	}
 	sortStr := `created_date DESC`
 	filterStr := ``
 	if sort == "Updated" {
 		sortStr = `updated_date DESC`
-		filterStr = ` AND (updated_date IS NOT NULL)`
+		filterStr += ` AND (updated_date IS NOT NULL)`
 	} else if sort == "Resolved" {
 		sortStr = `resolved_date DESC`
-		filterStr = ` AND (resolved_date IS NOT NULL)`
+		filterStr += ` AND (resolved_date IS NOT NULL)`
 	} else if sort == "Votes" {
 		sortStr = `votes DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved')) AND ($5 = '' OR mojang_priority = $5)`+filterStr+` ORDER BY `+sortStr+` LIMIT $6`, project, status, confirmation, resolution, mojangPriority, limit)
+	rows, err := c.db.Query(`SELECT key, summary, reporter_name, created_date FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
 	if err != nil {
 		return nil, err
 	}

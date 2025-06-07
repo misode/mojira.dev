@@ -146,14 +146,28 @@ footer {
 
 /* ISSUES */
 
-.issue-controls {
+.filters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.25rem;
   padding: 1rem;
 }
 
-.issue-controls select {
+.filters input {
+  width: 120px;
+  height: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.25rem;
+  transition: width 0.2s;
+}
+
+.filters input:not(:placeholder-shown),
+.filters input:focus-within {
+  width: 240px;
+}
+
+.filters select {
   height: 2rem;
   display: flex;
   gap: 0.25rem;
@@ -168,13 +182,13 @@ footer {
   cursor: pointer;
 }
 
-.issue-controls select:has([value=""]:not(:checked)) {
+.filters select:has([value=""]:not(:checked)) {
   font-weight: bold;
   background-color: var(--link-bg);
   color: var(--link);
 }
 
-.issue-controls option {
+.filters option {
   color: var(--gray-950);
   background-color: var(--gray-100);
 }

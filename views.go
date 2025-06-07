@@ -80,13 +80,14 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
+		search := query.Get("search")
 		project := query.Get("project")
 		status := query.Get("status")
 		confirmation := query.Get("confirmation")
 		resolution := query.Get("resolution")
-		mojangPriority := query.Get("mojang_priority")
+		priority := query.Get("priority")
 		sort := query.Get("sort")
-		issues, err := service.db.FilterIssues(project, status, confirmation, resolution, mojangPriority, sort, 50)
+		issues, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, 50)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
