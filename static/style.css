@@ -98,7 +98,8 @@ header {
 }
 
 .search input {
-  padding: 0.25rem 0.75rem;
+  height: 2rem;
+  padding: 0.15rem 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: 0.25rem;
   width: 100%;
@@ -146,7 +147,7 @@ footer {
   border-top: 1px solid var(--gray-200);
   font-size: 14px;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   flex-wrap: wrap;
 }
 
@@ -209,19 +210,32 @@ footer a:hover {
   background-color: var(--gray-100);
 }
 
-.issue-list {
-  padding: 0 1rem 1rem;
-}
-
 .issue-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
   font-size: 14px;
   padding: 0 0.25rem;
 }
 
+.issue-list-spinner {
+  display: none;
+  animation: spin 1s linear reverse infinite;
+}
+
+.filters:has(.htmx-request) + .issue-list .issue-list-spinner {
+  display: block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .issue-table-container {
   overflow: auto;
-  border-top-left-radius: 0.25rem;
 }
 
 .issue-table {
@@ -259,14 +273,6 @@ footer a:hover {
   background-color: var(--gray-100);
 }
 
-.issue-table thead th:first-child > * {
-  border-top-left-radius: 0.25rem;
-}
-
-.issue-table thead th:last-child > * {
-  border-top-right-radius: 0.25rem;
-}
-
 .issue-table td:first-child > *, .issue-table th:first-child > * {
   border-left: 1px solid var(--gray-300);
 }
@@ -281,7 +287,7 @@ footer a:hover {
 }
 
 .issue-table-key {
-  width: 90px;
+  min-width: 90px;
 }
 
 tbody .issue-table-key {
@@ -290,7 +296,7 @@ tbody .issue-table-key {
   font-weight: 600;
 }
 
-.issue-table .issue-table-key:hover {
+.issue-table tbody .issue-table-key:hover {
   color: var(--link);
   background-color: var(--gray-200);
 }
@@ -331,6 +337,24 @@ tbody .issue-table-key {
 
 .issue-table-time {
   width: 180px;
+}
+
+@media (min-width: 720px) {
+  .issue-list {
+    padding: 0 1rem 1rem;
+  }
+
+  .issue-table-container {
+    border-top-left-radius: 0.25rem;
+  }
+
+  .issue-table thead th:first-child > * {
+    border-top-left-radius: 0.25rem;
+  }
+
+  .issue-table thead th:last-child > * {
+    border-top-right-radius: 0.25rem;
+  }
 }
 
 /* ISSUE DETAIL */
@@ -506,7 +530,7 @@ tbody .issue-table-key {
 }
 
 .issue-link:hover {
-  background-color: var(--gray-200);
+  background-color: var(--gray-100);
   color: var(--gray-950);
 }
 

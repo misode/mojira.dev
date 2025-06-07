@@ -58,7 +58,8 @@
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   <div class="issue-count">
-    {{len .Issues}} of {{.Count}}
+    <div>{{len .Issues}} of {{.Count}}</div>
+    <div class="issue-list-spinner">{{icon "sync"}}</div>
   </div>
   <div class="issue-table-container">
     <table class="issue-table">
