@@ -26,6 +26,10 @@ func ParseTime(s string) (*time.Time, error) {
 
 func SafeName(s string) string {
 	at := strings.IndexByte(s, '@')
+	if at == 0 {
+		s, _ = strings.CutPrefix(s, "@")
+		return "@" + SafeName(s)
+	}
 	if at >= 0 {
 		return s[:at]
 	}

@@ -41,7 +41,9 @@ func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, 
 	if issue != nil {
 		return issue, nil
 	}
-	log.Printf("[WARNING] GetIssueByKey %s: %s", key, err)
+	if !errors.Is(err, model.ErrIssueNotStored) {
+		log.Printf("[ERROR] GetIssueByKey %s: %s", key, err)
+	}
 
 	issue, err = s.fetchIssue(ctx, key)
 	if err != nil {

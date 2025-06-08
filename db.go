@@ -168,6 +168,9 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	issue.Key = key
 	err := row.Scan(&issue.Summary, &issue.CreatorName, &issue.CreatorAvatar, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.LegacyVotes, &issue.SyncedDate, &state)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, model.ErrIssueNotStored
+		}
 		return nil, err
 	}
 	if state == "removed" {
@@ -179,9 +182,11 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var cmt model.Comment
-			if err := rows.Scan(&cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment); err == nil {
-				comments = append(comments, cmt)
+			err := rows.Scan(&cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment)
+			if err != nil {
+				return nil, err
 			}
+			comments = append(comments, cmt)
 		}
 	}
 	issue.Comments = comments
@@ -191,9 +196,11 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var l model.IssueLink
-			if err := rows.Scan(&l.Type, &l.OtherKey, &l.OtherSummary, &l.OtherStatus); err == nil {
-				links = append(links, l)
+			err := rows.Scan(&l.Type, &l.OtherKey, &l.OtherSummary, &l.OtherStatus)
+			if err != nil {
+				return nil, err
 			}
+			links = append(links, l)
 		}
 	}
 	issue.Links = links
@@ -203,9 +210,11 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var a model.Attachment
-			if err := rows.Scan(&a.Id, &a.Filename, &a.AuthorName, &a.AuthorAvatar, &a.CreatedDate, &a.Size, &a.MimeType); err == nil {
-				attachments = append(attachments, a)
+			err := rows.Scan(&a.Id, &a.Filename, &a.AuthorName, &a.AuthorAvatar, &a.CreatedDate, &a.Size, &a.MimeType)
+			if err != nil {
+				return nil, err
 			}
+			attachments = append(attachments, a)
 		}
 	}
 	issue.Attachments = attachments

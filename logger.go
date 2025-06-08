@@ -60,19 +60,20 @@ func (l *LokiLogger) Write(p []byte) (int, error) {
 
 func (l *LokiLogger) parseLog(p []byte) (string, string) {
 	parts := bytes.SplitN(p, []byte(" "), 3)
-	msg := bytes.TrimRight(p, "\n")
+	rest := bytes.TrimRight(p, "\n")
 	if len(parts) >= 3 {
-		msg = parts[2]
+		rest = parts[2]
 	}
+	msg := string(rest)
 	level := "info"
-	if strings.HasPrefix(string(msg), "[WARNING] ") {
+	if strings.HasPrefix(msg, "[WARNING] ") {
 		level = "warning"
-		msg = bytes.TrimLeft(msg, "[WARNING] ")
-	} else if strings.HasPrefix(string(msg), "[ERROR] ") {
+		msg, _ = strings.CutPrefix(msg, "[WARNING] ")
+	} else if strings.HasPrefix(msg, "[ERROR] ") {
 		level = "error"
-		msg = bytes.TrimLeft(msg, "[ERROR] ")
+		msg, _ = strings.CutPrefix(msg, "[ERROR] ")
 	}
-	return level, string(msg)
+	return level, msg
 }
 
 func (l *LokiLogger) run() {
