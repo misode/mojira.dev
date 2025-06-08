@@ -123,9 +123,9 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 		sortStr = `resolved_date DESC`
 		filterStr += ` AND (resolved_date IS NOT NULL)`
 	} else if sort == "Votes" {
-		sortStr = `votes DESC, created_date DESC`
+		sortStr = `total_votes DESC, created_date DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, (legacy_votes + votes) AS total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -134,7 +134,8 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate); err != nil {
+		var ignoredTotalVotes int
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate, &ignoredTotalVotes); err != nil {
 			return nil, 0, err
 		}
 		issues = append(issues, issue)
@@ -161,11 +162,11 @@ func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
 }
 
 func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
-	row := c.db.QueryRow("SELECT summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, synced_date, state FROM issue WHERE key = $1", key)
+	row := c.db.QueryRow("SELECT summary, creator_name, creator_avatar, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, legacy_votes, synced_date, state FROM issue WHERE key = $1", key)
 	var state string
 	var issue model.Issue
 	issue.Key = key
-	err := row.Scan(&issue.Summary, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.SyncedDate, &state)
+	err := row.Scan(&issue.Summary, &issue.CreatorName, &issue.CreatorAvatar, &issue.ReporterName, &issue.ReporterAvatar, &issue.AssigneeName, &issue.AssigneeAvatar, &issue.Description, &issue.Environment, pq.Array(&issue.Labels), &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Status, &issue.ConfirmationStatus, &issue.Resolution, pq.Array(&issue.AffectedVersions), pq.Array(&issue.FixVersions), pq.Array(&issue.Category), &issue.MojangPriority, &issue.Area, pq.Array(&issue.Components), &issue.ADO, &issue.Platform, &issue.OSVersion, &issue.RealmsPlatform, &issue.Votes, &issue.LegacyVotes, &issue.SyncedDate, &state)
 	if err != nil {
 		return nil, err
 	}
@@ -173,12 +174,12 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 		return nil, model.ErrIssueRemoved
 	}
 	comments := []model.Comment{}
-	rows, err := c.db.Query(`SELECT comment_id, date, author_name, author_avatar, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
+	rows, err := c.db.Query(`SELECT comment_id, legacy_id, date, author_name, author_avatar, adf_comment FROM comment WHERE issue_key = $1 ORDER BY date ASC`, key)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var cmt model.Comment
-			if err := rows.Scan(&cmt.Id, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment); err == nil {
+			if err := rows.Scan(&cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment); err == nil {
 				comments = append(comments, cmt)
 			}
 		}
@@ -248,13 +249,13 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	if err != nil {
 		return err
 	}
-	query := `INSERT INTO issue (key, summary, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, text, synced_date, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, 'present')`
-	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, issue.SyncedDate)
+	query := `INSERT INTO issue (key, summary, creator_name, creator_avatar, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, legacy_votes, text, synced_date, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, 'present')`
+	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.CreatorName, issue.CreatorAvatar, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, issue.LegacyVotes, text, issue.SyncedDate)
 	if err != nil {
 		return errors.New("failed to insert issue: " + err.Error())
 	}
 	for _, cmt := range issue.Comments {
-		_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6)`, issue.Key, cmt.Id, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
+		_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, legacy_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6, $7)`, issue.Key, cmt.Id, cmt.LegacyId, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
 		if err != nil {
 			return errors.New("failed to insert comment: " + err.Error())
 		}

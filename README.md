@@ -7,7 +7,7 @@
 Since the [migration](https://minecraft.wiki/w/Bug_tracker#Migration) the public bug tracker has been very slow and unfriendly to work with. There are two official platforms: [bugs.mojang.com](https://bugs.mojang.com) and [report.bugs.mojang.com](https://report.bugs.mojang.com). Both platforms expose part of an issue's metadata, but getting the full picture is difficult.
 
 ## How does this work?
-The Go server uses both the public and servicedesk APIs to mirror issues. There are currently 3 systems in place to make sure issues are as much in-sync as possible:
+The Go server uses the public, servicedesk, and legacy APIs to mirror issues. There are currently 3 systems in place to make sure issues are as much in-sync as possible:
 
 1. A full sweep sync of issues runs in the background. With currently around 590000 issue keys, this process can take around 4 days.
 2. The server actively polls a list of recently updated issues every few seconds and adds them to a queue, which is later processed.

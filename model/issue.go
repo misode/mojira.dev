@@ -11,6 +11,8 @@ import (
 type Issue struct {
 	Key                string
 	Summary            string
+	CreatorName        string // Legacy
+	CreatorAvatar      string // Legacy
 	ReporterName       string
 	ReporterAvatar     string
 	AssigneeName       string
@@ -35,6 +37,7 @@ type Issue struct {
 	RealmsPlatform     string
 	ADO                string
 	Votes              int
+	LegacyVotes        int // Legacy
 	Links              []IssueLink
 	Attachments        []Attachment
 	Comments           []Comment
@@ -61,6 +64,7 @@ type Attachment struct {
 
 type Comment struct {
 	Id           string
+	LegacyId     string // Legacy
 	Date         *time.Time
 	AuthorName   string
 	AuthorAvatar string
@@ -107,6 +111,10 @@ func (i *Issue) ShortAffectedVersions() string {
 	short := append(i.AffectedVersions[:5], "...")
 	short = append(short, i.AffectedVersions[n-5:]...)
 	return strings.Join(short, ", ")
+}
+
+func (i *Issue) TotalVotes() int {
+	return i.LegacyVotes + i.Votes
 }
 
 func (i *Issue) IsUpToDate() bool {

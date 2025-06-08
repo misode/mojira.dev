@@ -11,8 +11,9 @@ import (
 
 type IssueService struct {
 	db          *DBClient
-	publicAPI   api.PublicClient
-	serviceDesk api.ServiceDeskClient
+	legacy      *api.LegacyClient
+	public      *api.PublicClient
+	serviceDesk *api.ServiceDeskClient
 }
 
 func NewIssueService() *IssueService {
@@ -21,15 +22,15 @@ func NewIssueService() *IssueService {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	pubClient := api.NewPublicClient()
-
-	sdClient := api.NewServiceDeskClient()
-	err = sdClient.Authenticate()
+	legacy := api.NewLegacyClient()
+	public := api.NewPublicClient()
+	serviceDesk := api.NewServiceDeskClient()
+	err = serviceDesk.Authenticate()
 	if err != nil {
 		log.Printf("Failed to authenticate to service desk: %v", err)
 	}
 
-	return &IssueService{db: dbClient, publicAPI: *pubClient, serviceDesk: *sdClient}
+	return &IssueService{db: dbClient, legacy: legacy, public: public, serviceDesk: serviceDesk}
 }
 
 func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
@@ -83,14 +84,18 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 }
 
 func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue, error) {
+	var legacyIssue *api.LegacyIssue
 	var pubIssue *api.PublicIssue
 	var sdIssue *api.ServiceDeskIssue
-	var pubErr, sdErr error
+	var legacyError, pubErr, sdErr error
 
-	done := make(chan struct{}, 2)
-
+	done := make(chan struct{}, 3)
 	go func() {
-		pubIssue, pubErr = s.publicAPI.GetIssue(ctx, key)
+		legacyIssue, legacyError = s.legacy.GetIssue(ctx, key)
+		done <- struct{}{}
+	}()
+	go func() {
+		pubIssue, pubErr = s.public.GetIssue(ctx, key)
 		done <- struct{}{}
 	}()
 	go func() {
@@ -99,9 +104,9 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 	}()
 	<-done
 	<-done
+	<-done
 
 	if sdErr != nil {
-		// Servicedesk API error
 		return nil, sdErr
 	}
 
@@ -144,6 +149,39 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		merged.Attachments = pubIssue.Attachments
 		now := time.Now()
 		merged.SyncedDate = &now
+	}
+
+	if legacyError != nil && !errors.Is(legacyError, model.ErrIssueNotFound) {
+		return nil, legacyError
+	}
+	if legacyIssue != nil {
+		if legacyIssue.CreatorKey != legacyIssue.ReporterKey {
+			merged.CreatorName = legacyIssue.CreatorName
+			merged.CreatorAvatar = legacyIssue.CreatorAvatar
+		}
+		if merged.ReporterName == "migrated" {
+			merged.ReporterName = legacyIssue.ReporterName
+			merged.ReporterAvatar = legacyIssue.ReporterAvatar
+		}
+		merged.LegacyVotes = legacyIssue.Votes
+		// Sync comments
+		legacyMap := make(map[int64]*model.Comment)
+		for i := range legacyIssue.Comments {
+			c := &legacyIssue.Comments[i]
+			legacyMap[c.Date.Unix()] = c
+		}
+		usedIds := make(map[string]bool)
+		for i, c := range merged.Comments {
+			match := legacyMap[c.Date.Unix()]
+			if match != nil && !usedIds[match.LegacyId] {
+				usedIds[match.LegacyId] = true
+				merged.Comments[i].LegacyId = match.LegacyId
+				if c.AuthorName == "migrated" {
+					merged.Comments[i].AuthorName = match.AuthorName
+					merged.Comments[i].AuthorAvatar = match.AuthorAvatar
+				}
+			}
+		}
 	}
 
 	return &merged, nil

@@ -94,6 +94,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
 		}
 		if err != nil {
+			log.Printf("[ERROR] FilterIssues: %s", err)
 			issues = []model.Issue{}
 		}
 		if r.Header.Get("Hx-Request") != "" {
