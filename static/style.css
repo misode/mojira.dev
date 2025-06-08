@@ -37,10 +37,6 @@ body {
   padding-top: 56px;
   min-height: 100vh;
 }
-/* 
-.content.full-page {
-  max-height: calc(100vh - 56px);
-} */
 
 a {
   color: var(--link);
@@ -53,6 +49,13 @@ a:hover {
 
 svg {
   fill: currentColor;
+}
+
+.anchor {
+  display: block;
+  position: relative;
+  top: -60px;
+  visibility: hidden;
 }
 
 /* HEADER */

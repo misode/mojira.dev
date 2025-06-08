@@ -132,7 +132,11 @@ func renderADFNode(node map[string]any) string {
 					case "link":
 						if attrs, ok := mark["attrs"].(map[string]any); ok {
 							if href, ok := attrs["href"].(string); ok {
-								text = fmt.Sprintf("<a href='%s' rel='nofollow' target='_blank'>%s</a>", template.HTMLEscapeString(href), text)
+								if id := extractCommentIdFromURL(href); id != "" {
+									text = fmt.Sprintf("<a href='%s'>%s</a>", id, text)
+								} else {
+									text = fmt.Sprintf("<a href='%s' rel='nofollow' target='_blank'>%s</a>", template.HTMLEscapeString(href), text)
+								}
 							}
 						}
 					}
@@ -215,6 +219,14 @@ func extractIssueKeyFromURL(url string) string {
 		if match := re.FindString(url); match != "" {
 			return match
 		}
+	}
+	return ""
+}
+
+func extractCommentIdFromURL(url string) string {
+	re := regexp.MustCompile(`#comment-(\d+)$`)
+	if match := re.FindString(url); match != "" {
+		return match
 	}
 	return ""
 }
