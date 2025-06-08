@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"math"
 	"mojira/model"
 	"os"
 	"strings"
@@ -366,14 +367,16 @@ func (c *DBClient) RetryQueuedIssue(ctx context.Context, key string) error {
 		_, err = tx.ExecContext(ctx, `DELETE FROM sync_queue WHERE issue_key = $1`, key)
 	} else {
 		// Delay will be: 5m, 25m, 2h5m, 10h25m
+		delay := time.Duration(math.Pow(5, float64(failedCount))) * time.Minute
+		retryAfter := time.Now().Add(delay)
 		_, err = tx.ExecContext(ctx, `
 			UPDATE sync_queue
 			SET 
 				failed_count = $2,
 				queued_date = NOW(),
-				retry_after = NOW() + (POWER(5, $2) * INTERVAL '1 minute')
+				retry_after = $3
 			WHERE issue_key = $1
-		`, key, failedCount)
+		`, key, failedCount, retryAfter)
 	}
 	if err != nil {
 		return err

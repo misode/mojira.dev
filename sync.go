@@ -63,7 +63,7 @@ func queueProcessor(service *IssueService) {
 	ctx := context.Background()
 	keys, err := service.db.PeekQueuedIssues(ctx, 10)
 	if err != nil {
-		log.Printf("[queue] Error getting queued keys: %v", err)
+		log.Printf("[ERROR] [queue] Error getting queued keys: %v", err)
 		return
 	}
 	for _, key := range keys {
@@ -73,12 +73,18 @@ func queueProcessor(service *IssueService) {
 				log.Printf("[queue] Detected removed issue %s", key)
 				service.db.MarkIssueRemoved(key)
 			} else {
-				service.db.RetryQueuedIssue(ctx, key)
+				err = service.db.RetryQueuedIssue(ctx, key)
+				if err != nil {
+					log.Printf("[ERROR] [queue] Error retrying queued issue %s: %v", key, err)
+				}
 				continue
 			}
 		} else {
 			log.Printf("[queue] Refreshed issue %s", key)
 		}
-		service.db.DeleteQueuedIssue(ctx, key)
+		err = service.db.DeleteQueuedIssue(ctx, key)
+		if err != nil {
+			log.Printf("[ERROR] [queue] Error deleting queued issue %s: %v", key, err)
+		}
 	}
 }
