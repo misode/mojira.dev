@@ -296,3 +296,28 @@ func IsEmptyADF(adf string) bool {
 	}
 	return true
 }
+
+func IsOnlyMediaADF(adf string) bool {
+	var node map[string]any
+	err := json.Unmarshal([]byte(adf), &node)
+	if err != nil {
+		return false
+	}
+	content, ok := node["content"].([]any)
+	if !ok {
+		return false
+	}
+	for _, item := range content {
+		block, ok := item.(map[string]any)
+		if !ok {
+			return false
+		}
+		switch block["type"] {
+		case "media", "mediaSingle", "mediaGroup":
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}

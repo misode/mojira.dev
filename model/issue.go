@@ -160,7 +160,7 @@ func (i *Issue) RealComments() []Comment {
 		return i.Comments
 	}
 	first := i.Comments[0]
-	if first.Date.Sub(*i.CreatedDate) < time.Second && first.AuthorName == "migrated" {
+	if first.Date.Sub(*i.CreatedDate) <= 2*time.Second && IsOnlyMediaADF(first.AdfComment) {
 		return i.Comments[1:]
 	}
 	return i.Comments
