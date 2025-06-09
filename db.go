@@ -126,7 +126,7 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	} else if sort == "Votes" {
 		sortStr = `total_votes DESC, created_date DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, (legacy_votes + votes) AS total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
 	if err != nil {
 		return nil, 0, err
 	}
