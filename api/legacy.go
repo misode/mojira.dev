@@ -17,6 +17,7 @@ type LegacyIssue struct {
 	ReporterKey    string
 	ReporterName   string
 	ReporterAvatar string
+	ResolvedDate   *time.Time
 	Votes          int
 	Comments       []model.Comment
 }
@@ -67,7 +68,8 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 					Size48 string `json:"48x48"`
 				}
 			}
-			Votes struct {
+			Resolutiondate string
+			Votes          struct {
 				Votes int
 			}
 			Comment struct {
@@ -91,6 +93,14 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 		return nil, model.ErrIssueNotFound
 	}
 
+	var resolvedDate *time.Time
+	if parsed.Fields.Resolutiondate != "" {
+		t, err := ParseTime(parsed.Fields.Resolutiondate)
+		if err != nil {
+			return nil, err
+		}
+		resolvedDate = t
+	}
 	comments := make([]model.Comment, 0, len(parsed.Fields.Comment.Comments))
 	for _, c := range parsed.Fields.Comment.Comments {
 		var date *time.Time
@@ -116,6 +126,7 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 		ReporterKey:    parsed.Fields.Reporter.Key,
 		ReporterName:   parsed.Fields.Reporter.DisplayName,
 		ReporterAvatar: parsed.Fields.Reporter.AvatarUrls.Size48,
+		ResolvedDate:   resolvedDate,
 		Votes:          parsed.Fields.Votes.Votes,
 		Comments:       comments,
 	}, nil

@@ -166,6 +166,9 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 			merged.ReporterName = legacyIssue.ReporterName
 			merged.ReporterAvatar = legacyIssue.ReporterAvatar
 		}
+		if merged.ResolvedDate != nil && legacyIssue.ResolvedDate != nil {
+			merged.ResolvedDate = legacyIssue.ResolvedDate
+		}
 		merged.LegacyVotes = legacyIssue.Votes
 		// Sync comments
 		legacyMap := make(map[int64]*model.Comment)
