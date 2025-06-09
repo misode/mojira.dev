@@ -7,6 +7,7 @@ import (
 	"mojira/model"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,7 +39,7 @@ func StartSync(service *IssueService, noSync bool) {
 
 	log.Println("Starting queue processor...")
 	go func() {
-		ticker := time.NewTicker(4 * time.Second)
+		ticker := time.NewTicker(1500 * time.Millisecond)
 		for {
 			<-ticker.C
 			queueProcessor(service)
@@ -78,27 +79,33 @@ func queueProcessor(service *IssueService) {
 		log.Printf("[ERROR] [queue] Error getting queued keys: %v", err)
 		return
 	}
+	var wg sync.WaitGroup
 	for _, key := range keys {
-		_, err := service.RefreshIssue(ctx, key)
-		if err != nil {
-			if errors.Is(err, model.ErrIssueRemoved) {
-				log.Printf("[queue] Detected removed issue %s", key)
-				service.db.MarkIssueRemoved(key)
-			} else {
-				err = service.db.RetryQueuedIssue(ctx, key)
-				if err != nil {
-					log.Printf("[ERROR] [queue] Error retrying queued issue %s: %v", key, err)
+		wg.Add(1)
+		go func(key string) {
+			defer wg.Done()
+			_, err := service.RefreshIssue(ctx, key)
+			if err != nil {
+				if errors.Is(err, model.ErrIssueRemoved) {
+					log.Printf("[queue] Detected removed issue %s", key)
+					service.db.MarkIssueRemoved(key)
+				} else {
+					err = service.db.RetryQueuedIssue(ctx, key)
+					if err != nil {
+						log.Printf("[ERROR] [queue] Error retrying queued issue %s: %v", key, err)
+					}
+					return
 				}
-				continue
+			} else {
+				log.Printf("[queue] Refreshed issue %s", key)
 			}
-		} else {
-			log.Printf("[queue] Refreshed issue %s", key)
-		}
-		err = service.db.DeleteQueuedIssue(ctx, key)
-		if err != nil {
-			log.Printf("[ERROR] [queue] Error deleting queued issue %s: %v", key, err)
-		}
+			err = service.db.DeleteQueuedIssue(ctx, key)
+			if err != nil {
+				log.Printf("[ERROR] [queue] Error deleting queued issue %s: %v", key, err)
+			}
+		}(key)
 	}
+	wg.Wait()
 	updateMetric(service, ctx)
 }
 
