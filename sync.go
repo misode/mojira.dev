@@ -8,11 +8,23 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var projects = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
 
+var syncQueueCount = promauto.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "mojira_sync_queue_size",
+		Help: "Number of rows in sync_queue table",
+	},
+)
+
 func StartSync(service *IssueService, noSync bool) {
+	updateMetric(service, context.Background())
+
 	if !noSync {
 		log.Println("Starting update feed listener...")
 		go func() {
@@ -87,4 +99,13 @@ func queueProcessor(service *IssueService) {
 			log.Printf("[ERROR] [queue] Error deleting queued issue %s: %v", key, err)
 		}
 	}
+	updateMetric(service, ctx)
+}
+
+func updateMetric(service *IssueService, ctx context.Context) {
+	count, err := service.db.GetQueueSize(ctx)
+	if err != nil {
+		log.Printf("[ERROR] [queue] Error getting queue size: %v", err)
+	}
+	syncQueueCount.Set(float64(count))
 }

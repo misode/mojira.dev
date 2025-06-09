@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func render(w http.ResponseWriter, name string, data any) {
@@ -209,6 +211,16 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 			"IsRefresh": true,
 		})
 	}
+}
+
+func metricsHandler(w http.ResponseWriter, r *http.Request) {
+	auth := r.Header.Get("Authorization")
+	metricsToken := os.Getenv("METRICS_TOKEN")
+	if metricsToken == "" || auth != "Bearer "+metricsToken {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	promhttp.Handler().ServeHTTP(w, r)
 }
 
 func formatTime(t any) string {

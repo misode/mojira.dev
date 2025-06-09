@@ -391,6 +391,16 @@ func (c *DBClient) DeleteQueuedIssue(ctx context.Context, key string) error {
 	return err
 }
 
+func (c *DBClient) GetQueueSize(ctx context.Context) (int, error) {
+	row := c.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sync_queue`)
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 type QueueRow struct {
 	Key         string
 	QueuedDate  *time.Time
@@ -414,9 +424,7 @@ func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, int, error) {
 		}
 		queue = append(queue, q)
 	}
-	countRow := c.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sync_queue`)
-	var count int
-	err = countRow.Scan(&count)
+	count, err := c.GetQueueSize(ctx)
 	if err != nil {
 		return nil, 0, err
 	}

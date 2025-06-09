@@ -40,12 +40,14 @@ func main() {
 		w.Write([]byte("User-agent: *\nAllow: /"))
 	})
 	http.HandleFunc("/static/", staticHandler)
+
 	http.HandleFunc("/", indexHandler(service))
 	http.HandleFunc("/queue", queueOverviewHandler(service))
 	http.HandleFunc("/{key}", issueHandler(service))
 
 	http.HandleFunc("/api/search", apiSearchHandler(service))
 	http.HandleFunc("/api/issues/{key}/refresh", apiRefreshHandler(service))
+	http.HandleFunc("/metrics", metricsHandler)
 
 	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
