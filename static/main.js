@@ -30,6 +30,16 @@ function afterSwap() {
   document.querySelectorAll('.image-overlay-backdrop').forEach((el) => {
     el.onclick = closeOverlay
   })
+
+  document.querySelectorAll('[data-expand]').forEach((el) => {
+    el.onclick = () => {
+      const template = document.getElementById(el.getAttribute('data-expand'))
+      console.log('click', el, template)
+      if (template) {
+        el.outerHTML = template.innerHTML
+      }
+    }
+  })
 }
 
 afterSwap()

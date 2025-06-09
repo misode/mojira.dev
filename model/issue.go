@@ -135,9 +135,10 @@ func (i *Issue) FirstImage() *Attachment {
 }
 
 type IssueLinkGroup struct {
-	Type       string
-	Links      []IssueLink
-	IsResolved bool
+	Type        string
+	Count       int
+	Links       []IssueLink
+	HiddenLinks []IssueLink
 }
 
 func (i *Issue) GroupedLinks() []IssueLinkGroup {
@@ -147,7 +148,13 @@ func (i *Issue) GroupedLinks() []IssueLinkGroup {
 	}
 	var groupedLinks []IssueLinkGroup
 	for typ, links := range groupsMap {
-		groupedLinks = append(groupedLinks, IssueLinkGroup{Type: typ, Links: links})
+		count := len(links)
+		var hiddenLinks []IssueLink
+		if count > 5 {
+			hiddenLinks = links[5:]
+			links = links[:5]
+		}
+		groupedLinks = append(groupedLinks, IssueLinkGroup{Type: typ, Count: count, Links: links, HiddenLinks: hiddenLinks})
 	}
 	sort.Slice(groupedLinks, func(a, b int) bool {
 		return groupedLinks[a].Type < groupedLinks[b].Type

@@ -69,14 +69,23 @@
         <h2>Linked issues</h2>
         {{range .Issue.GroupedLinks}}
           <div>
-            <h3 class="issue-link-type">{{.Type}}</h3>
+            <h3 class="issue-link-type">
+              {{.Type}}
+              <span class="issue-link-count">{{.Count}}</span>
+            </h3>
             <div>
               {{range .Links}}
-                <a class="issue-link {{if .IsResolved}}issue-link-resolved{{end}}" href="/{{.OtherKey}}">
-                  <img src="/static/icons/bug.svg" width="16" height="16" alt="">
-                  <span class="issue-link-key" >{{.OtherKey}}</span>
-                  <span class="issue-link-summary">{{.OtherSummary}}</span>
-                </a>
+                {{template "issueLink" .}}
+              {{end}}
+              {{if .HiddenLinks}}
+                <div class="issue-link" data-expand="hidden-links-{{.Type}}">
+                  <span>{{len .HiddenLinks}} more links</span>
+                  <template id="hidden-links-{{.Type}}">
+                    {{range .HiddenLinks}}
+                      {{template "issueLink" .}}
+                    {{end}}
+                  </template>
+                </div>
               {{end}}
             </div>
           </div>
@@ -189,6 +198,14 @@
     <div class="image-overlay-info"></div>
   </div>
 </div>
+{{end}}
+
+{{define "issueLink"}}
+  <a class="issue-link {{if .IsResolved}}issue-link-resolved{{end}}" href="/{{.OtherKey}}">
+    <img src="/static/icons/bug.svg" width="16" height="16" alt="">
+    <span class="issue-link-key">{{.OtherKey}}</span>
+    <span class="issue-link-summary">{{.OtherSummary}}</span>
+  </a>
 {{end}}
 
 {{template "base" .}}

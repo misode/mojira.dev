@@ -518,6 +518,14 @@ tbody .issue-table-key {
   font-size: 12px;
 }
 
+.issue-link-count {
+  margin-left: 0.25rem;
+  padding: 0 0.5rem;
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+  border-radius: 100px;
+}
+
 .issue-link {
   display: flex;
   align-items: center;
@@ -530,6 +538,7 @@ tbody .issue-table-key {
   font-size: 14px;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .issue-link:hover {
@@ -561,6 +570,10 @@ tbody .issue-table-key {
 .issue-link-summary {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.issue-link[data-expand] {
+  color: var(--gray-600);
 }
 
 .attachments {
