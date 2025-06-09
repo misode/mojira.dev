@@ -53,7 +53,10 @@
     <option value="">Sort by: Created</option>
     <option value="Updated" {{if eq .Query.sort "Updated"}}selected{{end}}>Sort by: Updated</option>
     <option value="Resolved" {{if eq .Query.sort "Resolved"}}selected{{end}}>Sort by: Resolved</option>
+    <option value="Priority" {{if eq .Query.sort "Priority"}}selected{{end}}>Sort by: Priority</option>
     <option value="Votes" {{if eq .Query.sort "Votes"}}selected{{end}}>Sort by: Votes</option>
+    <option value="Comments" {{if eq .Query.sort "Comments"}}selected{{end}}>Sort by: Comments</option>
+    <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
   </select>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
