@@ -316,20 +316,6 @@ tbody .issue-table-key {
   width: 155px;
 }
 
-.issue-table-status-badge {
-  padding: 0 0.25rem;
-  border-radius: 0.2rem;
-  background-color: var(--gray-200);
-  color: var(--gray-700);
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.issue-resolved .issue-table-status-badge {
-  background-color: var(--resolved-bg);
-  color: var(--resolved-text);
-}
-
 .issue-table-user {
   width: 150px;
 }
@@ -563,13 +549,17 @@ tbody .issue-table-key {
   font-weight: 600;
 }
 
-.issue-link-resolved .issue-link-key {
+.issue-resolved .issue-link-key {
   text-decoration: line-through;
 }
 
 .issue-link-summary {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.issue-link .status-badge {
+  margin-left: auto;
 }
 
 .issue-link[data-expand] {
@@ -625,6 +615,22 @@ tbody .issue-table-key {
   gap: 0.25rem;
   font-size: 12px;
   color: var(--gray-500);
+}
+
+/* SHARED */
+
+.status-badge {
+  padding: 0 0.25rem;
+  border-radius: 0.2rem;
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.issue-resolved .status-badge {
+  background-color: var(--resolved-bg);
+  color: var(--resolved-text);
 }
 
 /* ADF */
