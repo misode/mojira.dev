@@ -162,15 +162,38 @@ func (i *Issue) GroupedLinks() []IssueLinkGroup {
 	return groupedLinks
 }
 
-func (i *Issue) RealComments() []Comment {
+type VisibleComments struct {
+	Count  int
+	Top    []Comment
+	Middle []Comment
+	Bottom []Comment
+}
+
+func (i *Issue) VisibleComments() VisibleComments {
+	var comments []Comment
+
+	// Filter out first comment with only media
 	if len(i.Comments) == 0 {
-		return i.Comments
+		comments = i.Comments
+	} else {
+		first := i.Comments[0]
+		if first.Date.Sub(*i.CreatedDate) <= 2*time.Second && IsOnlyMediaADF(first.AdfComment) {
+			comments = i.Comments[1:]
+		} else {
+			comments = i.Comments
+		}
 	}
-	first := i.Comments[0]
-	if first.Date.Sub(*i.CreatedDate) <= 2*time.Second && IsOnlyMediaADF(first.AdfComment) {
-		return i.Comments[1:]
+
+	n := len(comments)
+	if n <= 10 {
+		return VisibleComments{Count: n, Top: comments}
 	}
-	return i.Comments
+	return VisibleComments{
+		Count:  n,
+		Top:    comments[:5],
+		Middle: comments[5 : n-5],
+		Bottom: comments[n-5:],
+	}
 }
 
 func (l *IssueLink) IsResolved() bool {

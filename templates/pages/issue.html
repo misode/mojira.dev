@@ -71,7 +71,7 @@
           <div>
             <h3 class="issue-link-type">
               {{.Type}}
-              <span class="issue-link-count">{{.Count}}</span>
+              <span class="count-badge">{{.Count}}</span>
             </h3>
             <div>
               {{range .Links}}
@@ -105,23 +105,28 @@
           {{end}}
         </div>
       {{end}}
-      <h2>Comments</h2>
-      {{range .Issue.RealComments}}
-        <div>
-          {{if .LegacyId}}
-            <div class="anchor" id="comment-{{.LegacyId}}"></div>
-          {{end}}
-          <div>
-            {{if .AuthorAvatar}}
-              <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
-            {{end}}
-            <strong>{{.AuthorName}}</strong>
-            <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
+      {{with .Issue.VisibleComments}}
+        <h2>
+          Comments
+          <span class="count-badge">{{.Count}}</span>
+        </h2>
+        {{range .Top}}
+          {{template "comment" .}}
+        {{end}}
+        {{if .Middle}}
+          <div class="expand-comments" data-expand="hidden-comments">
+            <span>{{len .Middle}} more comments</span>
+            <template id="hidden-comments">
+              {{range .Middle}}
+                {{template "comment" .}}
+              {{end}}
+            </template>
           </div>
-          <div class="comment-body adf">{{renderADF .AdfComment}}</div>
-        </div>
-      {{else}}
-        <p>No comments.</p>
+        {{end}}
+        {{range .Bottom}}
+          {{template "comment" .}}
+        {{end}}
+        {{if eq .Count 0}}<p>No comments.</p>{{end}}
       {{end}}
     </main>
 
@@ -209,6 +214,20 @@
       {{.OtherStatus}}
     </span>
   </a>
+{{end}}
+
+{{define "comment"}}
+  <div>
+    {{if .LegacyId}}<div class="anchor" id="comment-{{.LegacyId}}"></div>{{end}}
+    <div>
+      {{if .AuthorAvatar}}
+        <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
+      {{end}}
+      <span class="comment-author">{{.AuthorName}}</span>
+      <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
+    </div>
+    <div class="comment-body adf">{{renderADF .AdfComment}}</div>
+  </div>
 {{end}}
 
 {{template "base" .}}

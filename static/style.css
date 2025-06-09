@@ -504,14 +504,6 @@ tbody .issue-table-key {
   font-size: 12px;
 }
 
-.issue-link-count {
-  margin-left: 0.25rem;
-  padding: 0 0.5rem;
-  background-color: var(--gray-200);
-  color: var(--gray-700);
-  border-radius: 100px;
-}
-
 .issue-link {
   display: flex;
   align-items: center;
@@ -600,6 +592,11 @@ tbody .issue-table-key {
   word-wrap: break-word;
 }
 
+.comment-author {
+  font-weight: bold;
+  font-size: 14px;
+}
+
 .comment-time {
   color: var(--gray-500);
   font-size: 14px;
@@ -607,6 +604,22 @@ tbody .issue-table-key {
 
 .comment-body {
   margin-left: 2rem;
+}
+
+.expand-comments {
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-600);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.expand-comments:hover {
+  background-color: var(--gray-100);
 }
 
 .sync-note {
@@ -631,6 +644,16 @@ tbody .issue-table-key {
 .issue-resolved .status-badge {
   background-color: var(--resolved-bg);
   color: var(--resolved-text);
+}
+
+.count-badge {
+  margin-left: 0.25rem;
+  padding: 0 0.5rem;
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 /* ADF */

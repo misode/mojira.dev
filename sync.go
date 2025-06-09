@@ -39,7 +39,7 @@ func StartSync(service *IssueService, noSync bool) {
 
 	log.Println("Starting queue processor...")
 	go func() {
-		ticker := time.NewTicker(2 * time.Second)
+		ticker := time.NewTicker(3 * time.Second)
 		for {
 			<-ticker.C
 			queueProcessor(service)
