@@ -142,11 +142,19 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 		issues = append(issues, issue)
 	}
 
-	countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority)
 	var count int
-	err = countRow.Scan(&count)
-	if err != nil {
-		return nil, 0, err
+	if search == "" && priority == "" {
+		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, project, status, confirmation, resolution)
+		err = countRow.Scan(&count)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority)
+		err = countRow.Scan(&count)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 	return issues, count, nil
 }
