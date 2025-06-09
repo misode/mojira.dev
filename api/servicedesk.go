@@ -110,6 +110,9 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 	if err != nil {
 		return nil, err
 	}
+	if strings.HasPrefix(string(raw), "<!DOCTYPE html>") {
+		return nil, errors.New("received HTML response from servicedesk, likely rate limited")
+	}
 
 	var parsed struct {
 		ReqDetails struct {
@@ -269,7 +272,7 @@ func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, err
 		return nil, err
 	}
 	if strings.HasPrefix(string(raw), "<!DOCTYPE html>") {
-		return nil, errors.New("received HTML response, likely rate limited")
+		return nil, errors.New("received HTML response from servicedesk, likely rate limited")
 	}
 
 	var response struct {

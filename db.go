@@ -236,7 +236,7 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	return &issue, nil
 }
 
-func (c *DBClient) InsertIssue(ctx context.Context, issue *model.Issue) error {
+func (c *DBClient) UpdateIssue(ctx context.Context, issue *model.Issue) error {
 	if issue.Partial {
 		return errors.New("tried to insert a partial issue")
 	}
@@ -244,14 +244,14 @@ func (c *DBClient) InsertIssue(ctx context.Context, issue *model.Issue) error {
 	if err != nil {
 		return err
 	}
-	if err := c.insertIssueImpl(tx, issue); err != nil {
+	if err := c.updateIssueImpl(tx, issue); err != nil {
 		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
-func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
+func (c *DBClient) updateIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	var textParts []string
 	if issue.Summary != "" {
 		textParts = append(textParts, issue.Summary)
@@ -275,14 +275,19 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 		}
 	}
 
-	_, err := tx.Exec(`DELETE FROM issue WHERE key = $1`, issue.Key)
+	_, err := tx.Exec(`INSERT INTO issue (key, creator_name, creator_avatar, synced_date, state) VALUES ($1, '', '', NOW(), 'present') ON CONFLICT DO NOTHING`, issue.Key)
 	if err != nil {
 		return err
 	}
-	query := `INSERT INTO issue (key, summary, creator_name, creator_avatar, reporter_name, reporter_avatar, assignee_name, assignee_avatar, description, environment, labels, created_date, updated_date, resolved_date, status, confirmation_status, resolution, affected_versions, fix_versions, category, mojang_priority, area, components, ado, platform, os_version, realms_platform, votes, legacy_votes, text, comment_count, duplicate_count, synced_date, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, 'present')`
+	query := `UPDATE issue SET summary = $2, creator_name = $3, creator_avatar = $4, reporter_name = $5, reporter_avatar = $6, assignee_name = $7, assignee_avatar = $8, description = $9, environment = $10, labels = $11, created_date = $12, updated_date = $13, resolved_date = $14, status = $15, confirmation_status = $16, resolution = $17, affected_versions = $18, fix_versions = $19, category = $20, mojang_priority = $21, area = $22, components = $23, ado = $24, platform = $25, os_version = $26, realms_platform = $27, votes = $28, legacy_votes = $29, text = $30, comment_count = $31, duplicate_count = $32, synced_date = $33, state = 'present' WHERE key = $1`
 	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.CreatorName, issue.CreatorAvatar, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, issue.LegacyVotes, text, len(issue.Comments), duplicateCount, issue.SyncedDate)
 	if err != nil {
-		return errors.New("failed to insert issue: " + err.Error())
+		return errors.New("failed to update issue: " + err.Error())
+	}
+
+	_, err = tx.Exec(`DELETE FROM comment WHERE issue_key = $1`, issue.Key)
+	if err != nil {
+		return errors.New("failed to delete comments: " + err.Error())
 	}
 	for _, cmt := range issue.Comments {
 		_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, legacy_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6, $7)`, issue.Key, cmt.Id, cmt.LegacyId, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
@@ -290,11 +295,19 @@ func (c *DBClient) insertIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 			return errors.New("failed to insert comment: " + err.Error())
 		}
 	}
+	_, err = tx.Exec(`DELETE FROM issue_link WHERE issue_key = $1`, issue.Key)
+	if err != nil {
+		return errors.New("failed to delete issue links: " + err.Error())
+	}
 	for _, l := range issue.Links {
 		_, err = tx.Exec(`INSERT INTO issue_link (issue_key, type, other_key, other_summary, other_status) VALUES ($1, $2, $3, $4, $5)`, issue.Key, l.Type, l.OtherKey, l.OtherSummary, l.OtherStatus)
 		if err != nil {
 			return errors.New("failed to insert issue_link: " + err.Error())
 		}
+	}
+	_, err = tx.Exec(`DELETE FROM attachment WHERE issue_key = $1`, issue.Key)
+	if err != nil {
+		return errors.New("failed to delete attachments: " + err.Error())
 	}
 	for _, a := range issue.Attachments {
 		_, err = tx.Exec(`INSERT INTO attachment (issue_key, attachment_id, filename, author_name, author_avatar, created_date, size, mime_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, issue.Key, a.Id, a.Filename, a.AuthorName, a.AuthorAvatar, a.CreatedDate, a.Size, a.MimeType)
