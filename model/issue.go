@@ -155,6 +155,17 @@ func (i *Issue) GroupedLinks() []IssueLinkGroup {
 	return groupedLinks
 }
 
+func (i *Issue) RealComments() []Comment {
+	if len(i.Comments) == 0 {
+		return i.Comments
+	}
+	first := i.Comments[0]
+	if first.Date.Sub(*i.CreatedDate) < time.Second && first.AuthorName == "migrated" {
+		return i.Comments[1:]
+	}
+	return i.Comments
+}
+
 func (l *IssueLink) IsResolved() bool {
 	return l.OtherStatus == "Resolved" || l.OtherStatus == "Closed"
 }

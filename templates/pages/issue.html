@@ -66,7 +66,7 @@
         <div class="adf">{{renderADF .Issue.Environment}}</div>
       {{end}}
       {{if .Issue.Links}}
-        <h2>Related issues</h2>
+        <h2>Linked issues</h2>
         {{range .Issue.GroupedLinks}}
           <div>
             <h3 class="issue-link-type">{{.Type}}</h3>
@@ -97,7 +97,7 @@
         </div>
       {{end}}
       <h2>Comments</h2>
-      {{range .Issue.Comments}}
+      {{range .Issue.RealComments}}
         <div>
           {{if .LegacyId}}
             <div class="anchor" id="comment-{{.LegacyId}}"></div>
