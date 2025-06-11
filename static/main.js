@@ -33,19 +33,45 @@ function afterSwap() {
 
   document.querySelectorAll('[data-expand]').forEach((el) => {
     el.onclick = () => {
-      const template = document.getElementById(el.getAttribute('data-expand'))
-      console.log('click', el, template)
-      if (template) {
-        el.outerHTML = template.innerHTML
+      const contents = document.getElementById(el.getAttribute('data-expand'))
+      if (contents) {
+        el.outerHTML = contents.innerHTML
       }
     }
   })
+
+  setTimeout(() => {
+    afterHashChange()
+  }, 500)
 }
 
 afterSwap()
 
 document.body.addEventListener('htmx:afterSwap', () => {
   afterSwap()
+})
+
+function afterHashChange() {
+  const hash = window.location.hash
+  if (!hash.startsWith('#comment-')) return
+  const id = hash.slice(1)
+
+  const el = document.querySelector('[data-expand=hidden-comments]')
+  if (el) {
+    if (el.querySelector(hash)) {
+      const contents = document.getElementById(el.getAttribute('data-expand'))
+      if (contents) {
+        el.outerHTML = contents.innerHTML
+      }
+    }
+  }
+  document.getElementById(id).scrollIntoView({ block: 'start' })
+  document.querySelectorAll('.comment-highlighted').forEach((el) => el.classList.remove('comment-highlighted'))
+  document.getElementById(id).parentElement.classList.add('comment-highlighted')
+}
+
+window.addEventListener('hashchange', () => {
+  afterHashChange()
 })
 
 const overlay = document.getElementById('image-overlay')

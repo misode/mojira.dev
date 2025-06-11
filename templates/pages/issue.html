@@ -80,11 +80,11 @@
               {{if .HiddenLinks}}
                 <div class="issue-link" data-expand="hidden-links-{{.Type}}">
                   <span>{{len .HiddenLinks}} more links</span>
-                  <template id="hidden-links-{{.Type}}">
+                  <div style="display:none;" id="hidden-links-{{.Type}}">
                     {{range .HiddenLinks}}
                       {{template "issueLink" .}}
                     {{end}}
-                  </template>
+                  </div>
                 </div>
               {{end}}
             </div>
@@ -116,11 +116,11 @@
         {{if .Middle}}
           <div class="expand-comments" data-expand="hidden-comments">
             <span>{{len .Middle}} more comments</span>
-            <template id="hidden-comments">
+            <div style="display:none;" id="hidden-comments">
               {{range .Middle}}
                 {{template "comment" .}}
               {{end}}
-            </template>
+            </div>
           </div>
         {{end}}
         {{range .Bottom}}

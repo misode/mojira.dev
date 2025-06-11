@@ -622,6 +622,13 @@ tbody .issue-table-key {
   background-color: var(--gray-100);
 }
 
+.comment-highlighted {
+  padding: 0.25rem;
+  background-color: var(--link-bg);
+  outline: 2px solid var(--link);
+  border-radius: 0.1rem;
+}
+
 .sync-note {
   display: flex;
   align-items: center;
