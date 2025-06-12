@@ -54,7 +54,7 @@ svg {
 .anchor {
   display: block;
   position: relative;
-  top: -60px;
+  top: -64px;
   visibility: hidden;
 }
 
@@ -351,7 +351,7 @@ tbody .issue-table-key {
 .issue {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1rem 2rem;
 }
 
 .avatar {
@@ -592,6 +592,16 @@ tbody .issue-table-key {
   word-wrap: break-word;
 }
 
+.comment {
+  padding: 0.25rem;
+}
+
+.comment-highlighted {
+  background-color: var(--link-bg);
+  outline: 2px solid var(--link);
+  border-radius: 0.1rem;
+}
+
 .comment-author {
   font-weight: bold;
   font-size: 14px;
@@ -600,10 +610,12 @@ tbody .issue-table-key {
 .comment-time {
   color: var(--gray-500);
   font-size: 14px;
+  text-decoration: none;
 }
 
 .comment-body {
   margin-left: 2rem;
+  overflow-x: auto;
 }
 
 .expand-comments {
@@ -622,11 +634,9 @@ tbody .issue-table-key {
   background-color: var(--gray-100);
 }
 
-.comment-highlighted {
-  padding: 0.25rem;
-  background-color: var(--link-bg);
-  outline: 2px solid var(--link);
-  border-radius: 0.1rem;
+.no-comments {
+  font-size: 14px;
+  color: var(--gray-500);
 }
 
 .sync-note {

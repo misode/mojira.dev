@@ -207,3 +207,10 @@ func (a *Attachment) IsImage() bool {
 func (a *Attachment) GetUrl() string {
 	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
 }
+
+func (c *Comment) Anchor() string {
+	if c.LegacyId != "" {
+		return fmt.Sprintf("comment-%s", c.LegacyId)
+	}
+	return fmt.Sprintf("comment-id-%s", c.Id)
+}

@@ -126,7 +126,7 @@
         {{range .Bottom}}
           {{template "comment" .}}
         {{end}}
-        {{if eq .Count 0}}<p>No comments.</p>{{end}}
+        {{if eq .Count 0}}<p class="no-comments">No comments.</p>{{end}}
       {{end}}
     </main>
 
@@ -217,16 +217,20 @@
 {{end}}
 
 {{define "comment"}}
-  <div>
-    {{if .LegacyId}}<div class="anchor" id="comment-{{.LegacyId}}"></div>{{end}}
+  <div class="comment">
+    <div class="anchor" id="{{.Anchor}}"></div>
     <div>
       {{if .AuthorAvatar}}
         <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
       {{end}}
       <span class="comment-author">{{.AuthorName}}</span>
-      <time class="comment-time" datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
+      <a class="comment-time" href="#{{.Anchor}}">
+        <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
+      </a>
     </div>
-    <div class="comment-body adf">{{renderADF .AdfComment}}</div>
+    <div class="comment-body">
+      <div class="adf">{{renderADF .AdfComment}}</div>
+    </div>
   </div>
 {{end}}
 

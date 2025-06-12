@@ -39,23 +39,11 @@ function afterSwap() {
       }
     }
   })
-
-  setTimeout(() => {
-    afterHashChange()
-  }, 500)
 }
 
-afterSwap()
-
-document.body.addEventListener('htmx:afterSwap', () => {
-  afterSwap()
-})
-
-function afterHashChange() {
+function onHashChange() {
   const hash = window.location.hash
   if (!hash.startsWith('#comment-')) return
-  const id = hash.slice(1)
-
   const el = document.querySelector('[data-expand=hidden-comments]')
   if (el) {
     if (el.querySelector(hash)) {
@@ -65,13 +53,25 @@ function afterHashChange() {
       }
     }
   }
-  document.getElementById(id).scrollIntoView({ block: 'start' })
+  const anchor = document.querySelector(hash)
+  if (!anchor) return
+  anchor.scrollIntoView({ block: 'start' })
   document.querySelectorAll('.comment-highlighted').forEach((el) => el.classList.remove('comment-highlighted'))
-  document.getElementById(id).parentElement.classList.add('comment-highlighted')
+  anchor.parentElement.classList.add('comment-highlighted')
 }
 
+afterSwap()
+
+setTimeout(() => {
+  onHashChange()
+}, 500)
+
+document.body.addEventListener('htmx:afterSwap', () => {
+  afterSwap()
+})
+
 window.addEventListener('hashchange', () => {
-  afterHashChange()
+  onHashChange()
 })
 
 const overlay = document.getElementById('image-overlay')
@@ -100,7 +100,6 @@ function showAttachment(el) {
   overlay.querySelector('.image-overlay-info').textContent = el.getAttribute('data-attachment-info')
   const id = el.getAttribute('data-attachment')
   overlay.setAttribute('data-current-id', id)
-  // Update URL with attachment param
   const url = new URL(window.location)
   url.searchParams.set('attachment', id)
   window.history.replaceState({}, '', url)
