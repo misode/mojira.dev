@@ -36,19 +36,19 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 	url := fmt.Sprintf("https://bugs-legacy.mojang.com/rest/api/2/issue/%s", key)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("legacy", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := l.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("legacy", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("legacy", err)
 	}
 
 	var parsed struct {
@@ -87,7 +87,7 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 		}
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return nil, err
+		return nil, NewApiError("legacy", err)
 	}
 	if parsed.Key == "" {
 		return nil, model.ErrIssueNotFound
@@ -97,7 +97,7 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 	if parsed.Fields.Resolutiondate != "" {
 		t, err := ParseTime(parsed.Fields.Resolutiondate)
 		if err != nil {
-			return nil, err
+			return nil, NewApiError("legacy", err)
 		}
 		resolvedDate = t
 	}
@@ -107,7 +107,7 @@ func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, 
 		if c.Created != "" {
 			t, err := ParseTime(c.Created)
 			if err != nil {
-				return nil, err
+				return nil, NewApiError("legacy", err)
 			}
 			date = t
 		}

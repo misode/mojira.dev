@@ -50,24 +50,24 @@ func (s *ServiceDeskClient) Authenticate() error {
 		"password": os.Getenv("JIRA_PASSWORD"),
 	})
 	if err != nil {
-		return err
+		return NewApiError("servicedesk", err)
 	}
 
 	req, err := http.NewRequest("POST", "https://report.bugs.mojang.com/jsd-login/v1/authentication/authenticate", bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		return NewApiError("servicedesk", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return err
+		return NewApiError("servicedesk", err)
 	}
 	defer resp.Body.Close()
 
 	cookies := resp.Cookies()
 	if len(cookies) == 0 {
-		return errors.New("no session cookie returned")
+		return NewApiError("servicedesk", errors.New("no session cookie returned"))
 	}
 	s.cookie = cookies[0]
 	return nil
@@ -75,7 +75,7 @@ func (s *ServiceDeskClient) Authenticate() error {
 
 func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceDeskIssue, error) {
 	if s.cookie == nil {
-		return nil, errors.New("no connection to servicedesk")
+		return nil, NewApiError("servicedesk", errors.New("no connection to servicedesk"))
 	}
 
 	portalId := model.PortalIds[strings.Split(key, "-")[0]]
@@ -90,28 +90,28 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://report.bugs.mojang.com/rest/servicedesk/1/customer/models", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(s.cookie)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	if strings.HasPrefix(string(raw), "<!DOCTYPE html>") {
-		return nil, errors.New("received HTML response from servicedesk, likely rate limited")
+		return nil, NewApiError("servicedesk", errors.New("received HTML response from servicedesk, likely rate limited"))
 	}
 
 	var parsed struct {
@@ -145,7 +145,7 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 		}
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	if parsed.ReqDetails.Issue.Key == "" {
 		return nil, model.ErrIssueNotFound
@@ -161,7 +161,7 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 		if c.Date != "" {
 			t, err := ParseTime(c.Date)
 			if err != nil {
-				return nil, err
+				return nil, NewApiError("servicedesk", err)
 			}
 			date = t
 		}
@@ -218,7 +218,7 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 	if apiIssue.Date != "" {
 		t, err := ParseTime(apiIssue.Date)
 		if err != nil {
-			return nil, err
+			return nil, NewApiError("servicedesk", err)
 		}
 		createdDate = t
 	}
@@ -241,6 +241,10 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 }
 
 func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, error) {
+	if s.cookie == nil {
+		return nil, NewApiError("servicedesk", errors.New("no connection to servicedesk"))
+	}
+
 	body, err := json.Marshal(map[string]any{
 		"models": []string{"allReqFilter"},
 		"options": map[string]any{
@@ -251,28 +255,28 @@ func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, err
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://report.bugs.mojang.com/rest/servicedesk/1/customer/models", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(s.cookie)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 	if strings.HasPrefix(string(raw), "<!DOCTYPE html>") {
-		return nil, errors.New("received HTML response from servicedesk, likely rate limited")
+		return nil, NewApiError("servicedesk", errors.New("received HTML response from servicedesk, likely rate limited"))
 	}
 
 	var response struct {
@@ -283,7 +287,7 @@ func (s *ServiceDeskClient) GetUpdatedIssues(ctx context.Context) ([]string, err
 		}
 	}
 	if err := json.Unmarshal(raw, &response); err != nil {
-		return nil, err
+		return nil, NewApiError("servicedesk", err)
 	}
 
 	var keys []string

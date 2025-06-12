@@ -64,18 +64,18 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, 
 	url := "https://bugs.mojang.com/api/jql-search-post"
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	var parsed struct {
 		Issues []struct {
@@ -161,7 +161,7 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, 
 		}
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	if len(parsed.Issues) == 0 {
 		return nil, errors.New("issue not found on public API")
@@ -209,7 +209,7 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, 
 	for _, a := range f.Attachment {
 		created, err := ParseTime(a.Created)
 		if err != nil {
-			return nil, err
+			return nil, NewApiError("public", err)
 		}
 		attachments = append(attachments, model.Attachment{
 			Id:           a.Id,
@@ -224,15 +224,15 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, 
 	var createdDate, updatedDate, resolvedDate *time.Time
 	createdDate, err = ParseTime(f.Created)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	updatedDate, err = ParseTime(f.Updated)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	resolvedDate, err = ParseTime(f.ResolutionDate)
 	if err != nil {
-		return nil, err
+		return nil, NewApiError("public", err)
 	}
 	return &PublicIssue{
 		Key:                key,

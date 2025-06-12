@@ -1,9 +1,23 @@
 package api
 
 import (
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+var apiErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "mojira_api_errors",
+	Help: "Number of errors coming from the APIs",
+}, []string{"source"})
+
+func NewApiError(source string, err error) error {
+	apiErrors.WithLabelValues(source).Inc()
+	return fmt.Errorf("API error %s: %s", source, err)
+}
 
 func ParseTime(s string) (*time.Time, error) {
 	if s == "" {
