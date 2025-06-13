@@ -39,25 +39,33 @@ function afterSwap() {
       }
     }
   })
+
+  expandCommentsIfNeeded()
 }
 
 function onHashChange() {
+  expandCommentsIfNeeded()
   const hash = window.location.hash
-  if (!hash.startsWith('#comment-')) return
-  const el = document.querySelector('[data-expand=hidden-comments]')
-  if (el) {
-    if (el.querySelector(hash)) {
+  if (hash) {
+    document.querySelector(hash)?.scrollIntoView({ block: 'start' })
+  }
+}
+
+function expandCommentsIfNeeded() {
+  const hash = window.location.hash
+  if (hash && hash.startsWith('#comment-')) {
+    const el = document.querySelector('[data-expand=hidden-comments]')
+    if (el && el.querySelector(hash)) {
       const contents = document.getElementById(el.getAttribute('data-expand'))
       if (contents) {
         el.outerHTML = contents.innerHTML
       }
     }
   }
-  const anchor = document.querySelector(hash)
-  if (!anchor) return
-  anchor.scrollIntoView({ block: 'start' })
   document.querySelectorAll('.comment-highlighted').forEach((el) => el.classList.remove('comment-highlighted'))
-  anchor.parentElement.classList.add('comment-highlighted')
+  if (hash) {
+    document.querySelector(hash)?.parentElement?.classList.add('comment-highlighted')
+  }
 }
 
 afterSwap()

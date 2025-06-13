@@ -101,7 +101,20 @@ func renderADFNode(node map[string]any) string {
 	case "text":
 		text, _ := node["text"].(string)
 		text = template.HTMLEscapeString(text)
-		text = linkifyIssueKeys(text)
+		hasLink := false
+		if marks, ok := node["marks"].([]any); ok {
+			for _, m := range marks {
+				if mark, ok := m.(map[string]any); ok {
+					typeMark, _ := mark["type"].(string)
+					if typeMark == "link" {
+						hasLink = true
+					}
+				}
+			}
+		}
+		if !hasLink {
+			text = linkifyIssueKeys(text)
+		}
 		if marks, ok := node["marks"].([]any); ok {
 			for _, m := range marks {
 				if mark, ok := m.(map[string]any); ok {
