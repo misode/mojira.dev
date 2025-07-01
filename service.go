@@ -154,7 +154,7 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		merged.SyncedDate = &now
 	}
 
-	if legacyError != nil && !errors.Is(legacyError, model.ErrIssueNotFound) {
+	if legacyError != nil && merged.CreatedDate.Before(time.Date(2025, 2, 11, 0, 0, 0, 0, time.UTC)) && !errors.Is(legacyError, model.ErrIssueNotFound) {
 		return nil, legacyError
 	}
 	if legacyIssue != nil {
