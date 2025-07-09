@@ -3,3 +3,4 @@ cache/
 logs/
 .env
 .mojira-server
+redacted.txt

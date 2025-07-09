@@ -6,14 +6,17 @@ import (
 	"log"
 	"mojira/api"
 	"mojira/model"
+	"os"
+	"strings"
 	"time"
 )
 
 type IssueService struct {
-	db          *DBClient
-	legacy      *api.LegacyClient
-	public      *api.PublicClient
-	serviceDesk *api.ServiceDeskClient
+	db           *DBClient
+	legacy       *api.LegacyClient
+	public       *api.PublicClient
+	serviceDesk  *api.ServiceDeskClient
+	redactedKeys map[string]struct{}
 }
 
 func NewIssueService() *IssueService {
@@ -30,7 +33,20 @@ func NewIssueService() *IssueService {
 		log.Printf("Failed to authenticate to service desk: %v", err)
 	}
 
-	return &IssueService{db: dbClient, legacy: legacy, public: public, serviceDesk: serviceDesk}
+	redactedKeys := make(map[string]struct{})
+	data, err := os.ReadFile("redacted.txt")
+	if err == nil {
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				redactedKeys[line] = struct{}{}
+			}
+		}
+	}
+	log.Printf("Using %v redacted keys", len(redactedKeys))
+
+	return &IssueService{db: dbClient, legacy: legacy, public: public, serviceDesk: serviceDesk, redactedKeys: redactedKeys}
 }
 
 func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
@@ -87,6 +103,7 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 }
 
 func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue, error) {
+	_, isRedacted := s.redactedKeys[key]
 	var legacyIssue *api.LegacyIssue
 	var pubIssue *api.PublicIssue
 	var sdIssue *api.ServiceDeskIssue
@@ -158,11 +175,11 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		return nil, legacyError
 	}
 	if legacyIssue != nil {
-		if legacyIssue.CreatorKey != legacyIssue.ReporterKey {
+		if legacyIssue.CreatorKey != legacyIssue.ReporterKey && !isRedacted {
 			merged.CreatorName = legacyIssue.CreatorName
 			merged.CreatorAvatar = legacyIssue.CreatorAvatar
 		}
-		if merged.ReporterName == "migrated" {
+		if merged.ReporterName == "migrated" && !isRedacted {
 			merged.ReporterName = legacyIssue.ReporterName
 			merged.ReporterAvatar = legacyIssue.ReporterAvatar
 		}

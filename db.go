@@ -117,19 +117,20 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	}
 	sortStr := `created_date DESC`
 	filterStr := ``
-	if sort == "Updated" {
+	switch sort {
+	case "Updated":
 		sortStr = `updated_date DESC`
 		filterStr += ` AND (updated_date IS NOT NULL)`
-	} else if sort == "Resolved" {
+	case "Resolved":
 		sortStr = `resolved_date DESC`
 		filterStr += ` AND (resolved_date IS NOT NULL)`
-	} else if sort == "Priority" {
+	case "Priority":
 		sortStr = `mojang_priority_rank DESC`
-	} else if sort == "Votes" {
+	case "Votes":
 		sortStr = `total_votes DESC, created_date DESC`
-	} else if sort == "Comments" {
+	case "Comments":
 		sortStr = `comment_count DESC`
-	} else if sort == "Duplicates" {
+	case "Duplicates":
 		sortStr = `duplicate_count DESC`
 	}
 	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` LIMIT $7`, search, project, status, confirmation, resolution, priority, limit)
