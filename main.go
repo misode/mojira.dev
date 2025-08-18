@@ -73,6 +73,9 @@ func main() {
 	})
 	http.HandleFunc("/static/", staticHandler)
 
+	http.HandleFunc("/browse/{key}", issueRedirectHandler)
+	http.HandleFunc("/browse/{project}/issues/{key}", issueRedirectHandler)
+
 	handle("/", indexHandler(service))
 	handle("/queue", queueOverviewHandler(service))
 	handle("/{key}", issueHandler(service))

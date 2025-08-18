@@ -79,6 +79,12 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, fi.Name(), fi.ModTime(), f)
 }
 
+func issueRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	w.Header().Set("Location", fmt.Sprintf("/%s", key))
+	w.WriteHeader(301)
+}
+
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
