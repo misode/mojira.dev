@@ -213,13 +213,50 @@ footer a:hover {
   background-color: var(--gray-100);
 }
 
-.issue-count {
+.issue-controls {
+  padding: 0.25rem;
+  font-weight: 600;
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 0 0.25rem;
+}
+
+.issue-pagination {
+  display: flex;
+  align-items: center;
+}
+
+.issue-pagination .issue-page {
+  height: 1.5rem;
+  min-width: 2rem;
+  padding: 0 0.5rem;
+  background-color: var(--gray-200);
+  border-left: 1px solid var(--gray-100);
+  border-right: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.issue-pagination button:first-child {
+  border-top-left-radius: 0.25rem;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.issue-pagination button:last-child {
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.issue-pagination button {
+  padding: 0.25rem;
+  background-color: var(--gray-200);
+  cursor: pointer;
+}
+
+.issue-pagination button:hover {
+  background-color: var(--gray-300);
 }
 
 .issue-list-spinner {

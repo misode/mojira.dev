@@ -10,11 +10,14 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+var pageSize = 50
 
 func render(w http.ResponseWriter, name string, data any) {
 	if !strings.HasSuffix(name, ".html") {
@@ -34,6 +37,9 @@ func render(w http.ResponseWriter, name string, data any) {
 		"icon": icon,
 		"join": func(arr []string) string {
 			return strings.Join(arr, ", ")
+		},
+		"add": func(a int, b int) int {
+			return a + b
 		},
 	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
@@ -95,8 +101,14 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		resolution := query.Get("resolution")
 		priority := query.Get("priority")
 		sort := query.Get("sort")
+		page, err := strconv.Atoi(query.Get("page"))
+		if err != nil {
+			page = 1
+		}
+		page = max(page, 1)
+		offset := (page - 1) * pageSize
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, 50)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, offset, pageSize)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
@@ -112,6 +124,11 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 					filtered[k] = v
 				}
 			}
+			if page > 1 {
+				filtered["page"] = []string{strconv.Itoa(page)}
+			} else {
+				filtered["page"] = nil
+			}
 			u := *r.URL
 			u.RawQuery = filtered.Encode()
 			w.Header().Add("Hx-Replace-Url", u.String())
@@ -126,6 +143,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			"Issues": issues,
 			"Count":  count,
 			"Query":  queryMap,
+			"Page":   page,
 		})
 	}
 }

@@ -60,8 +60,13 @@
   </select>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
-  <div class="issue-count">
-    <div>{{len .Issues}} of {{.Count}}</div>
+  <div class="issue-controls">
+    <div class="issue-count">{{len .Issues}} of {{.Count}}</div>
+    <div class="issue-pagination">
+      <button hx-get="/" hx-vals='{"page":{{add .Page -1}}}' hx-trigger="click" hx-include=".filters [name]" hx-swap="none">{{icon "chevron-left"}}</button>
+      <div class="issue-page">{{.Page}}</div>
+      <button hx-get="/" hx-vals='{"page":{{add .Page 1}}}' hx-trigger="click" hx-include=".filters [name]" hx-swap="none">{{icon "chevron-right"}}</button>
+    </div>
     <div class="issue-list-spinner">{{icon "sync"}}</div>
   </div>
   <div class="issue-table-container">
