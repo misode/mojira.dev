@@ -36,8 +36,10 @@ type responseRecorder struct {
 }
 
 func (r *responseRecorder) WriteHeader(code int) {
-	r.statusCode = code
-	r.ResponseWriter.WriteHeader(code)
+	if r.statusCode == 0 {
+		r.statusCode = code
+		r.ResponseWriter.WriteHeader(code)
+	}
 }
 
 func handle(path string, handler http.Handler) {
