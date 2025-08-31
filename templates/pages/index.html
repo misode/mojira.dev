@@ -91,18 +91,18 @@
                 {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
               </div>
             </div></td>
-            <td><div class="issue-table-user">
+            <td><a class="issue-table-user" href="/user/{{.ReporterName}}">
               {{if .ReporterAvatar}}
                 <img class="avatar" src="{{.ReporterAvatar}}" alt="" width="24" height="24">
               {{end}}
               {{.ReporterName}}
-            </div></td>
-            <td><div class="issue-table-user">
+            </a></td>
+            <td><a class="issue-table-user" href="/user/{{.AssigneeName}}">
               {{if .AssigneeAvatar}}
                 <img class="avatar" src="{{.AssigneeAvatar}}" alt="" width="24" height="24">
               {{end}}
               {{.AssigneeName}}
-            </div></td>
+            </a></td>
             <td><time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time></td>
           </tr>
         {{end}}

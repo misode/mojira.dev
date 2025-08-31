@@ -173,17 +173,17 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 func userHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userName := r.PathValue("name")
-		assignedIssues, err := service.db.GetIssueByAssignee(userName, 25)
+		assignedIssues, err := service.db.GetIssueByAssignee(userName, 20)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByAssignee: %s", err)
 			assignedIssues = []model.Issue{}
 		}
-		reportedIssues, err := service.db.GetIssueByReporter(userName, 25)
+		reportedIssues, err := service.db.GetIssueByReporter(userName, 20)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByReporter: %s", err)
 			reportedIssues = []model.Issue{}
 		}
-		comments, err := service.db.GetCommentsByUser(userName, 25)
+		comments, err := service.db.GetCommentsByUser(userName, 20)
 		if err != nil {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}

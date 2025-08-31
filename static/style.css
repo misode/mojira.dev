@@ -355,6 +355,11 @@ tbody .issue-table-key {
 
 .issue-table-user {
   width: 150px;
+  text-decoration: none;
+}
+
+.issue-table-user:hover, .issue-table-user:focus {
+  text-decoration: underline;
 }
 
 .issue-table-priority {
