@@ -57,7 +57,7 @@
   <a class="issue-link {{if .IsResolved}}issue-resolved{{end}}" href="/{{.Key}}">
     <img src="/static/icons/bug.svg" width="16" height="16" alt="">
     <span class="issue-link-key">{{.Key}}</span>
-    <span class="issue-link-summary">{{.Summary}}</span>
+    <span class="issue-link-summary" title="{{.Summary}}">{{.Summary}}</span>
     <span class="status-badge">
       {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
     </span>

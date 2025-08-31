@@ -273,7 +273,13 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 
 func (c *DBClient) GetCommentsByUser(name string, limit int) ([]model.Comment, error) {
 	comments := []model.Comment{}
-	rows, err := c.db.Query(`SELECT issue_key, comment_id, legacy_id, date, author_name, author_avatar, adf_comment FROM comment WHERE author_name = $1 ORDER BY date DESC LIMIT $2`, name, limit)
+	query := `SELECT c.issue_key, c.comment_id, c.legacy_id, c.date, c.author_name, c.author_avatar, c.adf_comment
+		FROM comment c
+		JOIN issue i ON c.issue_key = i.key
+		WHERE c.author_name = $1 AND i.state = 'present'
+		ORDER BY c.date DESC
+		LIMIT $2;`
+	rows, err := c.db.Query(query, name, limit)
 	if err != nil {
 		return nil, err
 	}
