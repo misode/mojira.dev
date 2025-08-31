@@ -188,6 +188,10 @@ func userHandler(service *IssueService) http.HandlerFunc {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}
 		}
+		if len(assignedIssues) == 0 && len(reportedIssues) == 0 && len(comments) == 0 {
+			render(w, "pages/user_not_found", map[string]any{})
+			return
+		}
 		avatarSet := make(map[string]struct{})
 		for _, issue := range assignedIssues {
 			if issue.AssigneeAvatar != "" {
