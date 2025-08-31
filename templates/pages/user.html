@@ -1,0 +1,89 @@
+{{define "meta"}}
+<meta name="title" content="{{.UserName}}" />
+<meta property="og:title" content="{{.UserName}}" />
+<meta property="twitter:title" content="{{.UserName}}">
+{{if .Issue.FirstImage}}
+  <meta property="og:image" content="{{.ReporterAvatar}}" />
+  <meta property="twitter:image" content="{{.ReporterAvatar}}">
+{{end}}
+<meta property="og:type" content="website" />
+<meta property="twitter:domain" content="mojira.dev">
+<meta property="og:url" content="https://mojira.dev/{{.UserName}}">
+<meta property="twitter:url" content="https://mojira.dev/{{.UserName}}">
+{{end}}
+
+{{define "title"}}{{.UserName}}{{end}}
+
+{{define "content"}}
+<div class="user">
+  <h1>
+    {{if .UserAvatar}}
+      <img class="avatar" src="{{.UserAvatar}}" alt="" width="24" height="24">
+    {{end}}
+    <span>{{.UserName}}</span>
+  </h1>
+  <div class="user-split">
+    <div>
+      <h2>Assigned</h2>
+      <div>
+        {{range .AssignedIssues}}
+          {{template "issueLink" .}}
+        {{else}}
+          <span class="no-results">No issues.</span>
+        {{end}}
+      </div>
+      <h2>Reported</h2>
+      <div>
+        {{range .ReportedIssues}}
+          {{template "issueLink" .}}
+        {{else}}
+          <span class="no-results">No issues.</span>
+        {{end}}
+      </div>
+    </div>
+    <div>
+      <h2>Comments</h2>
+      <div class="user-comments">
+        {{range .Comments}}
+          {{template "comment" .}}
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "issueLink"}}
+  <a class="issue-link {{if .IsResolved}}issue-resolved{{end}}" href="/{{.Key}}">
+    <img src="/static/icons/bug.svg" width="16" height="16" alt="">
+    <span class="issue-link-key">{{.Key}}</span>
+    <span class="issue-link-summary">{{.Summary}}</span>
+    <span class="status-badge">
+      {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
+    </span>
+  </a>
+{{end}}
+
+{{define "comment"}}
+  <div class="comment">
+    <div class="anchor" id="{{.Anchor}}"></div>
+    <div>
+      {{if .AuthorAvatar}}
+        <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
+      {{end}}
+      <a class="user-link" href="/user/{{.AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
+      <span class="comment-on">on</span>
+      <a class="comment-link" href="/{{.IssueKey}}#{{.Anchor}}">
+        <span class="issue-key">{{.IssueKey}}</span>
+        <span class="comment-time">
+          <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
+        </span>
+      </a>
+    </div>
+    <div class="comment-body">
+      <div class="adf">{{renderADF .AdfComment}}</div>
+    </div>
+  </div>
+{{end}}
+
+{{template "base" .}}

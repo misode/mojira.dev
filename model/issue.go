@@ -63,6 +63,7 @@ type Attachment struct {
 }
 
 type Comment struct {
+	IssueKey     string
 	Id           string
 	LegacyId     string // Legacy
 	Date         *time.Time

@@ -650,6 +650,23 @@ tbody .issue-table-key {
   text-decoration: none;
 }
 
+.comment-on {
+  font-size: 12px;
+}
+
+.comment-link {
+  text-decoration: none;
+}
+
+.comment-link .issue-key {
+  font-weight: 600;
+  color: var(--link);
+}
+
+.comment-link:hover, .comment-link:focus {
+  text-decoration: underline;
+}
+
 .comment-body {
   margin-left: 2rem;
   overflow-x: auto;
@@ -671,7 +688,7 @@ tbody .issue-table-key {
   background-color: var(--gray-100);
 }
 
-.no-comments {
+.no-results {
   font-size: 14px;
   color: var(--gray-500);
 }
@@ -682,6 +699,37 @@ tbody .issue-table-key {
   gap: 0.25rem;
   font-size: 12px;
   color: var(--gray-500);
+}
+
+/* USER DETAIL */
+
+.user {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+}
+
+.user h1 {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.user-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.user h2 {
+  margin-top: 1rem;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.user-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* SHARED */
@@ -708,6 +756,15 @@ tbody .issue-table-key {
   border-radius: 100px;
   font-weight: 600;
   font-size: 12px;
+}
+
+.user-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.user-link:hover, .user-link:focus {
+  text-decoration: underline;
 }
 
 /* ADF */

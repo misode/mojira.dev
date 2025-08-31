@@ -170,6 +170,42 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
+func userHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userName := r.PathValue("name")
+		assignedIssues, err := service.db.GetIssueByAssignee(userName, 25)
+		if err != nil {
+			log.Printf("[ERROR] GetIssueByAssignee: %s", err)
+			assignedIssues = []model.Issue{}
+		}
+		reportedIssues, err := service.db.GetIssueByReporter(userName, 25)
+		if err != nil {
+			log.Printf("[ERROR] GetIssueByReporter: %s", err)
+			reportedIssues = []model.Issue{}
+		}
+		comments, err := service.db.GetCommentsByUser(userName, 25)
+		if err != nil {
+			log.Printf("[ERROR] GetCommentsByUser: %s", err)
+			comments = []model.Comment{}
+		}
+		userAvatar := ""
+		if len(assignedIssues) > 0 {
+			userAvatar = assignedIssues[0].AssigneeAvatar
+		} else if len(reportedIssues) > 0 {
+			userAvatar = reportedIssues[0].ReporterAvatar
+		} else if len(comments) > 0 {
+			userAvatar = comments[0].AuthorAvatar
+		}
+		render(w, "pages/user", map[string]any{
+			"UserName":       userName,
+			"UserAvatar":     userAvatar,
+			"AssignedIssues": assignedIssues,
+			"ReportedIssues": reportedIssues,
+			"Comments":       comments,
+		})
+	}
+}
+
 func queueOverviewHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

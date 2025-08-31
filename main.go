@@ -81,6 +81,7 @@ func main() {
 	handle("/", indexHandler(service))
 	handle("/queue", queueOverviewHandler(service))
 	handle("/{key}", issueHandler(service))
+	handle("/user/{name}", userHandler(service))
 
 	handle("/api/search", apiSearchHandler(service))
 	handle("/api/issues/{key}/refresh", apiRefreshHandler(service))

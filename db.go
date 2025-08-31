@@ -166,6 +166,40 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	return issues, count, nil
 }
 
+func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue, error) {
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, created_date FROM issue WHERE state = 'present' AND reporter_name = $1 ORDER BY created_date DESC LIMIT $2`, reporter, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var issues []model.Issue
+	for rows.Next() {
+		var issue model.Issue
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.CreatedDate); err != nil {
+			return nil, err
+		}
+		issues = append(issues, issue)
+	}
+	return issues, nil
+}
+
+func (c *DBClient) GetIssueByAssignee(assignee string, limit int) ([]model.Issue, error) {
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND assignee_name = $1 ORDER BY created_date DESC LIMIT $2`, assignee, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var issues []model.Issue
+	for rows.Next() {
+		var issue model.Issue
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate); err != nil {
+			return nil, err
+		}
+		issues = append(issues, issue)
+	}
+	return issues, nil
+}
+
 func (c *DBClient) GetIssueForSync(key string) (*model.Issue, error) {
 	row := c.db.QueryRow("SELECT synced_date FROM issue WHERE key = $1", key)
 	var issue model.Issue
@@ -235,6 +269,24 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 	}
 	issue.Attachments = attachments
 	return &issue, nil
+}
+
+func (c *DBClient) GetCommentsByUser(name string, limit int) ([]model.Comment, error) {
+	comments := []model.Comment{}
+	rows, err := c.db.Query(`SELECT issue_key, comment_id, legacy_id, date, author_name, author_avatar, adf_comment FROM comment WHERE author_name = $1 ORDER BY date DESC LIMIT $2`, name, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cmt model.Comment
+		err := rows.Scan(&cmt.IssueKey, &cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, cmt)
+	}
+	return comments, nil
 }
 
 func (c *DBClient) UpdateIssue(ctx context.Context, issue *model.Issue) error {

@@ -126,7 +126,7 @@
         {{range .Bottom}}
           {{template "comment" .}}
         {{end}}
-        {{if eq .Count 0}}<p class="no-comments">No comments.</p>{{end}}
+        {{if eq .Count 0}}<p class="no-results">No comments.</p>{{end}}
       {{end}}
     </main>
 
@@ -136,21 +136,27 @@
           {{if .Issue.CreatorAvatar}}
             <img class="avatar" src="{{.Issue.CreatorAvatar}}" alt="" width="24" height="24">
           {{end}}
-          {{.Issue.CreatorName}}
+          <a class="user-link" href="/user/{{.Issue.CreatorName}}">
+            {{.Issue.CreatorName}}
+          </a>
         </p>
       {{end}}
       <p><label>Reporter:</label>
         {{if .Issue.ReporterAvatar}}
           <img class="avatar" src="{{.Issue.ReporterAvatar}}" alt="" width="24" height="24">
         {{end}}
-        {{.Issue.ReporterName}}
+        <a class="user-link" href="/user/{{.Issue.ReporterName}}">
+          {{.Issue.ReporterName}}
+        </a>
       </p>
       <p><label>Assignee:</label>
-        {{if .Issue.AssigneeAvatar}}
-          <img class="avatar" src="{{.Issue.AssigneeAvatar}}" alt="" width="24" height="24">
-        {{end}}
         {{if .Issue.AssigneeName}}
-          {{.Issue.AssigneeName}}
+          {{if .Issue.AssigneeAvatar}}
+            <img class="avatar" src="{{.Issue.AssigneeAvatar}}" alt="" width="24" height="24">
+          {{end}}
+          <a class="user-link" href="/user/{{.Issue.AssigneeName}}">
+            {{.Issue.AssigneeName}}
+          </a>
         {{else}}
           (Unassigned)
         {{end}}
@@ -223,7 +229,7 @@
       {{if .AuthorAvatar}}
         <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
       {{end}}
-      <span class="comment-author">{{.AuthorName}}</span>
+      <a class="user-link" href="/user/{{.AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
       <a class="comment-time" href="#{{.Anchor}}">
         <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
       </a>
