@@ -718,6 +718,10 @@ tbody .issue-table-key {
   font-weight: 500;
 }
 
+.user-warning {
+  padding-top: 1rem;
+}
+
 .user-split {
   display: flex;
   flex-direction: column;

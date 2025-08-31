@@ -188,20 +188,34 @@ func userHandler(service *IssueService) http.HandlerFunc {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}
 		}
+		avatarSet := make(map[string]struct{})
+		for _, issue := range assignedIssues {
+			if issue.AssigneeAvatar != "" {
+				avatarSet[issue.AssigneeAvatar] = struct{}{}
+			}
+		}
+		for _, issue := range reportedIssues {
+			if issue.ReporterAvatar != "" {
+				avatarSet[issue.ReporterAvatar] = struct{}{}
+			}
+		}
+		for _, comment := range comments {
+			if comment.AuthorAvatar != "" {
+				avatarSet[comment.AuthorAvatar] = struct{}{}
+			}
+		}
 		userAvatar := ""
-		if len(assignedIssues) > 0 {
-			userAvatar = assignedIssues[0].AssigneeAvatar
-		} else if len(reportedIssues) > 0 {
-			userAvatar = reportedIssues[0].ReporterAvatar
-		} else if len(comments) > 0 {
-			userAvatar = comments[0].AuthorAvatar
+		for avatar := range avatarSet {
+			userAvatar = avatar
+			break
 		}
 		render(w, "pages/user", map[string]any{
-			"UserName":       userName,
-			"UserAvatar":     userAvatar,
-			"AssignedIssues": assignedIssues,
-			"ReportedIssues": reportedIssues,
-			"Comments":       comments,
+			"UserName":        userName,
+			"UserAvatar":      userAvatar,
+			"MultipleAvatars": len(avatarSet) > 1,
+			"AssignedIssues":  assignedIssues,
+			"ReportedIssues":  reportedIssues,
+			"Comments":        comments,
 		})
 	}
 }

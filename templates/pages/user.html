@@ -22,6 +22,16 @@
     {{end}}
     <span>{{.UserName}}</span>
   </h1>
+  {{if .MultipleAvatars}}
+  <div class="adf user-warning">
+    <div class='panel panel-warning'>
+      <img src='/static/icons/warning.svg' alt=''>
+      <div>
+        More than one avatar was detected! There might be multiple accounts sharing this same name.
+      </div>
+    </div>
+  </div>
+  {{end}}
   <div class="user-split">
     <div>
       <h2>Assigned</h2>
