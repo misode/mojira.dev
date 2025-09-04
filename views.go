@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"maps"
 	"mojira/model"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -194,28 +196,18 @@ func userHandler(service *IssueService) http.HandlerFunc {
 		}
 		avatarSet := make(map[string]struct{})
 		for _, issue := range assignedIssues {
-			if issue.AssigneeAvatar != "" {
-				avatarSet[issue.AssigneeAvatar] = struct{}{}
-			}
+			avatarSet[issue.AssigneeAvatar] = struct{}{}
 		}
 		for _, issue := range reportedIssues {
-			if issue.ReporterAvatar != "" {
-				avatarSet[issue.ReporterAvatar] = struct{}{}
-			}
+			avatarSet[issue.ReporterAvatar] = struct{}{}
 		}
 		for _, comment := range comments {
-			if comment.AuthorAvatar != "" {
-				avatarSet[comment.AuthorAvatar] = struct{}{}
-			}
+			avatarSet[comment.AuthorAvatar] = struct{}{}
 		}
-		userAvatar := ""
-		for avatar := range avatarSet {
-			userAvatar = avatar
-			break
-		}
+		delete(avatarSet, "")
 		render(w, "pages/user", map[string]any{
 			"UserName":        userName,
-			"UserAvatar":      userAvatar,
+			"UserAvatars":     slices.Collect(maps.Keys(avatarSet)),
 			"MultipleAvatars": len(avatarSet) > 1,
 			"AssignedIssues":  assignedIssues,
 			"ReportedIssues":  reportedIssues,

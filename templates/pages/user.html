@@ -17,8 +17,8 @@
 {{define "content"}}
 <div class="user">
   <h1>
-    {{if .UserAvatar}}
-      <img class="avatar" src="{{.UserAvatar}}" alt="" width="24" height="24">
+    {{range .UserAvatars}}
+      <img class="avatar" src="{{.}}" alt="" width="24" height="24">
     {{end}}
     <span>{{.UserName}}</span>
   </h1>
