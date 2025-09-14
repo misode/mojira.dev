@@ -860,6 +860,16 @@ tbody .issue-table-key {
   background-color: var(--border);
 }
 
+.adf th {
+  background-color: var(--gray-200);
+  text-align: left;
+}
+
+.adf td, .adf th {
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+}
+
 .adf td > p {
   margin: 0;
 }
