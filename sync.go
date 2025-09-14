@@ -27,12 +27,19 @@ func StartSync(service *IssueService, noSync bool) {
 	updateMetric(service, context.Background())
 
 	if !noSync {
-		log.Println("Starting update feed listener...")
+		log.Println("Starting sync listeners...")
 		go func() {
 			ticker := time.NewTicker(10 * time.Second)
 			for {
 				<-ticker.C
-				updateListener(service)
+				updateFeedListener(service)
+			}
+		}()
+		go func() {
+			ticker := time.NewTicker(15 * time.Minute)
+			for {
+				<-ticker.C
+				futureVersionChecker(service)
 			}
 		}()
 	}
@@ -47,12 +54,12 @@ func StartSync(service *IssueService, noSync bool) {
 	}()
 }
 
-func updateListener(service *IssueService) {
+func updateFeedListener(service *IssueService) {
 	t0 := time.Now()
 	ctx := context.Background()
 	updatedKeys, err := service.serviceDesk.GetUpdatedIssues(ctx)
 	if err != nil {
-		log.Printf("[listener] Error fetching issues: %v", err)
+		log.Printf("[updateFeed] Error fetching issues: %v", err)
 		return
 	}
 	var filteredKeys []string
@@ -63,12 +70,31 @@ func updateListener(service *IssueService) {
 	}
 	queuedKeys, err := service.db.QueueIssueKeys(filteredKeys, 10, "update-feed")
 	if err != nil {
-		log.Printf("[listener] Error queueing issues: %v", err)
+		log.Printf("[updateFeed] Error queueing issues: %v", err)
 		return
 	}
 	t1 := time.Now()
 	if len(queuedKeys) > 0 {
-		log.Printf("[listener] Queued %d issues (%s): %s", len(queuedKeys), t1.Sub(t0), strings.Join(queuedKeys, ", "))
+		log.Printf("[updateFeed] Queued %d issues (%s): %s", len(queuedKeys), t1.Sub(t0), strings.Join(queuedKeys, ", "))
+	}
+}
+
+func futureVersionChecker(service *IssueService) {
+	t0 := time.Now()
+	ctx := context.Background()
+	keys, err := service.db.PeekFutureVersionIssues(ctx, 100)
+	if err != nil {
+		log.Printf("[ERROR] [futureVersion] Error getting future version keys: %v", err)
+		return
+	}
+	queuedKeys, err := service.db.QueueIssueKeys(keys, 8, "future-version-check")
+	if err != nil {
+		log.Printf("[futureVersion] Error queueing issues: %v", err)
+		return
+	}
+	t1 := time.Now()
+	if len(queuedKeys) > 0 {
+		log.Printf("[futureVersion] Queued %d issues (%s): %s", len(queuedKeys), t1.Sub(t0), strings.Join(queuedKeys, ", "))
 	}
 }
 

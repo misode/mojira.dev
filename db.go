@@ -440,6 +440,30 @@ func (c *DBClient) PeekQueuedIssues(ctx context.Context, limit int) ([]string, e
 	return keys, nil
 }
 
+func (c *DBClient) PeekFutureVersionIssues(ctx context.Context, limit int) ([]string, error) {
+	query := `SELECT key
+		FROM issue
+		WHERE EXISTS (
+			SELECT 1 FROM unnest(fix_versions) AS v
+			WHERE v LIKE 'Future%'
+		)
+		LIMIT $1`
+	rows, err := c.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var keys []string
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
 func (c *DBClient) RetryQueuedIssue(ctx context.Context, key string) error {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
