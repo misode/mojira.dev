@@ -102,6 +102,8 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		confirmation := query.Get("confirmation")
 		resolution := query.Get("resolution")
 		priority := query.Get("priority")
+		reporter := query.Get("reporter")
+		assignee := query.Get("assignee")
 		sort := query.Get("sort")
 		page, err := strconv.Atoi(query.Get("page"))
 		if err != nil {
@@ -110,7 +112,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		page = max(page, 1)
 		offset := (page - 1) * pageSize
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, sort, offset, pageSize)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, sort, offset, pageSize)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
