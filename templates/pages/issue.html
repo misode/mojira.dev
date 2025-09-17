@@ -98,6 +98,10 @@
             <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
               {{if .IsImage}}
                 <img src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy" />
+              {{else if .IsVideo}}
+                <video src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy">
+                  <div class="attachment-nopreview">{{.Filename}}</div>
+                </video>
               {{else}}
                 <div class="attachment-nopreview">{{.Filename}}</div>
               {{end}}
