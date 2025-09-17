@@ -15,7 +15,7 @@ import (
 	"github.com/kyokomi/emoji/v2"
 )
 
-func RenderADF(adf string) template.HTML {
+func RenderADF(adf string, issue *Issue) template.HTML {
 	if adf == "" {
 		return ""
 	}
@@ -23,16 +23,16 @@ func RenderADF(adf string) template.HTML {
 	if err := json.Unmarshal([]byte(adf), &node); err != nil {
 		return template.HTML(template.HTMLEscapeString(adf))
 	}
-	return template.HTML(renderADFNode(node))
+	return template.HTML(renderADFNode(node, issue))
 }
 
-func renderADFNode(node map[string]any) string {
+func renderADFNode(node map[string]any, issue *Issue) string {
 	typeStr, _ := node["type"].(string)
 	switch typeStr {
 	case "doc":
-		return renderADFChildren(node)
+		return renderADFChildren(node, issue)
 	case "paragraph":
-		return "<p>" + renderADFChildren(node) + "</p>"
+		return "<p>" + renderADFChildren(node, issue) + "</p>"
 	case "heading":
 		lvl := 1
 		if attrs, ok := node["attrs"].(map[string]any); ok {
@@ -43,15 +43,15 @@ func renderADFNode(node map[string]any) string {
 		if lvl < 1 || lvl > 6 {
 			lvl = 1
 		}
-		return fmt.Sprintf("<h%d>%s</h%d>", lvl, renderADFChildren(node), lvl)
+		return fmt.Sprintf("<h%d>%s</h%d>", lvl, renderADFChildren(node, issue), lvl)
 	case "blockquote":
-		return "<blockquote>" + renderADFChildren(node) + "</blockquote>"
+		return "<blockquote>" + renderADFChildren(node, issue) + "</blockquote>"
 	case "bulletList":
-		return "<ul>" + renderADFChildren(node) + "</ul>"
+		return "<ul>" + renderADFChildren(node, issue) + "</ul>"
 	case "orderedList":
-		return "<ol>" + renderADFChildren(node) + "</ol>"
+		return "<ol>" + renderADFChildren(node, issue) + "</ol>"
 	case "listItem":
-		return "<li>" + renderADFChildren(node) + "</li>"
+		return "<li>" + renderADFChildren(node, issue) + "</li>"
 	case "codeBlock":
 		text := extractPlainTextFromADFChildren(node)
 		lang := "mcfunction"
@@ -89,15 +89,15 @@ func renderADFNode(node map[string]any) string {
 				panelType = p
 			}
 		}
-		return fmt.Sprintf("<div class='panel panel-%s'><img src='/static/icons/%s.svg' alt=''><div>", panelType, panelType) + renderADFChildren(node) + "</div></div>"
+		return fmt.Sprintf("<div class='panel panel-%s'><img src='/static/icons/%s.svg' alt=''><div>", panelType, panelType) + renderADFChildren(node, issue) + "</div></div>"
 	case "table":
-		return "<table>" + renderADFChildren(node) + "</table>"
+		return "<table>" + renderADFChildren(node, issue) + "</table>"
 	case "tableRow":
-		return "<tr>" + renderADFChildren(node) + "</tr>"
+		return "<tr>" + renderADFChildren(node, issue) + "</tr>"
 	case "tableCell":
-		return "<td>" + renderADFChildren(node) + "</td>"
+		return "<td>" + renderADFChildren(node, issue) + "</td>"
 	case "tableHeader":
-		return "<th>" + renderADFChildren(node) + "</th>"
+		return "<th>" + renderADFChildren(node, issue) + "</th>"
 	case "text":
 		text, _ := node["text"].(string)
 		text = template.HTMLEscapeString(text)
@@ -180,11 +180,35 @@ func renderADFNode(node map[string]any) string {
 		}
 		return "@unknown"
 	case "mediaSingle":
-		return renderADFChildren(node)
+		return fmt.Sprintf("<div class='media-single'>%s</div>", renderADFChildren(node, issue))
 	case "mediaGroup":
-		return renderADFChildren(node)
+		return fmt.Sprintf("<div class='media-group'>%s</div>", renderADFChildren(node, issue))
 	case "media":
-		return "<span class='placeholder'>[media]</span>"
+		if attrs, ok := node["attrs"].(map[string]any); ok {
+			typeStr, _ := attrs["type"].(string)
+			switch typeStr {
+			case "file":
+				if alt, ok := attrs["alt"].(string); ok {
+					if issue != nil {
+						for _, att := range issue.Attachments {
+							if att.Filename == alt {
+								width, _ := attrs["width"].(float64)
+								height, _ := attrs["height"].(float64)
+								if att.IsImage() {
+									return fmt.Sprintf("<img class='media' src='%s' alt='%s' width='%.0f' height='%.0f'>", att.GetUrl(), template.HTMLEscapeString(alt), width, height)
+								} else if att.IsVideo() {
+									return fmt.Sprintf("<video class='media' src='%s' alt='%s' width='%.0f' height='%.0f' controls></video>", att.GetUrl(), template.HTMLEscapeString(alt), width, height)
+								}
+							}
+						}
+					}
+					return fmt.Sprintf("<span class='placeholder'>[media: %s]</span>", template.HTMLEscapeString(alt))
+				}
+			default:
+				return "<span class='placeholder'>[media]</span>"
+			}
+		}
+		return "[media]"
 	case "inlineCard":
 		if attrs, ok := node["attrs"].(map[string]any); ok {
 			if url, ok := attrs["url"].(string); ok {
@@ -196,11 +220,11 @@ func renderADFNode(node map[string]any) string {
 		}
 		return "[inlineCard]"
 	default:
-		return fmt.Sprintf("<span style='color:red;font-weight:bold;'>[%s]</span>", template.HTMLEscapeString(typeStr)) + renderADFChildren(node)
+		return fmt.Sprintf("<span style='color:red;font-weight:bold;'>[%s]</span>", template.HTMLEscapeString(typeStr)) + renderADFChildren(node, issue)
 	}
 }
 
-func renderADFChildren(node map[string]any) string {
+func renderADFChildren(node map[string]any, issue *Issue) string {
 	content, ok := node["content"].([]any)
 	if !ok {
 		return ""
@@ -208,7 +232,7 @@ func renderADFChildren(node map[string]any) string {
 	var sb strings.Builder
 	for _, c := range content {
 		if child, ok := c.(map[string]any); ok {
-			sb.WriteString(renderADFNode(child))
+			sb.WriteString(renderADFNode(child, issue))
 		}
 	}
 	return sb.String()

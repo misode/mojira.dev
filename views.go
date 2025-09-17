@@ -28,7 +28,6 @@ func render(w http.ResponseWriter, name string, data any) {
 
 	tmpl, err := template.New(filepath.Base(name)).Funcs(template.FuncMap{
 		"formatTime": formatTime,
-		"renderADF":  model.RenderADF,
 		"previewADF": func(adf string) string {
 			text := model.ExtractPlainTextFromADF(adf)
 			if len(text) > 200 {

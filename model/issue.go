@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"html/template"
 	"slices"
 	"sort"
 	"strings"
@@ -63,7 +64,7 @@ type Attachment struct {
 }
 
 type Comment struct {
-	IssueKey     string
+	Issue        *Issue
 	Id           string
 	LegacyId     string // Legacy
 	Date         *time.Time
@@ -133,6 +134,14 @@ func (i *Issue) FirstImage() *Attachment {
 		}
 	}
 	return nil
+}
+
+func (i *Issue) RenderDescription() template.HTML {
+	return RenderADF(i.Description, i)
+}
+
+func (i *Issue) RenderEnvironment() template.HTML {
+	return RenderADF(i.Environment, i)
 }
 
 type IssueLinkGroup struct {
@@ -205,6 +214,10 @@ func (a *Attachment) IsImage() bool {
 	return strings.HasPrefix(a.MimeType, "image/")
 }
 
+func (a *Attachment) IsVideo() bool {
+	return strings.HasPrefix(a.MimeType, "video/")
+}
+
 func (a *Attachment) GetUrl() string {
 	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
 }
@@ -214,4 +227,8 @@ func (c *Comment) Anchor() string {
 		return fmt.Sprintf("comment-%s", c.LegacyId)
 	}
 	return fmt.Sprintf("comment-id-%s", c.Id)
+}
+
+func (c *Comment) Render() template.HTML {
+	return RenderADF(c.AdfComment, c.Issue)
 }

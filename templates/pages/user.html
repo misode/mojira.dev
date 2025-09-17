@@ -85,15 +85,15 @@
       {{end}}
       <a class="user-link" href="/user/{{.AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
       <span class="comment-on">on</span>
-      <a class="comment-link" href="/{{.IssueKey}}#{{.Anchor}}">
-        <span class="issue-key">{{.IssueKey}}</span>
+      <a class="comment-link" href="/{{.Issue.Key}}#{{.Anchor}}">
+        <span class="issue-key">{{.Issue.Key}}</span>
         <span class="comment-time">
           <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
         </span>
       </a>
     </div>
     <div class="comment-body">
-      <div class="adf">{{renderADF .AdfComment}}</div>
+      <div class="adf">{{.Render}}</div>
     </div>
   </div>
 {{end}}

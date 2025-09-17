@@ -164,7 +164,7 @@ func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, 
 		return nil, NewApiError("public", err)
 	}
 	if len(parsed.Issues) == 0 {
-		return nil, errors.New("issue not found on public API")
+		return nil, NewApiError("public", errors.New("issue not found on public API"))
 	}
 
 	f := parsed.Issues[0].Fields

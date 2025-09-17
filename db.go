@@ -236,6 +236,7 @@ func (c *DBClient) GetIssueByKey(key string) (*model.Issue, error) {
 			if err != nil {
 				return nil, err
 			}
+			cmt.Issue = &issue
 			comments = append(comments, cmt)
 		}
 	}
@@ -286,10 +287,12 @@ func (c *DBClient) GetCommentsByUser(name string, limit int) ([]model.Comment, e
 	defer rows.Close()
 	for rows.Next() {
 		var cmt model.Comment
-		err := rows.Scan(&cmt.IssueKey, &cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment)
+		var issueKey string
+		err := rows.Scan(&issueKey, &cmt.Id, &cmt.LegacyId, &cmt.Date, &cmt.AuthorName, &cmt.AuthorAvatar, &cmt.AdfComment)
 		if err != nil {
 			return nil, err
 		}
+		cmt.Issue = &model.Issue{Key: issueKey}
 		comments = append(comments, cmt)
 	}
 	return comments, nil

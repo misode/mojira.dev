@@ -924,6 +924,14 @@ tbody .issue-table-key {
   color: var(--gray-500);
 }
 
+.adf .media-single, .adf .media-group {
+  margin: 0.5rem 0;
+}
+
+.adf .media {
+  border-radius: 0.25rem;
+}
+
 /* OTHER */
 
 .simple-table {

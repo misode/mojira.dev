@@ -207,5 +207,9 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		}
 	}
 
+	for i := range merged.Comments {
+		merged.Comments[i].Issue = &merged
+	}
+
 	return &merged, nil
 }

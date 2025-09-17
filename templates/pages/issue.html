@@ -59,11 +59,11 @@
   <div class="issue-split">
     <main class="issue-body">
       <div class="issue-description">
-        <div class="adf">{{renderADF .Issue.Description}}</div>
+        <div class="adf">{{.Issue.RenderDescription}}</div>
       </div>
       {{if .Issue.HasEnvironment}}
         <h2>Environment</h2>
-        <div class="adf">{{renderADF .Issue.Environment}}</div>
+        <div class="adf">{{.Issue.RenderEnvironment}}</div>
       {{end}}
       {{if .Issue.Links}}
         <h2>Linked issues</h2>
@@ -194,7 +194,7 @@
       {{end}}
       <p class="sync-note" id="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
         {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}
-        Retrieved <time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
+        Retrieved {{if .Issue.Partial}}partially {{end}}<time datetime="{{formatTime .Issue.SyncedDate}}">{{formatTime .Issue.SyncedDate}}</time>
       </p>
     </div>
   </div>
@@ -233,9 +233,10 @@
       <a class="comment-time" href="#{{.Anchor}}">
         <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
       </a>
+      <!-- <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button> -->
     </div>
     <div class="comment-body">
-      <div class="adf">{{renderADF .AdfComment}}</div>
+      <div class="adf">{{.Render}}</div>
     </div>
   </div>
 {{end}}
