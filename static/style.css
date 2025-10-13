@@ -150,13 +150,16 @@ footer {
   border-top: 1px solid var(--gray-200);
   font-size: 14px;
   display: flex;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem 1.5rem;
   flex-wrap: wrap;
 }
 
 footer a {
   text-decoration: none;
   color: var(--gray-950);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 footer a:hover {
@@ -232,8 +235,8 @@ footer a:hover {
   min-width: 2rem;
   padding: 0 0.5rem;
   background-color: var(--gray-200);
-  border-left: 1px solid var(--gray-100);
-  border-right: 1px solid var(--gray-100);
+  border-left: 2px solid var(--gray-100);
+  border-right: 2px solid var(--gray-100);
   display: flex;
   align-items: center;
   justify-content: center;
