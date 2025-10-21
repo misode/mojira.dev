@@ -399,7 +399,7 @@ func (c *DBClient) QueueIssueKeys(keys []string, priority int, reason string) ([
 			FROM UNNEST($1::text[]) AS k
 			WHERE
 				NOT EXISTS (SELECT 1 FROM sync_queue q WHERE q.issue_key = k)
-				AND NOT EXISTS (SELECT 1 FROM issue i WHERE i.key = k AND i.synced_date >= NOW() - INTERVAL '5 minutes')
+				AND NOT EXISTS (SELECT 1 FROM issue i WHERE i.key = k AND i.synced_date >= NOW() - INTERVAL '15 minutes')
 		)
 		INSERT INTO sync_queue (issue_key, priority, reason)
 		SELECT issue_key, $2, $3 FROM new_keys
