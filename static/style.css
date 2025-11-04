@@ -277,6 +277,20 @@ footer a:hover {
   }
 }
 
+.issue-list-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--panel-warning);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-weight: 400;
+}
+
+.issue-list-notice span {
+  font-weight: 500;
+}
+
 .issue-table-container {
   overflow: auto;
 }

@@ -117,6 +117,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		}
 		page = max(page, 1)
 		offset := (page - 1) * pageSize
+
 		t0 := time.Now()
 		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, pageSize)
 		t1 := time.Now()
@@ -127,6 +128,12 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			log.Printf("[ERROR] FilterIssues: %s", err)
 			issues = []model.Issue{}
 		}
+
+		outage, err := service.db.GetSyncOutage(r.Context())
+		if err != nil {
+			log.Printf("[ERROR] GetQueueSize: %s", err)
+		}
+
 		if r.Header.Get("Hx-Request") != "" {
 			filtered := url.Values{}
 			for k, v := range query {
@@ -154,6 +161,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			"Count":  count,
 			"Query":  queryMap,
 			"Page":   page,
+			"Outage": outage,
 		})
 	}
 }

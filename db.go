@@ -521,6 +521,33 @@ func (c *DBClient) GetQueueSize(ctx context.Context) (int, error) {
 	return count, nil
 }
 
+type SyncOutage struct {
+	NewCount    int
+	UpdateCount int
+}
+
+func (c *DBClient) GetSyncOutage(ctx context.Context) (*SyncOutage, error) {
+	row := c.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sync_queue WHERE reason = 'update-feed'`)
+	var totalCount int
+	err := row.Scan(&totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	row = c.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sync_queue WHERE reason = 'update-feed'
+		AND NOT EXISTS (SELECT 1 FROM issue WHERE key = sync_queue.issue_key)`)
+	var newCount int
+	err = row.Scan(&newCount)
+	if err != nil {
+		return nil, err
+	}
+
+	if newCount < 50 {
+		return nil, nil
+	}
+	return &SyncOutage{NewCount: newCount, UpdateCount: totalCount - newCount}, nil
+}
+
 type QueueRow struct {
 	Key         string
 	QueuedDate  *time.Time

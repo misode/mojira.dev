@@ -68,6 +68,14 @@
       <button hx-get="/" hx-vals='{"page":{{add .Page 1}}}' hx-trigger="click" hx-include=".filters [name]" hx-swap="none">{{icon "chevron-right"}}</button>
     </div>
     <div class="issue-list-spinner">{{icon "sync"}}</div>
+    {{if .Outage}}
+    <div class="issue-list-notice">
+      <img src='/static/icons/warning.svg' alt='' width="16" height="16">
+      <span>Ongoing outage:</span>
+      {{.Outage.NewCount}} new issues haven't synced to this platform and
+      {{.Outage.UpdateCount}} issues have outdated information.
+    </div>
+    {{end}}
   </div>
   <div class="issue-table-container">
     <table class="issue-table">
