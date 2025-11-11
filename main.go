@@ -86,6 +86,8 @@ func main() {
 	handle("/api/search", apiSearchHandler(service))
 	handle("/api/issues/{key}/refresh", apiRefreshHandler(service))
 
+	handle("/api/v1/issues/{key}", apiV1Issue(service))
+
 	http.HandleFunc("/metrics", metricsHandler)
 
 	log.Println("Starting server...")

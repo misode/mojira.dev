@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -296,6 +297,113 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 			"Issue":     issue,
 			"IsRefresh": true,
 		})
+	}
+}
+
+type V1Issue = struct {
+	Key                string     `json:"key"`
+	Summary            string     `json:"summary"`
+	ReporterName       *string    `json:"reporter_name"`
+	ReporterAvatar     *string    `json:"reporter_avatar"`
+	AssigneeName       *string    `json:"assignee_name"`
+	AssigneeAvatar     *string    `json:"assignee_avatar"`
+	Description        *string    `json:"description"`
+	Environment        *string    `json:"environment"`
+	Labels             []string   `json:"labels"`
+	CreatedDate        *time.Time `json:"created_date"`
+	UpdatedDate        *time.Time `json:"updated_date"`
+	ResolvedDate       *time.Time `json:"resolved_date"`
+	Status             *string    `json:"status"`
+	ConfirmationStatus string     `json:"confirmation_status"`
+	Resolution         string     `json:"resolution"`
+	AffectedVersions   []string   `json:"affected_versions"`
+	FixVersions        []string   `json:"fix_versions"`
+	Category           []string   `json:"category"`
+	MojangPriority     *string    `json:"mojang_priority"`
+	Area               *string    `json:"area"`
+	Components         []string   `json:"components"`
+	Platform           *string    `json:"platform"`
+	OSVersion          *string    `json:"os_version"`
+	RealmsPlatform     *string    `json:"realms_platform"`
+	ADO                *string    `json:"ado"`
+	Votes              int        `json:"votes"`
+}
+
+func apiField(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func newV1Issue(issue *model.Issue) V1Issue {
+	confirmationStatus := "Unconfirmed"
+	if issue.ConfirmationStatus != "" {
+		confirmationStatus = issue.ConfirmationStatus
+	}
+	resolution := "Unresolved"
+	if issue.Resolution != "" {
+		resolution = issue.Resolution
+	}
+	category := []string{}
+	if issue.Category != nil {
+		category = issue.Category
+	}
+	components := []string{}
+	for _, v := range issue.Components {
+		if v != "" {
+			components = append(components, v)
+		}
+	}
+	return V1Issue{
+		Key:                issue.Key,
+		Summary:            issue.Summary,
+		ReporterName:       apiField(issue.ReporterName),
+		ReporterAvatar:     apiField(issue.ReporterAvatar),
+		AssigneeName:       apiField(issue.AssigneeName),
+		AssigneeAvatar:     apiField(issue.AssigneeAvatar),
+		Description:        apiField(issue.Description),
+		Environment:        apiField(issue.Environment),
+		Labels:             issue.Labels,
+		CreatedDate:        issue.CreatedDate,
+		UpdatedDate:        issue.UpdatedDate,
+		ResolvedDate:       issue.ResolvedDate,
+		Status:             apiField(issue.Status),
+		ConfirmationStatus: confirmationStatus,
+		Resolution:         resolution,
+		AffectedVersions:   issue.AffectedVersions,
+		FixVersions:        issue.FixVersions,
+		Category:           category,
+		MojangPriority:     apiField(issue.MojangPriority),
+		Area:               apiField(issue.Area),
+		Components:         components,
+		Platform:           apiField(issue.Platform),
+		OSVersion:          apiField(issue.OSVersion),
+		RealmsPlatform:     apiField(issue.RealmsPlatform),
+		ADO:                apiField(issue.ADO),
+		Votes:              issue.LegacyVotes + issue.Votes,
+	}
+}
+
+func apiV1Issue(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := r.PathValue("key")
+		issue, err := service.GetIssue(r.Context(), key)
+		if err != nil {
+			if errors.Is(err, model.ErrIssueRemoved) || errors.Is(err, model.ErrIssueNotFound) {
+				http.Error(w, "Issue not found", http.StatusNotFound)
+				return
+			}
+			log.Printf("[ERROR] API /v1/issues/%s: %s", key, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		result := newV1Issue(issue)
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			log.Printf("[ERROR] API /v1/issues/%s: %s", key, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
 	}
 }
 
