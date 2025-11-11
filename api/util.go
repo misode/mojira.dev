@@ -9,6 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+var apiCalls = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "mojira_api_calls",
+	Help: "Number of calls to the APIs",
+}, []string{"source"})
+
+func NewApiCall(source string) {
+	apiCalls.WithLabelValues(source).Inc()
+}
+
 var apiErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "mojira_api_errors",
 	Help: "Number of errors coming from the APIs",

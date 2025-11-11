@@ -33,6 +33,8 @@ func NewLegacyClient() *LegacyClient {
 }
 
 func (l *LegacyClient) GetIssue(ctx context.Context, key string) (*LegacyIssue, error) {
+	NewApiCall("legacy")
+
 	url := fmt.Sprintf("https://bugs-legacy.mojang.com/rest/api/2/issue/%s", key)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {

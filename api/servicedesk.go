@@ -74,6 +74,8 @@ func (s *ServiceDeskClient) Authenticate() error {
 }
 
 func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceDeskIssue, error) {
+	NewApiCall("servicedesk")
+
 	if s.cookie == nil {
 		return nil, NewApiError("servicedesk", errors.New("no connection to servicedesk"))
 	}

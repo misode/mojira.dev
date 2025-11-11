@@ -55,6 +55,8 @@ type publicJQLRequest struct {
 }
 
 func (c *PublicClient) GetIssue(ctx context.Context, key string) (*PublicIssue, error) {
+	NewApiCall("public")
+
 	body, _ := json.Marshal(publicJQLRequest{
 		Advanced:   true,
 		Project:    strings.Split(key, "-")[0],
