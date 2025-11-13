@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httprate"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,13 +22,14 @@ var httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"handler", "method", "code"})
 
-func instrumentHandler(name string, next http.Handler) http.Handler {
+func InstrumentMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rr := &responseRecorder{ResponseWriter: w, statusCode: 200}
 		next.ServeHTTP(rr, r)
 		duration := time.Since(start).Seconds()
-		httpDuration.WithLabelValues(name, r.Method, http.StatusText(rr.statusCode)).Observe(duration)
+		routePattern := chi.RouteContext(r.Context()).RoutePattern()
+		httpDuration.WithLabelValues(routePattern, r.Method, http.StatusText(rr.statusCode)).Observe(duration)
 	})
 }
 
@@ -40,10 +43,6 @@ func (r *responseRecorder) WriteHeader(code int) {
 		r.statusCode = code
 		r.ResponseWriter.WriteHeader(code)
 	}
-}
-
-func handle(path string, handler http.Handler) {
-	http.Handle(path, instrumentHandler(path, handler))
 }
 
 func main() {
@@ -69,27 +68,33 @@ func main() {
 	}
 	StartSync(service, *noSync)
 
-	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+	r := chi.NewRouter()
+	r.Use(httprate.LimitByIP(300, time.Minute))
+
+	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("User-agent: *\nAllow: /"))
 	})
-	http.HandleFunc("/static/", staticHandler)
+	r.Get("/metrics", metricsHandler)
+	r.Get("/static/*", staticHandler)
 
-	http.HandleFunc("/browse/{key}", issueRedirectHandler)
-	http.HandleFunc("/browse/{project}/issues/{key}", issueRedirectHandler)
+	r.Get("/browse/{key}", issueRedirectHandler)
+	r.Get("/browse/{project}/issues/{key}", issueRedirectHandler)
 
-	handle("/", indexHandler(service))
-	handle("/queue", queueOverviewHandler(service))
-	handle("/{key}", issueHandler(service))
-	handle("/user/{name}", userHandler(service))
+	r.Group(func(r chi.Router) {
+		r.Use(InstrumentMiddleware)
 
-	handle("/api/search", apiSearchHandler(service))
-	handle("/api/issues/{key}/refresh", apiRefreshHandler(service))
+		r.Get("/", indexHandler(service))
+		r.Get("/queue", queueOverviewHandler(service))
+		r.Get("/{key}", issueHandler(service))
+		r.Get("/user/{name}", userHandler(service))
 
-	handle("/api/v1/issues/{key}", apiV1Issue(service))
+		r.Post("/api/search", apiSearchHandler(service))
+		r.Get("/api/issues/{key}/refresh", apiRefreshHandler(service))
 
-	http.HandleFunc("/metrics", metricsHandler)
+		r.Get("/api/v1/issues/{key}", apiV1Issue(service))
+	})
 
 	log.Println("Starting server...")
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	log.Fatal(http.ListenAndServe("localhost:8080", r))
 }
