@@ -486,8 +486,8 @@ func (c *DBClient) RetryQueuedIssue(ctx context.Context, key string) error {
 	if failedCount > 4 && priority < 10 {
 		_, err = tx.ExecContext(ctx, `DELETE FROM sync_queue WHERE issue_key = $1`, key)
 	} else {
-		// Delay will be: 5m, 25m, 2h5m, 10h25m
-		delay := time.Duration(math.Pow(5, float64(failedCount))) * time.Minute
+		// Delay will be: 2m, 4m, 8m, 16m, 16m, 16m, ...
+		delay := time.Duration(math.Pow(2, float64(min(4, failedCount)))) * time.Minute
 		retryAfter := time.Now().Add(delay)
 		_, err = tx.ExecContext(ctx, `
 			UPDATE sync_queue

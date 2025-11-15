@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -70,6 +71,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(httprate.LimitByIP(300, time.Minute))
+	r.Use(middleware.RedirectSlashes)
 
 	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
