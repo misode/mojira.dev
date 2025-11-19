@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -70,7 +71,6 @@ func main() {
 	StartSync(service, *noSync)
 
 	r := chi.NewRouter()
-	r.Use(httprate.LimitByIP(300, time.Minute))
 	r.Use(middleware.RedirectSlashes)
 
 	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +84,7 @@ func main() {
 	r.Get("/browse/{project}/issues/{key}", issueRedirectHandler)
 
 	r.Group(func(r chi.Router) {
+		r.Use(httprate.Limit(300, time.Minute, httprate.WithKeyFuncs(KeyByCFConnectingIP)))
 		r.Use(InstrumentMiddleware)
 
 		r.Get("/", indexHandler(service))
@@ -99,4 +100,39 @@ func main() {
 
 	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:8080", r))
+}
+
+func KeyByCFConnectingIP(r *http.Request) (string, error) {
+	var ip string
+	if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+		ip = cfip
+	} else {
+		var err error
+		ip, _, err = net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+	}
+	return canonicalizeIP(ip), nil
+}
+
+// From httprate, but not public
+func canonicalizeIP(ip string) string {
+	isIPv6 := false
+	for i := 0; !isIPv6 && i < len(ip); i++ {
+		switch ip[i] {
+		case '.':
+			return ip
+		case ':':
+			isIPv6 = true
+		}
+	}
+	if !isIPv6 {
+		return ip
+	}
+	ipv6 := net.ParseIP(ip)
+	if ipv6 == nil {
+		return ip
+	}
+	return ipv6.Mask(net.CIDRMask(64, 128)).String()
 }
