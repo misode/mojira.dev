@@ -52,6 +52,14 @@ func StartSync(service *IssueService, noSync bool) {
 			queueProcessor(service)
 		}
 	}()
+
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for {
+			<-ticker.C
+			refreshCountView(service)
+		}
+	}()
 }
 
 func updateFeedListener(service *IssueService) {
@@ -133,6 +141,13 @@ func queueProcessor(service *IssueService) {
 	}
 	wg.Wait()
 	updateMetric(service, ctx)
+}
+
+func refreshCountView(service *IssueService) {
+	err := service.db.RefreshCountView()
+	if err != nil {
+		log.Printf("[ERROR] [refreshCountView] Failed: %v", err)
+	}
 }
 
 func updateMetric(service *IssueService, ctx context.Context) {

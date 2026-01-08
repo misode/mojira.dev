@@ -577,3 +577,8 @@ func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, int, error) {
 	}
 	return queue, count, nil
 }
+
+func (c *DBClient) RefreshCountView() error {
+	_, err := c.db.Exec(`REFRESH MATERIALIZED VIEW CONCURRENTLY issue_count`)
+	return err
+}
