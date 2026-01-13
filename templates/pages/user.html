@@ -83,7 +83,7 @@
       {{if .AuthorAvatar}}
         <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
       {{end}}
-      <a class="user-link" href="/user/{{.AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
+      <a class="user-link" href="/user/{{urlPathEscape .AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
       <span class="comment-on">on</span>
       <a class="comment-link" href="/{{.Issue.Key}}#{{.Anchor}}">
         <span class="issue-key">{{.Issue.Key}}</span>
