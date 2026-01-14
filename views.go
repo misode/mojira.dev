@@ -43,6 +43,7 @@ func render(w http.ResponseWriter, name string, data any) {
 		"add": func(a int, b int) int {
 			return a + b
 		},
+		"urlPathEscape": url.PathEscape,
 	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
