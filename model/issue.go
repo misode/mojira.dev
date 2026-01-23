@@ -206,6 +206,34 @@ func (i *Issue) VisibleComments() VisibleComments {
 	}
 }
 
+type VisibleIssues struct {
+	Count   int
+	Visible []Issue
+	HasMore bool
+}
+
+func VisibleIssuesFromSlice(issues []Issue, hasMore bool) VisibleIssues {
+	return VisibleIssues{
+		Count:   len(issues),
+		Visible: issues,
+		HasMore: hasMore,
+	}
+}
+
+type VisibleUserComments struct {
+	Count   int
+	Visible []Comment
+	HasMore bool
+}
+
+func VisibleUserCommentsFromSlice(comments []Comment, hasMore bool) VisibleUserComments {
+	return VisibleUserComments{
+		Count:   len(comments),
+		Visible: comments,
+		HasMore: hasMore,
+	}
+}
+
 func (l *IssueLink) IsResolved() bool {
 	return l.OtherStatus == "Resolved" || l.OtherStatus == "Closed"
 }

@@ -1,0 +1,10 @@
+{{define "user_comments"}}
+{{range .Comments}}
+  {{template "comment" .}}
+{{end}}
+{{if .HasMore}}
+  <div class="expand-comments" data-load-more data-type="comments" data-offset="{{.NextOffset}}">
+    <span>Load more comments</span>
+  </div>
+{{end}}
+{{end}}

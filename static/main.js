@@ -40,6 +40,31 @@ function afterSwap() {
     }
   })
 
+  document.querySelectorAll('[data-load-more]').forEach((el) => {
+    el.onclick = () => {
+      const type = el.getAttribute('data-type')
+      const offset = parseInt(el.getAttribute('data-offset') || '0')
+      const userName = window.location.pathname.split('/user/')[1]
+      
+      if (!userName) return
+      
+      el.style.opacity = '0.5'
+      el.style.pointerEvents = 'none'
+      
+      fetch(`/api/user/${encodeURIComponent(userName)}/load-more?type=${type}&offset=${offset}`)
+        .then(res => res.text())
+        .then(html => {
+          el.outerHTML = html
+          afterSwap()
+        })
+        .catch(err => {
+          console.error('Failed to load more:', err)
+          el.style.opacity = '1'
+          el.style.pointerEvents = 'auto'
+        })
+    }
+  })
+
   expandCommentsIfNeeded()
 }
 

@@ -37,17 +37,33 @@
   <div class="user-split">
     <div>
       <h2>Assigned</h2>
-      <div>
-        {{range .AssignedIssues}}
-          {{template "issueLink" .}}
+      {{if gt .AssignedIssues.Count 0}}
+        <div class="user-section-link">
+          <a href="/?assignee={{.UserName}}">View all</a>
+        </div>
+      {{end}}
+      <div id="assigned-issues">
+        {{with .AssignedIssues}}
+          {{range .Visible}}
+            {{template "issueLink" .}}
+          {{end}}
+          {{if eq .Count 0}}<span class="no-results">No issues.</span>{{end}}
         {{else}}
           <span class="no-results">No issues.</span>
         {{end}}
       </div>
       <h2>Reported</h2>
-      <div>
-        {{range .ReportedIssues}}
-          {{template "issueLink" .}}
+      {{if gt .ReportedIssues.Count 0}}
+        <div class="user-section-link">
+          <a href="/?reporter={{.UserName}}">View all</a>
+        </div>
+      {{end}}
+      <div id="reported-issues">
+        {{with .ReportedIssues}}
+          {{range .Visible}}
+            {{template "issueLink" .}}
+          {{end}}
+          {{if eq .Count 0}}<span class="no-results">No issues.</span>{{end}}
         {{else}}
           <span class="no-results">No issues.</span>
         {{end}}
@@ -55,9 +71,17 @@
     </div>
     <div>
       <h2>Comments</h2>
-      <div class="user-comments">
-        {{range .Comments}}
-          {{template "comment" .}}
+      <div class="user-comments" id="user-comments">
+        {{with .Comments}}
+          {{range .Visible}}
+            {{template "comment" .}}
+          {{end}}
+          {{if .HasMore}}
+            <div class="expand-comments" data-load-more="comments" data-offset="20" data-type="comments">
+              <span>Load more comments</span>
+            </div>
+          {{end}}
+          {{if eq .Count 0}}<p class="no-results">No comments.</p>{{end}}
         {{end}}
       </div>
     </div>

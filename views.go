@@ -193,21 +193,37 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 func userHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userName := r.PathValue("name")
-		assignedIssues, err := service.db.GetIssueByAssignee(userName, 20)
+		limit := 20
+		assignedIssues, err := service.db.GetIssueByAssignee(userName, limit+1, 0)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByAssignee: %s", err)
 			assignedIssues = []model.Issue{}
 		}
-		reportedIssues, err := service.db.GetIssueByReporter(userName, 20)
+		assignedHasMore := len(assignedIssues) > limit
+		if assignedHasMore {
+			assignedIssues = assignedIssues[:limit]
+		}
+
+		reportedIssues, err := service.db.GetIssueByReporter(userName, limit+1, 0)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByReporter: %s", err)
 			reportedIssues = []model.Issue{}
 		}
-		comments, err := service.db.GetCommentsByUser(userName, 20)
+		reportedHasMore := len(reportedIssues) > limit
+		if reportedHasMore {
+			reportedIssues = reportedIssues[:limit]
+		}
+
+		comments, err := service.db.GetCommentsByUser(userName, limit+1, 0)
 		if err != nil {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}
 		}
+		commentsHasMore := len(comments) > limit
+		if commentsHasMore {
+			comments = comments[:limit]
+		}
+
 		if len(assignedIssues) == 0 && len(reportedIssues) == 0 && len(comments) == 0 {
 			render(w, "pages/user_not_found", map[string]any{})
 			return
@@ -227,10 +243,108 @@ func userHandler(service *IssueService) http.HandlerFunc {
 			"UserName":        userName,
 			"UserAvatars":     slices.Collect(maps.Keys(avatarSet)),
 			"MultipleAvatars": len(avatarSet) > 1,
-			"AssignedIssues":  assignedIssues,
-			"ReportedIssues":  reportedIssues,
-			"Comments":        comments,
+			"AssignedIssues":  model.VisibleIssuesFromSlice(assignedIssues, assignedHasMore),
+			"ReportedIssues":  model.VisibleIssuesFromSlice(reportedIssues, reportedHasMore),
+			"Comments":        model.VisibleUserCommentsFromSlice(comments, commentsHasMore),
 		})
+	}
+}
+
+func renderPartial(w http.ResponseWriter, partialName string, pageName string, data any) {
+	tmpl, err := template.New(filepath.Base(partialName)).Funcs(template.FuncMap{
+		"formatTime": formatTime,
+		"previewADF": func(adf string) string {
+			text := model.ExtractPlainTextFromADF(adf)
+			if len(text) > 200 {
+				return text[:200] + "..."
+			}
+			return text
+		},
+		"icon": icon,
+		"join": func(arr []string) string {
+			return strings.Join(arr, ", ")
+		},
+		"add": func(a int, b int) int {
+			return a + b
+		},
+		"urlPathEscape": url.PathEscape,
+	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", pageName), fmt.Sprintf("templates/%s", partialName))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	templateName := strings.TrimSuffix(filepath.Base(partialName), ".html")
+	err = tmpl.ExecuteTemplate(w, templateName, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func apiUserLoadMoreHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userName := r.PathValue("name")
+		itemType := r.URL.Query().Get("type")
+		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			offset = 0
+		}
+		// The amount of issues to show per load more comments request
+		limit := 20
+
+		switch itemType {
+		case "assigned":
+			issues, err := service.db.GetIssueByAssignee(userName, limit+1, offset)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			hasMore := len(issues) > limit
+			if hasMore {
+				issues = issues[:limit]
+			}
+			renderPartial(w, "partials/user_issues.html", "pages/user.html", map[string]any{
+				"Issues":     issues,
+				"HasMore":    hasMore,
+				"NextOffset": offset + len(issues),
+				"Type":       "assigned",
+			})
+		case "reported":
+			issues, err := service.db.GetIssueByReporter(userName, limit+1, offset)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			hasMore := len(issues) > limit
+			if hasMore {
+				issues = issues[:limit]
+			}
+			renderPartial(w, "partials/user_issues.html", "pages/user.html", map[string]any{
+				"Issues":     issues,
+				"HasMore":    hasMore,
+				"NextOffset": offset + len(issues),
+				"Type":       "reported",
+			})
+		case "comments":
+			comments, err := service.db.GetCommentsByUser(userName, limit+1, offset)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			hasMore := len(comments) > limit
+			if hasMore {
+				comments = comments[:limit]
+			}
+			renderPartial(w, "partials/user_comments.html", "pages/user.html", map[string]any{
+				"Comments":   comments,
+				"HasMore":    hasMore,
+				"NextOffset": offset + len(comments),
+			})
+		default:
+			http.Error(w, "Invalid type", http.StatusBadRequest)
+		}
 	}
 }
 

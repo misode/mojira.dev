@@ -94,12 +94,13 @@ func main() {
 
 		r.Post("/api/search", apiSearchHandler(service))
 		r.Get("/api/issues/{key}/refresh", apiRefreshHandler(service))
+		r.Get("/api/user/{name}/load-more", apiUserLoadMoreHandler(service))
 
 		r.Get("/api/v1/issues/{key}", apiV1Issue(service))
 	})
 
 	log.Println("Starting server...")
-	log.Fatal(http.ListenAndServe("localhost:8080", r))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
 func KeyByCFConnectingIP(r *http.Request) (string, error) {
