@@ -100,7 +100,7 @@ func main() {
 	})
 
 	log.Println("Starting server...")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe("localhost:8080", r))
 }
 
 func KeyByCFConnectingIP(r *http.Request) (string, error) {
