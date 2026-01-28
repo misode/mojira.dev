@@ -44,13 +44,13 @@ function afterSwap() {
     el.onclick = () => {
       const type = el.getAttribute('data-type')
       const offset = parseInt(el.getAttribute('data-offset') || '0')
-      const userName = window.location.pathname.split('/user/')[1]
-      
+      const userName = decodeURIComponent(window.location.pathname.split('/user/')[1])
+
       if (!userName) return
-      
+
       el.style.opacity = '0.5'
       el.style.pointerEvents = 'none'
-      
+
       fetch(`/api/user/${encodeURIComponent(userName)}/load-more?type=${type}&offset=${offset}`)
         .then(res => res.text())
         .then(html => {
