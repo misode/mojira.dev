@@ -132,3 +132,68 @@ function nextImg() {
   const a = document.querySelector(`[data-attachment="${current}"]`)?.nextElementSibling
   showAttachment(a)
 }
+
+
+initTheme()
+
+function initTheme() {
+  const stored = localStorage.getItem('theme')
+  const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  const theme = stored === 'system' || !stored ? 'system' : stored
+
+  applyTheme(theme)
+
+  const actualTheme = theme === 'system' ? system : theme
+  document.cookie = `theme=${actualTheme}; path=/; max-age=31536000; SameSite=Lax`
+}
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+
+  document.querySelectorAll('.theme-option').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-value') === theme)
+  })
+
+  updateThemeIcon(theme)
+}
+
+function setTheme(theme) {
+  localStorage.setItem('theme', theme)
+  applyTheme(theme)
+
+  const actualTheme = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme
+  document.cookie = `theme=${actualTheme}; path=/; max-age=31536000; SameSite=Lax`
+
+  const details = document.querySelector('.theme-dropdown')
+  if (details) {
+    details.removeAttribute('open')
+  }
+}
+
+function updateThemeIcon(theme) {
+  const option = document.querySelector(`.theme-option[data-value="${theme}"] svg`)
+  const toggle = document.querySelector('.theme-toggle')
+  if (option && toggle) {
+    toggle.innerHTML = option.outerHTML
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const details = document.querySelector('.theme-dropdown')
+  if (details && details.hasAttribute('open') && !details.contains(e.target)) {
+    details.removeAttribute('open')
+  }
+})
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('theme') || localStorage.getItem('theme') === 'system') {
+    applyTheme('system')
+  }
+})
+
+initTheme()
+
+window.setTheme = setTheme
