@@ -64,22 +64,44 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 		if lexer == nil {
 			lexer = lexers.Fallback
 		}
-		iterator, err := lexer.Tokenise(nil, text)
-		if err != nil {
-			log.Printf("[WARNING] Error during code tokenizing: %s", err)
-			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
-		}
+
 		formatter := html.New(
 			html.PreventSurroundingPre(true),
 			html.TabWidth(4),
 		)
-		var buf bytes.Buffer
-		err = formatter.Format(&buf, styles.Get("vs"), iterator)
+
+		// Render light version
+		iteratorLight, err := lexer.Tokenise(nil, text)
 		if err != nil {
-			log.Printf("[WARNING] Error during code highlighting: %s", err)
+			log.Printf("[WARNING] Error during code tokenizing: %s", err)
 			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
 		}
-		return fmt.Sprintf("<pre><code>%s</code></pre>", buf.String())
+		var bufLight bytes.Buffer
+		err = formatter.Format(&bufLight, styles.Get("vs"), iteratorLight)
+		if err != nil {
+			log.Printf("[WARNING] Error during code highlighting (light): %s", err)
+			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+		}
+
+		// Render dark version
+		iteratorDark, err := lexer.Tokenise(nil, text)
+		if err != nil {
+			log.Printf("[WARNING] Error during code tokenizing: %s", err)
+			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+		}
+		var bufDark bytes.Buffer
+		err = formatter.Format(&bufDark, styles.Get("nord"), iteratorDark)
+		if err != nil {
+			log.Printf("[WARNING] Error during code highlighting (dark): %s", err)
+			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+		}
+
+		// Return both versions wrapped in theme-specific divs
+		return fmt.Sprintf(
+			"<div class='code-light'><pre><code>%s</code></pre></div><div class='code-dark'><pre><code>%s</code></pre></div>",
+			bufLight.String(),
+			bufDark.String(),
+		)
 	case "rule":
 		return "<hr>"
 	case "panel":
