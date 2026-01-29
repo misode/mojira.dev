@@ -8,8 +8,8 @@
 {{end}}
 <meta property="og:type" content="website" />
 <meta property="twitter:domain" content="mojira.dev">
-<meta property="og:url" content="https://mojira.dev/{{.UserName}}">
-<meta property="twitter:url" content="https://mojira.dev/{{.UserName}}">
+<meta property="og:url" content="https://mojira.dev/user/{{urlPathEscape .UserName}}">
+<meta property="twitter:url" content="https://mojira.dev/user/{{urlPathEscape .UserName}}">
 {{end}}
 
 {{define "title"}}{{.UserName}}{{end}}
@@ -38,7 +38,7 @@
     <div>
       <h2>Assigned</h2>
       {{if .AssignedIssues}}
-      <a class="user-section-link" href="/?assignee={{.UserName}}">View all</a>
+      <a class="user-section-link" href="/?assignee={{urlPathEscape .UserName}}">View all</a>
       {{end}}
       <div>
         {{range .AssignedIssues}}
@@ -49,7 +49,7 @@
       </div>
       <h2>Reported</h2>
       {{if .ReportedIssues}}
-      <a class="user-section-link" href="/?reporter={{.UserName}}">View all</a>
+      <a class="user-section-link" href="/?reporter={{urlPathEscape .UserName}}">View all</a>
       {{end}}
       <div>
         {{range .ReportedIssues}}
@@ -68,7 +68,7 @@
           <p class="no-results">No comments.</p>
         {{end}}
         {{if .MoreComments}}
-          <div class="expand-comments" hx-get="/api/user/{{.UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
+          <div class="expand-comments" hx-get="/api/user/{{urlPathEscape .UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
             <span>Load more comments</span>
           </div>
         {{end}}

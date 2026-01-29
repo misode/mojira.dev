@@ -2,7 +2,7 @@
   {{template "userComment" .}}
 {{end}}
 {{if .MoreComments}}
-  <div class="expand-comments" hx-get="/api/user/{{.UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
+  <div class="expand-comments" hx-get="/api/user/{{urlPathEscape .UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
     <span>Load more comments</span>
   </div>
 {{end}}
