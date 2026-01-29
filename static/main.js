@@ -51,7 +51,7 @@ function afterSwap() {
       el.style.opacity = '0.5'
       el.style.pointerEvents = 'none'
 
-      fetch(`/api/user/${encodeURIComponent(userName)}/load-more?type=${type}&offset=${offset}`)
+      fetch(`/api/user/${encodeURIComponent(userName)}/comments?offset=${offset}`)
         .then(res => res.text())
         .then(html => {
           el.outerHTML = html

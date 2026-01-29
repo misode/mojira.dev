@@ -283,68 +283,30 @@ func renderPartial(w http.ResponseWriter, partialName string, pageName string, d
 	}
 }
 
-func apiUserLoadMoreHandler(service *IssueService) http.HandlerFunc {
+func apiUserCommentsHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userName := r.PathValue("name")
-		itemType := r.URL.Query().Get("type")
 		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 		if err != nil {
 			offset = 0
 		}
-		// The amount of issues to show per load more comments request
+		// The amount of comments to show per load more comments request
 		limit := 20
 
-		switch itemType {
-		case "assigned":
-			issues, err := service.db.GetIssueByAssignee(userName, limit+1, offset)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			hasMore := len(issues) > limit
-			if hasMore {
-				issues = issues[:limit]
-			}
-			renderPartial(w, "partials/user_issues.html", "pages/user.html", map[string]any{
-				"Issues":     issues,
-				"HasMore":    hasMore,
-				"NextOffset": offset + len(issues),
-				"Type":       "assigned",
-			})
-		case "reported":
-			issues, err := service.db.GetIssueByReporter(userName, limit+1, offset)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			hasMore := len(issues) > limit
-			if hasMore {
-				issues = issues[:limit]
-			}
-			renderPartial(w, "partials/user_issues.html", "pages/user.html", map[string]any{
-				"Issues":     issues,
-				"HasMore":    hasMore,
-				"NextOffset": offset + len(issues),
-				"Type":       "reported",
-			})
-		case "comments":
-			comments, err := service.db.GetCommentsByUser(userName, limit+1, offset)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			hasMore := len(comments) > limit
-			if hasMore {
-				comments = comments[:limit]
-			}
-			renderPartial(w, "partials/user_comments.html", "pages/user.html", map[string]any{
-				"Comments":   comments,
-				"HasMore":    hasMore,
-				"NextOffset": offset + len(comments),
-			})
-		default:
-			http.Error(w, "Invalid type", http.StatusBadRequest)
+		comments, err := service.db.GetCommentsByUser(userName, limit+1, offset)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		hasMore := len(comments) > limit
+		if hasMore {
+			comments = comments[:limit]
+		}
+		renderPartial(w, "partials/user_comments.html", "pages/user.html", map[string]any{
+			"Comments":   comments,
+			"HasMore":    hasMore,
+			"NextOffset": offset + len(comments),
+		})
 	}
 }
 
