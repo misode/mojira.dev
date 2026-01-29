@@ -1,30 +1,8 @@
 {{range .Comments}}
-  {{template "comment" .}}
+  {{template "userComment" .}}
 {{end}}
 {{if .MoreComments}}
   <div class="expand-comments" hx-get="/api/user/{{.UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
     <span>Load more comments</span>
-  </div>
-{{end}}
-
-{{define "comment"}}
-  <div class="comment">
-    <div class="anchor" id="{{.Anchor}}"></div>
-    <div>
-      {{if .AuthorAvatar}}
-        <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
-      {{end}}
-      <a class="user-link" href="/user/{{urlPathEscape .AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
-      <span class="comment-on">on</span>
-      <a class="comment-link" href="/{{.Issue.Key}}#{{.Anchor}}">
-        <span class="issue-key">{{.Issue.Key}}</span>
-        <span class="comment-time">
-          <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
-        </span>
-      </a>
-    </div>
-    <div class="comment-body">
-      <div class="adf">{{.Render}}</div>
-    </div>
   </div>
 {{end}}

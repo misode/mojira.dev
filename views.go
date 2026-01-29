@@ -45,7 +45,7 @@ func render(w http.ResponseWriter, name string, data any) {
 			return a + b
 		},
 		"urlPathEscape": url.PathEscape,
-	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
+	}).ParseFiles("templates/base.html", "templates/common.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
