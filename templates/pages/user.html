@@ -38,7 +38,7 @@
     <div>
       <h2>Assigned</h2>
       {{if .AssignedIssues}}
-      <a class="user-section-link" href="/?assignee={{urlPathEscape .UserName}}">View all</a>
+      <a class="user-section-link" href="/?assignee={{.UserName}}">View all</a>
       {{end}}
       <div>
         {{range .AssignedIssues}}
@@ -49,7 +49,7 @@
       </div>
       <h2>Reported</h2>
       {{if .ReportedIssues}}
-      <a class="user-section-link" href="/?reporter={{urlPathEscape .UserName}}">View all</a>
+      <a class="user-section-link" href="/?reporter={{.UserName}}">View all</a>
       {{end}}
       <div>
         {{range .ReportedIssues}}
