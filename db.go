@@ -133,7 +133,7 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	case "Duplicates":
 		sortStr = `duplicate_count DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR reporter_name = $7) AND ($8 = '' OR assignee_name = $8) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $16 LIMIT $17`, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, offset, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $16 LIMIT $17`, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -157,7 +157,7 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 			return nil, 0, err
 		}
 	} else {
-		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR reporter_name = $7) AND ($8 = '' OR assignee_name = $8) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area)
+		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area)
 		err = countRow.Scan(&count)
 		if err != nil {
 			return nil, 0, err
@@ -167,7 +167,7 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 }
 
 func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, created_date FROM issue WHERE state = 'present' AND reporter_name = $1 ORDER BY created_date DESC LIMIT $2`, reporter, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, created_date FROM issue WHERE state = 'present' AND LOWER(reporter_name) = LOWER($1) ORDER BY created_date DESC LIMIT $2`, reporter, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue
 }
 
 func (c *DBClient) GetIssueByAssignee(assignee string, limit int) ([]model.Issue, error) {
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND assignee_name = $1 ORDER BY created_date DESC LIMIT $2`, assignee, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, assignee_avatar, assignee_name, created_date FROM issue WHERE state = 'present' AND LOWER(assignee_name) = LOWER($1) ORDER BY created_date DESC LIMIT $2`, assignee, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (c *DBClient) GetCommentsByUser(name string, offset int, limit int) ([]mode
 	query := `SELECT c.issue_key, c.comment_id, c.legacy_id, c.date, c.author_name, c.author_avatar, c.adf_comment
 		FROM comment c
 		JOIN issue i ON c.issue_key = i.key
-		WHERE c.author_name = $1 AND i.state = 'present'
+		WHERE LOWER(c.author_name) = LOWER($1) AND i.state = 'present'
 		ORDER BY c.date DESC
 		OFFSET $2 LIMIT $3;`
 	rows, err := c.db.Query(query, name, offset, limit)
