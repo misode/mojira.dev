@@ -37,6 +37,9 @@
   <div class="user-split">
     <div>
       <h2>Assigned</h2>
+      {{if .AssignedIssues}}
+      <a class="user-section-link" href="/?assignee={{.UserName}}">View all</a>
+      {{end}}
       <div>
         {{range .AssignedIssues}}
           {{template "issueLink" .}}
@@ -45,6 +48,9 @@
         {{end}}
       </div>
       <h2>Reported</h2>
+      {{if .ReportedIssues}}
+      <a class="user-section-link" href="/?reporter={{.UserName}}">View all</a>
+      {{end}}
       <div>
         {{range .ReportedIssues}}
           {{template "issueLink" .}}
@@ -57,7 +63,14 @@
       <h2>Comments</h2>
       <div class="user-comments">
         {{range .Comments}}
-          {{template "comment" .}}
+          {{template "userComment" .}}
+        {{else}}
+          <p class="no-results">No comments.</p>
+        {{end}}
+        {{if .MoreComments}}
+          <div class="expand-comments" hx-get="/api/user/{{.UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
+            <span>Load more comments</span>
+          </div>
         {{end}}
       </div>
     </div>
@@ -74,28 +87,6 @@
       {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
     </span>
   </a>
-{{end}}
-
-{{define "comment"}}
-  <div class="comment">
-    <div class="anchor" id="{{.Anchor}}"></div>
-    <div>
-      {{if .AuthorAvatar}}
-        <img class="avatar" src="{{.AuthorAvatar}}" alt="" width="24" height="24">
-      {{end}}
-      <a class="user-link" href="/user/{{urlPathEscape .AuthorName}}"><span class="comment-author">{{.AuthorName}}</span></a>
-      <span class="comment-on">on</span>
-      <a class="comment-link" href="/{{.Issue.Key}}#{{.Anchor}}">
-        <span class="issue-key">{{.Issue.Key}}</span>
-        <span class="comment-time">
-          <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
-        </span>
-      </a>
-    </div>
-    <div class="comment-body">
-      <div class="adf">{{.Render}}</div>
-    </div>
-  </div>
 {{end}}
 
 {{template "base" .}}

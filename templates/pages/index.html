@@ -2,6 +2,8 @@
 
 {{define "content"}}
 <div class="filters">
+  {{if .Query.reporter}}<input type="hidden" name="reporter" value="{{.Query.reporter}}">{{end}}
+  {{if .Query.assignee}}<input type="hidden" name="assignee" value="{{.Query.assignee}}">{{end}}
   <input name="search" type="text" placeholder="Search" value="{{.Query.search}}" hx-get="/" hx-trigger="input[this.value.length >= 3 || this.value.length === 0] delay:0.3s" hx-include=".filters [name]" hx-swap="none">
   <select name="project" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Project</option>

@@ -20,7 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var pageSize = 50
+var issuePageSize = 50
+var maxUserComments = 20
 
 func render(w http.ResponseWriter, name string, data any) {
 	if !strings.HasSuffix(name, ".html") {
@@ -44,7 +45,7 @@ func render(w http.ResponseWriter, name string, data any) {
 			return a + b
 		},
 		"urlPathEscape": url.PathEscape,
-	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", name))
+	}).ParseFiles("templates/base.html", "templates/common.html", fmt.Sprintf("templates/%s", name))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,10 +119,10 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			page = 1
 		}
 		page = max(page, 1)
-		offset := (page - 1) * pageSize
+		offset := (page - 1) * issuePageSize
 
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, pageSize)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, issuePageSize)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
@@ -193,20 +194,25 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 func userHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userName := r.PathValue("name")
-		assignedIssues, err := service.db.GetIssueByAssignee(userName, 20)
+		assignedIssues, err := service.db.GetIssueByAssignee(userName, 10)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByAssignee: %s", err)
 			assignedIssues = []model.Issue{}
 		}
-		reportedIssues, err := service.db.GetIssueByReporter(userName, 20)
+		reportedIssues, err := service.db.GetIssueByReporter(userName, 10)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByReporter: %s", err)
 			reportedIssues = []model.Issue{}
 		}
-		comments, err := service.db.GetCommentsByUser(userName, 20)
+		comments, err := service.db.GetCommentsByUser(userName, 0, maxUserComments+1)
 		if err != nil {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}
+		}
+		moreComments := false
+		if len(comments) > maxUserComments {
+			comments = comments[:maxUserComments]
+			moreComments = true
 		}
 		if len(assignedIssues) == 0 && len(reportedIssues) == 0 && len(comments) == 0 {
 			render(w, "pages/user_not_found", map[string]any{})
@@ -230,6 +236,35 @@ func userHandler(service *IssueService) http.HandlerFunc {
 			"AssignedIssues":  assignedIssues,
 			"ReportedIssues":  reportedIssues,
 			"Comments":        comments,
+			"MoreComments":    moreComments,
+			"NextComments":    maxUserComments,
+		})
+	}
+}
+
+func apiUserCommentsHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userName := r.PathValue("name")
+		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			offset = 0
+		}
+		comments, err := service.db.GetCommentsByUser(userName, offset, maxUserComments+1)
+		fmt.Println(offset, maxUserComments, len(comments), err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		moreComments := false
+		if len(comments) > maxUserComments {
+			comments = comments[:maxUserComments]
+			moreComments = true
+		}
+		render(w, "partials/user_comments.html", map[string]any{
+			"UserName":     userName,
+			"Comments":     comments,
+			"MoreComments": moreComments,
+			"NextComments": offset + maxUserComments,
 		})
 	}
 }

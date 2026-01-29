@@ -758,6 +758,20 @@ tbody .issue-table-key {
   font-weight: bold;
 }
 
+.user-section-link {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+  margin: 0.25rem 0;
+  color: var(--gray-600);
+  text-decoration: none;
+}
+
+.user-section-link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
 .user-comments {
   display: flex;
   flex-direction: column;

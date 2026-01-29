@@ -21,11 +21,7 @@
 <div class="issue" id="issue" hx-swap-oob="true">
   <div class="issue-top">
     <div class="issue-title">
-      <div class="issue-key" data-copy="{{.Issue.Key}}">
-        <img src="/static/icons/bug.svg" width="16" height="16" alt="">
-        <span>{{.Issue.Key}}</span>
-        {{icon "check"}}
-      </div>
+      {{template "issueKey" .Issue}}
 
       <h1 class="issue-summary">
         {{.Issue.Summary}}

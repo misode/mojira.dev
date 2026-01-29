@@ -94,6 +94,7 @@ func main() {
 
 		r.Post("/api/search", apiSearchHandler(service))
 		r.Get("/api/issues/{key}/refresh", apiRefreshHandler(service))
+		r.Get("/api/user/{name}/comments", apiUserCommentsHandler(service))
 
 		r.Get("/api/v1/issues/{key}", apiV1Issue(service))
 	})
