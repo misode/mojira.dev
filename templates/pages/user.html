@@ -37,33 +37,23 @@
   <div class="user-split">
     <div>
       <h2>Assigned</h2>
-      {{if gt .AssignedIssues.Count 0}}
-        <div class="user-section-link">
-          <a href="/?assignee={{.UserName}}">View all</a>
-        </div>
+      {{if .AssignedIssues}}
+      <a class="user-section-link" href="/?assignee={{.UserName}}">View all</a>
       {{end}}
-      <div id="assigned-issues">
-        {{with .AssignedIssues}}
-          {{range .Visible}}
+      <div>
+        {{range .AssignedIssues}}
             {{template "issueLink" .}}
-          {{end}}
-          {{if eq .Count 0}}<span class="no-results">No issues.</span>{{end}}
         {{else}}
           <span class="no-results">No issues.</span>
         {{end}}
       </div>
       <h2>Reported</h2>
-      {{if gt .ReportedIssues.Count 0}}
-        <div class="user-section-link">
-          <a href="/?reporter={{.UserName}}">View all</a>
-        </div>
+      {{if .ReportedIssues}}
+      <a class="user-section-link" href="/?reporter={{.UserName}}">View all</a>
       {{end}}
-      <div id="reported-issues">
-        {{with .ReportedIssues}}
-          {{range .Visible}}
+      <div>
+        {{range .ReportedIssues}}
             {{template "issueLink" .}}
-          {{end}}
-          {{if eq .Count 0}}<span class="no-results">No issues.</span>{{end}}
         {{else}}
           <span class="no-results">No issues.</span>
         {{end}}
@@ -71,17 +61,16 @@
     </div>
     <div>
       <h2>Comments</h2>
-      <div class="user-comments" id="user-comments">
-        {{with .Comments}}
-          {{range .Visible}}
-            {{template "comment" .}}
-          {{end}}
-          {{if .HasMore}}
-            <div class="expand-comments" data-load-more="comments" data-offset="20" data-type="comments">
-              <span>Load more comments</span>
-            </div>
-          {{end}}
-          {{if eq .Count 0}}<p class="no-results">No comments.</p>{{end}}
+      <div class="user-comments">
+        {{range .Comments}}
+          {{template "comment" .}}
+        {{else}}
+          <p class="no-results">No comments.</p>
+        {{end}}
+        {{if .MoreComments}}
+          <div class="expand-comments" hx-get="/api/user/{{.UserName}}/comments?offset={{.NextComments}}" hx-swap="outerHTML">
+            <span>Load more comments</span>
+          </div>
         {{end}}
       </div>
     </div>

@@ -20,7 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var pageSize = 50
+var issuePageSize = 50
+var maxUserComments = 20
 
 func render(w http.ResponseWriter, name string, data any) {
 	if !strings.HasSuffix(name, ".html") {
@@ -118,10 +119,10 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			page = 1
 		}
 		page = max(page, 1)
-		offset := (page - 1) * pageSize
+		offset := (page - 1) * issuePageSize
 
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, pageSize)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, issuePageSize)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
@@ -193,37 +194,26 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 func userHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userName := r.PathValue("name")
-		limit := 20
-		assignedIssues, err := service.db.GetIssueByAssignee(userName, limit+1, 0)
+		assignedIssues, err := service.db.GetIssueByAssignee(userName, 10)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByAssignee: %s", err)
 			assignedIssues = []model.Issue{}
 		}
-		assignedHasMore := len(assignedIssues) > limit
-		if assignedHasMore {
-			assignedIssues = assignedIssues[:limit]
-		}
-
-		reportedIssues, err := service.db.GetIssueByReporter(userName, limit+1, 0)
+		reportedIssues, err := service.db.GetIssueByReporter(userName, 10)
 		if err != nil {
 			log.Printf("[ERROR] GetIssueByReporter: %s", err)
 			reportedIssues = []model.Issue{}
 		}
-		reportedHasMore := len(reportedIssues) > limit
-		if reportedHasMore {
-			reportedIssues = reportedIssues[:limit]
-		}
-
-		comments, err := service.db.GetCommentsByUser(userName, limit+1, 0)
+		comments, err := service.db.GetCommentsByUser(userName, 0, maxUserComments+1)
 		if err != nil {
 			log.Printf("[ERROR] GetCommentsByUser: %s", err)
 			comments = []model.Comment{}
 		}
-		commentsHasMore := len(comments) > limit
-		if commentsHasMore {
-			comments = comments[:limit]
+		moreComments := false
+		if len(comments) > maxUserComments {
+			comments = comments[:maxUserComments]
+			moreComments = true
 		}
-
 		if len(assignedIssues) == 0 && len(reportedIssues) == 0 && len(comments) == 0 {
 			render(w, "pages/user_not_found", map[string]any{})
 			return
@@ -243,43 +233,12 @@ func userHandler(service *IssueService) http.HandlerFunc {
 			"UserName":        userName,
 			"UserAvatars":     slices.Collect(maps.Keys(avatarSet)),
 			"MultipleAvatars": len(avatarSet) > 1,
-			"AssignedIssues":  model.VisibleIssuesFromSlice(assignedIssues, assignedHasMore),
-			"ReportedIssues":  model.VisibleIssuesFromSlice(reportedIssues, reportedHasMore),
-			"Comments":        model.VisibleUserCommentsFromSlice(comments, commentsHasMore),
+			"AssignedIssues":  assignedIssues,
+			"ReportedIssues":  reportedIssues,
+			"Comments":        comments,
+			"MoreComments":    moreComments,
+			"NextComments":    maxUserComments,
 		})
-	}
-}
-
-func renderPartial(w http.ResponseWriter, partialName string, pageName string, data any) {
-	tmpl, err := template.New(filepath.Base(partialName)).Funcs(template.FuncMap{
-		"formatTime": formatTime,
-		"previewADF": func(adf string) string {
-			text := model.ExtractPlainTextFromADF(adf)
-			if len(text) > 200 {
-				return text[:200] + "..."
-			}
-			return text
-		},
-		"icon": icon,
-		"join": func(arr []string) string {
-			return strings.Join(arr, ", ")
-		},
-		"add": func(a int, b int) int {
-			return a + b
-		},
-		"urlPathEscape": url.PathEscape,
-	}).ParseFiles("templates/base.html", fmt.Sprintf("templates/%s", pageName), fmt.Sprintf("templates/%s", partialName))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	templateName := strings.TrimSuffix(filepath.Base(partialName), ".html")
-	err = tmpl.ExecuteTemplate(w, templateName, data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 
@@ -290,22 +249,22 @@ func apiUserCommentsHandler(service *IssueService) http.HandlerFunc {
 		if err != nil {
 			offset = 0
 		}
-		// The amount of comments to show per load more comments request
-		limit := 20
-
-		comments, err := service.db.GetCommentsByUser(userName, limit+1, offset)
+		comments, err := service.db.GetCommentsByUser(userName, offset, maxUserComments+1)
+		fmt.Println(offset, maxUserComments, len(comments), err)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		hasMore := len(comments) > limit
-		if hasMore {
-			comments = comments[:limit]
+		moreComments := false
+		if len(comments) > maxUserComments {
+			comments = comments[:maxUserComments]
+			moreComments = true
 		}
-		renderPartial(w, "partials/user_comments.html", "pages/user.html", map[string]any{
-			"Comments":   comments,
-			"HasMore":    hasMore,
-			"NextOffset": offset + len(comments),
+		render(w, "partials/user_comments.html", map[string]any{
+			"UserName":     userName,
+			"Comments":     comments,
+			"MoreComments": moreComments,
+			"NextComments": offset + maxUserComments,
 		})
 	}
 }

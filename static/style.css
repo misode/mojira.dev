@@ -759,18 +759,16 @@ tbody .issue-table-key {
 }
 
 .user-section-link {
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
   font-size: 12px;
-}
-
-.user-section-link a {
-  color: var(--gray-500);
+  font-weight: 600;
+  display: block;
+  margin: 0.25rem 0;
+  color: var(--gray-600);
   text-decoration: none;
 }
 
-.user-section-link a:hover {
-  color: var(--link);
+.user-section-link:hover {
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
