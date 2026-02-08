@@ -102,35 +102,22 @@ func (i *Issue) HasEnvironment() bool {
 	return i.Environment != "" && !IsEmptyADF(i.Environment)
 }
 
-func (i *Issue) ShortAffectedVersions() string {
-	if i.AffectedVersions == nil {
-		return ""
-	}
-	n := len(i.AffectedVersions)
-	if n <= 10 {
-		return strings.Join(i.AffectedVersions, ", ")
-	}
-	short := append(i.AffectedVersions[:5], "...")
-	short = append(short, i.AffectedVersions[n-5:]...)
-	return strings.Join(short, ", ")
-}
-
-type AffectedVersionsSplit struct {
+type VisibleVersions struct {
 	Top    []string
 	Middle []string
 	Bottom []string
 	Count  int
 }
 
-func (i *Issue) SplitAffectedVersions() AffectedVersionsSplit {
+func (i *Issue) VisibleAffectedVersions() VisibleVersions {
 	n := len(i.AffectedVersions)
 	if n <= 10 {
-		return AffectedVersionsSplit{
+		return VisibleVersions{
 			Top:   i.AffectedVersions,
 			Count: n,
 		}
 	}
-	return AffectedVersionsSplit{
+	return VisibleVersions{
 		Top:    i.AffectedVersions[:5],
 		Middle: i.AffectedVersions[5 : n-5],
 		Bottom: i.AffectedVersions[n-5:],
