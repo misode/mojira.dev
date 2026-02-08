@@ -115,6 +115,29 @@ func (i *Issue) ShortAffectedVersions() string {
 	return strings.Join(short, ", ")
 }
 
+type AffectedVersionsSplit struct {
+	Top    []string
+	Middle []string
+	Bottom []string
+	Count  int
+}
+
+func (i *Issue) SplitAffectedVersions() AffectedVersionsSplit {
+	n := len(i.AffectedVersions)
+	if n <= 10 {
+		return AffectedVersionsSplit{
+			Top:   i.AffectedVersions,
+			Count: n,
+		}
+	}
+	return AffectedVersionsSplit{
+		Top:    i.AffectedVersions[:5],
+		Middle: i.AffectedVersions[5 : n-5],
+		Bottom: i.AffectedVersions[n-5:],
+		Count:  n,
+	}
+}
+
 func (i *Issue) TotalVotes() int {
 	return i.LegacyVotes + i.Votes
 }

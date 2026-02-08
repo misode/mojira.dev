@@ -189,7 +189,18 @@
       {{end}}
       <p><label>Labels:</label> {{join .Issue.Labels}}</p>
       {{if .Issue.IsProject "MC" "MCPE"}}
-      <p><label>Affects Versions:</label> {{.Issue.ShortAffectedVersions}}</p>
+      <p><label>Affects Versions:</label>
+      {{with .Issue.SplitAffectedVersions}}
+        {{join .Top}}
+        {{if .Middle}}
+          <span class="expand-link" style="cursor:pointer;" data-expand="hidden-versions-{{$.Issue.Key}}">, ...</span>
+          <span style="display:none;" id="hidden-versions-{{$.Issue.Key}}">, {{join .Middle}}</span>
+        {{end}}
+        {{if .Bottom}}
+          , {{join .Bottom}}
+        {{end}}
+      {{end}}
+      </p>
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
       {{end}}
       <p class="sync-note" id="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
