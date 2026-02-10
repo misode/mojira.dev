@@ -1086,3 +1086,17 @@ tbody .issue-table-key {
   width: 64px;
   height: 64px;
 }
+
+.expand-inline-button {
+  padding: 0 0.5rem;
+  border: 1px solid var(--gray-300);
+  background-color: transparent;
+  color: var(--gray-600);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.expand-inline-button:hover {
+  background-color: var(--gray-100);
+}
