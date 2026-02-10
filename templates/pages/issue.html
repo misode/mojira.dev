@@ -191,18 +191,10 @@
       {{if .Issue.IsProject "MC" "MCPE"}}
       <p><label>Affects Versions:</label>
         {{with .Issue.VisibleAffectedVersions}}
-        {{join .Top}}
-        {{if .Middle}}
-        , <button class="expand-inline-button" data-expand="hidden-versions-{{$.Issue.Key}}">{{len .Middle}} more</button>
-        <span style="display:none;" id="hidden-versions-{{$.Issue.Key}}">, {{join .Middle}}</span>
-        {{end}}
-        {{if .Bottom}}
-        , {{join .Bottom}}
-        {{end}}
+        {{join .Top}}{{if .Middle}}, <button class="expand-inline-button" data-expand="hidden-versions-{{$.Issue.Key}}">{{len .Middle}} more</button><span style="display:none;" id="hidden-versions-{{$.Issue.Key}}">{{join .Middle}}</span>{{end}}{{if .Bottom}}, {{join .Bottom}}{{end}}
         {{end}}
       </p>
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
-
       {{end}}
       <p class="sync-note" id="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
         {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}
