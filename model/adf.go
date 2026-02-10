@@ -60,48 +60,11 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 				lang = p
 			}
 		}
-		lexer := lexers.Get(lang)
-		if lexer == nil {
-			lexer = lexers.Fallback
-		}
-
-		formatter := html.New(
-			html.PreventSurroundingPre(true),
-			html.TabWidth(4),
-		)
-
-		// Render light version
-		iteratorLight, err := lexer.Tokenise(nil, text)
-		if err != nil {
-			log.Printf("[WARNING] Error during code tokenizing: %s", err)
-			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
-		}
-		var bufLight bytes.Buffer
-		err = formatter.Format(&bufLight, styles.Get("vs"), iteratorLight)
-		if err != nil {
-			log.Printf("[WARNING] Error during code highlighting (light): %s", err)
-			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
-		}
-
-		// Render dark version
-		iteratorDark, err := lexer.Tokenise(nil, text)
-		if err != nil {
-			log.Printf("[WARNING] Error during code tokenizing: %s", err)
-			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
-		}
-		var bufDark bytes.Buffer
-		err = formatter.Format(&bufDark, styles.Get("nord"), iteratorDark)
-		if err != nil {
-			log.Printf("[WARNING] Error during code highlighting (dark): %s", err)
-			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
-		}
 
 		// Return both versions wrapped in theme-specific divs
-		return fmt.Sprintf(
-			"<div class='code-light'><pre><code>%s</code></pre></div><div class='code-dark'><pre><code>%s</code></pre></div>",
-			bufLight.String(),
-			bufDark.String(),
-		)
+		var lightCode = highlightCodeBlock(text, lang, "catppuccin-latte") // abap
+		var darkCode = highlightCodeBlock(text, lang, "catppuccin-mocha")  // onedark
+		return fmt.Sprintf("<div class='code-light'>%s</div><div class='code-dark'>%s</div>", lightCode, darkCode)
 	case "rule":
 		return "<hr>"
 	case "panel":
@@ -244,6 +207,33 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 	default:
 		return fmt.Sprintf("<span style='color:red;font-weight:bold;'>[%s]</span>", template.HTMLEscapeString(typeStr)) + renderADFChildren(node, issue)
 	}
+}
+
+func highlightCodeBlock(text string, lang string, style string) string {
+	lexer := lexers.Get(lang)
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	formatter := html.New(
+		html.PreventSurroundingPre(true),
+		html.TabWidth(4),
+	)
+
+	iterator, err := lexer.Tokenise(nil, text)
+	if err != nil {
+		log.Printf("[WARNING] Error during code tokenizing: %s", err)
+		return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+	}
+
+	var buffer bytes.Buffer
+	err = formatter.Format(&buffer, styles.Get(style), iterator)
+	if err != nil {
+		log.Printf("[WARNING] Error during code highlighting: %s", err)
+		return fmt.Sprintf("<pre><code>%s</code></pre>", text)
+	}
+
+	return fmt.Sprintf("<pre><code lang=\"%s\">%s</code></pre>", lang, buffer.String())
 }
 
 func renderADFChildren(node map[string]any, issue *Issue) string {
