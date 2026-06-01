@@ -33,6 +33,15 @@ body {
   color: var(--gray-950);
 }
 
+body.resizing {
+  cursor: col-resize !important;
+}
+
+body.resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
 .content {
   padding-top: 56px;
   min-height: 100vh;
@@ -306,6 +315,25 @@ footer a:hover {
   height: 2rem;
 }
 
+.issue-table th {
+  position: relative;
+}
+
+.resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  height: 100%;
+  z-index: 10;
+}
+
+.resizer:hover {
+  border-right: 2px solid var(--link);
+}
+
 .issue-table td > *, .issue-table th > * {
   padding: 0.25rem 0.5rem;
   height: 2rem;
@@ -363,7 +391,7 @@ tbody .issue-table-key {
 }
 
 .issue-table-summary {
-  width: 600px;
+  width: var(--col-summary-width, 600px);
 }
 
 .issue-table-status {
@@ -374,6 +402,9 @@ tbody .issue-table-key {
   width: 150px;
   text-decoration: none;
 }
+
+.col-reporter { width: var(--col-reporter-width, 150px); }
+.col-assignee { width: var(--col-assignee-width, 150px); }
 
 .issue-table-user:hover, .issue-table-user:focus {
   text-decoration: underline;

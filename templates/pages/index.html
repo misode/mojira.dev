@@ -79,14 +79,14 @@
     {{end}}
   </div>
   <div class="issue-table-container">
-    <table class="issue-table">
+    <table class="issue-table" id="resizable-table">
       <thead>
         <tr>
           <th><div class="issue-table-key">Key</div></th>
-          <th><div class="issue-table-summary">Summary</div></th>
+          <th data-col="summary"><div class="issue-table-summary">Summary</div><div class="resizer"></div></th>
           <th><div class="issue-table-status">Status</div></th>
-          <th><div class="issue-table-user">Reporter</div></th>
-          <th><div class="issue-table-user">Assignee</div></th>
+          <th data-col="reporter"><div class="issue-table-user col-reporter">Reporter</div><div class="resizer"></div></th>
+          <th data-col="assignee"><div class="issue-table-user col-assignee">Assignee</div><div class="resizer"></div></th>
           <th><div class="issue-table-time">Created</div></th>
         </tr>
       </thead>
@@ -100,25 +100,67 @@
                 {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
               </div>
             </div></td>
-            <td><a class="issue-table-user" href="/user/{{urlPathEscape .ReporterName}}">
+            <td><a class="issue-table-user col-reporter" href="/user/{{urlPathEscape .ReporterName}}">
               {{if .ReporterAvatar}}
                 <img class="avatar" src="{{.ReporterAvatar}}" alt="" width="24" height="24">
               {{end}}
               {{.ReporterName}}
             </a></td>
-            <td><a class="issue-table-user" {{if .AssigneeName}}href="/user/{{urlPathEscape .AssigneeName}}"{{end}}>
+            <td><a class="issue-table-user col-assignee" {{if .AssigneeName}}href="/user/{{urlPathEscape .AssigneeName}}"{{end}}>
               {{if .AssigneeAvatar}}
                 <img class="avatar" src="{{.AssigneeAvatar}}" alt="" width="24" height="24">
               {{end}}
               {{.AssigneeName}}
             </a></td>
-            <td><time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time></td>
+            <td><div class="issue-table-time"><time datetime="{{formatTime .CreatedDate}}">{{formatTime .CreatedDate}}</time></div></td>
           </tr>
         {{end}}
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+  (() => {
+    let th, startX, startWidth, initialWidth, colName, table;
+
+    const onMouseMove = (e) => {
+      if (!th) return;
+      const currentMove = startWidth + (e.pageX - startX);
+      const newWidth = Math.max(initialWidth, Math.min(initialWidth * 2, currentMove));
+      table.style.setProperty(`--col-${colName}-width`, `${newWidth}px`);
+    };
+
+    const onMouseUp = () => {
+      document.body.classList.remove('resizing');
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      th = null;
+    };
+
+    document.addEventListener('mousedown', (e) => {
+      if (!e.target.classList.contains('resizer')) return;
+      
+      th = e.target.parentElement;
+      table = document.getElementById('resizable-table');
+      colName = th.dataset.col;
+      startX = e.pageX;
+
+      const targetDiv = th.querySelector('div:first-child');
+      startWidth = targetDiv.offsetWidth;
+      
+      if (!th.dataset.initialWidth) {
+          th.dataset.initialWidth = startWidth;
+      }
+      initialWidth = parseInt(th.dataset.initialWidth);
+
+      document.body.classList.add('resizing');
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    });
+  })();
+</script>
 {{end}}
 
 {{template "base" .}}
