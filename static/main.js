@@ -18,7 +18,6 @@ function afterSwap() {
   })
 
   document.querySelectorAll('[data-attachment]').forEach((el) => {
-    if (!el.querySelector('img')) return
     el.onclick = (e) => {
       let success = showAttachment(el)
       if (success) {
@@ -82,6 +81,8 @@ window.addEventListener('hashchange', () => {
   onHashChange()
 })
 
+const attachmentElements = [...document.querySelectorAll("div.attachments > a.attachment")].filter(element => element.dataset["filetype"] !== "unknown");
+attachmentElements.map((element, idx) => element.dataset["attachmentIdx"] = idx)
 const overlay = document.getElementById('image-overlay')
 
 if (overlay) {
@@ -98,8 +99,12 @@ if (overlay) {
   const attachment = params.get('attachment')
 
   if (attachment) {
-    const el = document.querySelector(`[data-attachment="${attachment}"]`)
-    showAttachment(el)
+    const attachmentIdx = parseInt (attachment);
+    if (!isNaN(attachmentIdx) && attachmentIdx >= 0 && attachmentIdx < attachmentElements.length)
+    {
+      const element = attachmentElements[attachment]
+      showAttachment(element)
+    }
   }
 }
 
@@ -132,9 +137,6 @@ function closeOverlay() {
   url.searchParams.delete('attachment')
   window.history.replaceState({}, '', url)
 }
-
-const attachmentElements = [...document.querySelectorAll("div.attachments > a.attachment")].filter(element => element.dataset["filetype"] !== "unknown");
-attachmentElements.map((element, idx) => element.dataset["attachmentIdx"] = idx)
 
 function prevAttachment() {
   let nextId = (parseInt(overlay?.dataset["currentId"]) - 1)
