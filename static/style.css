@@ -1075,6 +1075,11 @@ tbody .issue-table-key {
   display: none;
 }
 
+#image-overlay-video {
+  max-width: 90vw;
+  max-height: 75vh;
+}
+
 .error-page {
   max-width: 600px;
   margin: 2rem auto;
