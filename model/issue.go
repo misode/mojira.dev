@@ -232,6 +232,16 @@ func (a *Attachment) GetUrl() string {
 	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
 }
 
+func (a *Attachment) GetFileType() string {
+	if a.IsImage() {
+		return "image"
+	}
+	if a.IsVideo() {
+		return "video"
+	}
+	return "unknown"
+}
+
 func (c *Comment) Anchor() string {
 	if c.LegacyId != "" {
 		return fmt.Sprintf("comment-%s", c.LegacyId)

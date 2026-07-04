@@ -85,17 +85,18 @@ window.addEventListener('hashchange', () => {
 const overlay = document.getElementById('image-overlay')
 
 if (overlay) {
-  document.querySelector('.image-overlay-arrow.left').onclick = prevImg
-  document.querySelector('.image-overlay-arrow.right').onclick = nextImg
+  document.querySelector('.image-overlay-arrow.left').onclick = prevAttachment
+  document.querySelector('.image-overlay-arrow.right').onclick = nextAttachment
   document.addEventListener('keydown', (e) => {
     if (overlay.hasAttribute('data-current-id')) {
       if (e.key === 'Escape') closeOverlay()
-      if (e.key === 'ArrowLeft') prevImg()
-      if (e.key === 'ArrowRight') nextImg()
+      if (e.key === 'ArrowLeft') prevAttachment()
+      if (e.key === 'ArrowRight') nextAttachment()
     }
   })
   const params = new URL(window.location).searchParams
   const attachment = params.get('attachment')
+
   if (attachment) {
     const el = document.querySelector(`[data-attachment="${attachment}"]`)
     showAttachment(el)
@@ -103,10 +104,21 @@ if (overlay) {
 }
 
 function showAttachment(el) {
-  if (!overlay || !el) return false
-  overlay.querySelector('img').src = el.querySelector('img').src
+  const attachmentType = el?.dataset["filetype"]
+  if (!overlay || !el || el.dataset["filetype"] === "unknown") return false
+  
+  const querySelectorElement = attachmentType === "image" ? "img" : "video"
+  const attachmentSrc = el.querySelector(querySelectorElement).src
+  const attachmentAlt = el.getAttribute('data-attachment-info')
+  
+  overlay.querySelector("img").src = querySelectorElement === "img" ? attachmentSrc : ""
+  overlay.querySelector("img").alt = querySelectorElement === "img" ? attachmentAlt : ""
+  overlay.querySelector("video").src = querySelectorElement === "video" ? attachmentSrc : ""
+  overlay.querySelector("video").alt = querySelectorElement === "video" ? attachmentAlt : ""
+  overlay.querySelector("video").controls = querySelectorElement === "video"
   overlay.querySelector('.image-overlay-info').textContent = el.getAttribute('data-attachment-info')
-  const id = el.getAttribute('data-attachment')
+
+  const id = el.dataset["attachmentIdx"]
   overlay.setAttribute('data-current-id', id)
   const url = new URL(window.location)
   url.searchParams.set('attachment', id)
@@ -121,14 +133,18 @@ function closeOverlay() {
   window.history.replaceState({}, '', url)
 }
 
-function prevImg() {
-  const current = overlay?.getAttribute('data-current-id')
-  const a = document.querySelector(`[data-attachment="${current}"]`)?.previousElementSibling
-  showAttachment(a)
+const attachmentElements = [...document.querySelectorAll("div.attachments > a.attachment")].filter(element => element.dataset["filetype"] !== "unknown");
+attachmentElements.map((element, idx) => element.dataset["attachmentIdx"] = idx)
+
+function prevAttachment() {
+  let nextId = (parseInt(overlay?.dataset["currentId"]) - 1)
+  if (nextId == -1) nextId += attachmentElements.length
+  const attachment = attachmentElements[nextId]
+  showAttachment(attachment)
 }
 
-function nextImg() {
-  const current = overlay?.getAttribute('data-current-id')
-  const a = document.querySelector(`[data-attachment="${current}"]`)?.nextElementSibling
-  showAttachment(a)
+function nextAttachment() {
+  const nextId = (parseInt(overlay?.dataset["currentId"]) + 1) % attachmentElements.length
+  const attachment = attachmentElements[nextId]
+  showAttachment(attachment)
 }

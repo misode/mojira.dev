@@ -91,7 +91,7 @@
         <h2>Attachments</h2>
         <div class="attachments">
           {{range .Issue.Attachments}}
-            <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
+            <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}" data-filetype="{{.GetFileType}}">
               {{if .IsImage}}
                 <img src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy" />
               {{else if .IsVideo}}
@@ -209,6 +209,7 @@
   <div class="image-overlay-content">
     <button class="image-overlay-arrow left" aria-label="Previous image">{{icon "chevron-left"}}</button>
     <img id="image-overlay-img" src="" alt="" />
+    <video id="image-overlay-video" src="" alt="" controls></video>
     <button class="image-overlay-arrow right" aria-label="Next image">{{icon "chevron-right"}}</button>
     <div class="image-overlay-info"></div>
   </div>
