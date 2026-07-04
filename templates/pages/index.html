@@ -59,6 +59,10 @@
     <option value="Comments" {{if eq .Query.sort "Comments"}}selected{{end}}>Sort by: Comments</option>
     <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
   </select>
+  <select name="orderDirection" hx-get="/" hx-include=".filters [name]" hx-swap="none">
+    <option value="DESC">Descending Order</option>
+    <option value="ASC" {{if eq .Query.orderDirection "ASC"}}selected{{end}}>Ascending Order</option>
+  </select>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   <div class="issue-controls">
