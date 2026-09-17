@@ -166,35 +166,43 @@
       {{if .Issue.ResolvedDate}}
       <p><label>Resolved:</label> <time datetime="{{formatTime .Issue.ResolvedDate}}">{{formatTime .Issue.ResolvedDate}}</time></p>
       {{end}}
-      {{if .Issue.IsProject "MC" "MCPE"}}
+      {{if .Issue.ADO}}
       <p><label>ADO:</label> <span data-copy="{{.Issue.ADO}}">{{.Issue.ADO}} {{icon "check"}}</span></p>
       {{end}}
       <p><label>Confirmation Status:</label> {{.Issue.ConfirmationStatus}}</p>
-      {{if .Issue.IsProject "MCPE"}}
+      {{if .Issue.Platform}}
       <p><label>Platform:</label> {{.Issue.Platform}}</p>
+      {{end}}
+      {{if .Issue.OSVersion}}
       <p><label>OS Version:</label> {{.Issue.OSVersion}}</p>
       {{end}}
-      {{if .Issue.IsProject "REALMS"}}
+      {{if .Issue.RealmsPlatform}}
       <p><label>Realms Platform:</label> {{.Issue.RealmsPlatform}}</p>
       {{end}}
-      {{if .Issue.IsProject "MC"}}
+      {{if .Issue.Area}}
       <p><label>Area:</label> {{.Issue.Area}}</p>
       {{end}}
-      {{if .Issue.IsProject "WEB"}}
+      {{if .Issue.HasComponents}}
       <p><label>Components:</label> {{join .Issue.Components}}</p>
       {{end}}
-      {{if .Issue.IsProject "MC"}}
+      {{if .Issue.MojangPriority}}
       <p><label>Mojang Priority:</label> {{.Issue.MojangPriority}}</p>
+      {{end}}
+      {{if .Issue.Category}}
       <p><label>Category:</label> {{join .Issue.Category}}</p>
       {{end}}
+      {{if .Issue.Labels}}
       <p><label>Labels:</label> {{join .Issue.Labels}}</p>
+      {{end}}
       {{if .Issue.IsProject "MC" "MCPE"}}
       <p><label>Affects Versions:</label>
         {{with .Issue.VisibleAffectedVersions}}
         {{join .Top}}{{if .Middle}}, <button class="expand-inline-button" data-expand="hidden-versions-{{$.Issue.Key}}">{{len .Middle}} more</button><span style="display:none;" id="hidden-versions-{{$.Issue.Key}}">{{join .Middle}}</span>{{end}}{{if .Bottom}}, {{join .Bottom}}{{end}}
         {{end}}
       </p>
+      {{if .Issue.FixVersions}}
       <p><label>Fix Versions:</label> {{join .Issue.FixVersions}}</p>
+      {{end}}
       {{end}}
       <p class="sync-note" id="sync-note" {{if and (not .Issue.IsUpToDate) (not .IsRefresh)}}hx-get="/api/issues/{{.Issue.Key}}/refresh" hx-trigger="load delay:1s" hx-swap="none"{{end}}>
         {{if .Issue.IsUpToDate}}{{icon "check"}}{{else}}{{icon "sync"}}{{end}}

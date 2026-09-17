@@ -102,6 +102,15 @@ func (i *Issue) HasEnvironment() bool {
 	return i.Environment != "" && !IsEmptyADF(i.Environment)
 }
 
+func (i *Issue) HasComponents() bool {
+	for _, c := range i.Components {
+		if c != "" {
+			return true
+		}
+	}
+	return false
+}
+
 type VisibleVersions struct {
 	Top    []string
 	Middle []string
