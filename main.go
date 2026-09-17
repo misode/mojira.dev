@@ -50,6 +50,7 @@ func (r *responseRecorder) WriteHeader(code int) {
 
 func main() {
 	migrationFile := flag.String("migrate", "", "Run a specific migration file")
+	migrateAll := flag.Bool("migrateall", false, "Run all migration files in order")
 	noSync := flag.Bool("nosync", false, "Disable background syncing")
 	flag.Parse()
 
@@ -63,7 +64,12 @@ func main() {
 	log.SetOutput(io.MultiWriter(os.Stdout, fileLogger, lokiLogger))
 
 	service := NewIssueService()
-	if *migrationFile != "" {
+	if *migrateAll {
+		if err := service.db.RunAllMigrations(); err != nil {
+			log.Fatal(err)
+		}
+		return
+	} else if *migrationFile != "" {
 		if err := service.db.RunMigration(*migrationFile); err != nil {
 			log.Fatal(err)
 		}

@@ -15,6 +15,22 @@ The Go server uses the public, servicedesk, and legacy APIs to mirror issues. Th
 
 <div align="center"><img width="600" src="https://raw.githubusercontent.com/misode/mojira.dev/main/images/mc-4.png" alt="Issue detail page"></div>
 
+## Development
+1. Download and install [PostgreSQL](https://www.postgresql.org/download/)
+2. Create a database with name `mojira`
+3. Install [air](https://github.com/air-verse/air)
+```sh
+go install github.com/air-verse/air@latest
+```
+4. Run all migrations
+```sh
+air -- -migrateall
+```
+5. Start the server
+```sh
+air -- -nosync
+```
+
 ## Sync queue management
 This is mostly internal documentation for myself, but it might be useful to you.
 
