@@ -50,19 +50,21 @@
     <option {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
     <option {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
   </select>
-  <select name="sort" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Sort by: Created</option>
-    <option value="Updated" {{if eq .Query.sort "Updated"}}selected{{end}}>Sort by: Updated</option>
-    <option value="Resolved" {{if eq .Query.sort "Resolved"}}selected{{end}}>Sort by: Resolved</option>
-    <option value="Priority" {{if eq .Query.sort "Priority"}}selected{{end}}>Sort by: Priority</option>
-    <option value="Votes" {{if eq .Query.sort "Votes"}}selected{{end}}>Sort by: Votes</option>
-    <option value="Comments" {{if eq .Query.sort "Comments"}}selected{{end}}>Sort by: Comments</option>
-    <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
-  </select>
-  <select name="orderDirection" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="DESC">Descending Order</option>
-    <option value="ASC" {{if eq .Query.orderDirection "ASC"}}selected{{end}}>Ascending Order</option>
-  </select>
+  <div class="filter-group">
+    <select name="sort" hx-get="/" hx-include=".filters [name]" hx-swap="none">
+      <option value="">Sort by: Created</option>
+      <option value="Updated" {{if eq .Query.sort "Updated"}}selected{{end}}>Sort by: Updated</option>
+      <option value="Resolved" {{if eq .Query.sort "Resolved"}}selected{{end}}>Sort by: Resolved</option>
+      <option value="Priority" {{if eq .Query.sort "Priority"}}selected{{end}}>Sort by: Priority</option>
+      <option value="Votes" {{if eq .Query.sort "Votes"}}selected{{end}}>Sort by: Votes</option>
+      <option value="Comments" {{if eq .Query.sort "Comments"}}selected{{end}}>Sort by: Comments</option>
+      <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
+    </select>
+    <select name="sort_dir" hx-get="/" hx-include=".filters [name]" hx-swap="none">
+      <option value="DESC">DESC</option>
+      <option value="ASC" {{if eq .Query.sort_dir "ASC"}}selected{{end}}>ASC</option>
+    </select>
+  </div>
 </div>
 <div class="issue-list" id="issue-list" hx-swap-oob="true">
   <div class="issue-controls">

@@ -216,6 +216,21 @@ footer a:hover {
   background-color: var(--gray-100);
 }
 
+.filter-group {
+  display: flex;
+}
+
+.filter-group > :not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.filter-group > :not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 2px solid var(--gray-100);
+}
+
 .issue-controls {
   padding: 0.25rem;
   font-weight: 600;
