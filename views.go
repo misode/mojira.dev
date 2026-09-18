@@ -114,6 +114,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		platform := query.Get("platform")
 		area := query.Get("area")
 		sort := query.Get("sort")
+		sort_dir := query.Get("sort_dir")
 		page, err := strconv.Atoi(query.Get("page"))
 		if err != nil {
 			page = 1
@@ -122,7 +123,7 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		offset := (page - 1) * issuePageSize
 
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, issuePageSize)
+		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, issuePageSize, sort_dir)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
 			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
