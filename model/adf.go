@@ -197,7 +197,7 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 								if att.IsImage() {
 									return fmt.Sprintf("<img class='media' src='%s' alt='%s' width='%.0f' height='%.0f'>", att.GetUrl(), template.HTMLEscapeString(alt), width, height)
 								} else if att.IsVideo() {
-									return fmt.Sprintf("<video class='media' src='%s' alt='%s' width='%.0f' height='%.0f' controls></video>", att.GetUrl(), template.HTMLEscapeString(alt), width, height)
+									return fmt.Sprintf("<video class='media' src='%s' alt='%s' preload='none' width='%.0f' height='%.0f' controls></video>", att.GetUrl(), template.HTMLEscapeString(alt), width, height)
 								}
 							}
 						}

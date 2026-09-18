@@ -18,8 +18,10 @@ function afterSwap() {
   })
 
   document.querySelectorAll('[data-attachment]').forEach((el) => {
-    if (!el.querySelector('img')) return
     el.onclick = (e) => {
+      if (e.ctrlKey || e.shiftKey) {
+        return // Don't overwrite opening attachments in new tab
+      }
       let success = showAttachment(el)
       if (success) {
         e.preventDefault()
@@ -27,7 +29,7 @@ function afterSwap() {
     }
   })
 
-  document.querySelectorAll('.image-overlay-backdrop').forEach((el) => {
+  document.querySelectorAll('.file-overlay-backdrop').forEach((el) => {
     el.onclick = closeOverlay
   })
 
@@ -82,16 +84,16 @@ window.addEventListener('hashchange', () => {
   onHashChange()
 })
 
-const overlay = document.getElementById('image-overlay')
+const overlay = document.getElementById('file-overlay')
 
 if (overlay) {
-  document.querySelector('.image-overlay-arrow.left').onclick = prevImg
-  document.querySelector('.image-overlay-arrow.right').onclick = nextImg
+  document.querySelector('.file-overlay-arrow.left').onclick = prevAttachment
+  document.querySelector('.file-overlay-arrow.right').onclick = nextAttachment
   document.addEventListener('keydown', (e) => {
     if (overlay.hasAttribute('data-current-id')) {
       if (e.key === 'Escape') closeOverlay()
-      if (e.key === 'ArrowLeft') prevImg()
-      if (e.key === 'ArrowRight') nextImg()
+      if (e.key === 'ArrowLeft') prevAttachment()
+      if (e.key === 'ArrowRight') nextAttachment()
     }
   })
   const params = new URL(window.location).searchParams
@@ -103,9 +105,26 @@ if (overlay) {
 }
 
 function showAttachment(el) {
-  if (!overlay || !el) return false
-  overlay.querySelector('img').src = el.querySelector('img').src
-  overlay.querySelector('.image-overlay-info').textContent = el.getAttribute('data-attachment-info')
+  if (!overlay || !el) {
+    return false
+  }
+  const fileType = el.getAttribute('data-attachment-type')
+  if (fileType === 'unknown') {
+    return false
+  }
+  overlay.querySelector('img').src = ''
+  overlay.querySelector('video').src = ''
+  if (fileType === 'image') {
+    overlay.querySelector('img').src = el.getAttribute('href')
+    overlay.querySelector('img').alt = el.getAttribute('data-attachment-info')
+  } else if (fileType === 'video') {
+    overlay.querySelector('video').src = el.getAttribute('href')
+    overlay.querySelector('video').alt = el.getAttribute('data-attachment-info')
+    overlay.querySelector('video').controls = true
+  } else {
+    return false
+  }
+  overlay.querySelector('.file-overlay-info').textContent = el.getAttribute('data-attachment-info')
   const id = el.getAttribute('data-attachment')
   overlay.setAttribute('data-current-id', id)
   const url = new URL(window.location)
@@ -115,20 +134,30 @@ function showAttachment(el) {
 }
 
 function closeOverlay() {
-  overlay?.removeAttribute('data-current-id')
+  if (overlay) {
+    overlay.querySelector('video').src = ''
+    overlay.querySelector('img').src = ''
+    overlay.removeAttribute('data-current-id')
+  }
   const url = new URL(window.location)
   url.searchParams.delete('attachment')
   window.history.replaceState({}, '', url)
 }
 
-function prevImg() {
-  const current = overlay?.getAttribute('data-current-id')
-  const a = document.querySelector(`[data-attachment="${current}"]`)?.previousElementSibling
-  showAttachment(a)
+function prevAttachment() {
+  const currentEl = document.querySelector(`[data-attachment="${overlay.getAttribute('data-current-id')}"]`)
+  let el = currentEl?.previousElementSibling
+  while (el && !el.matches(':not([data-attachment-type="unknown"])')) {
+    el = el.previousElementSibling
+  }
+  showAttachment(el)
 }
 
-function nextImg() {
-  const current = overlay?.getAttribute('data-current-id')
-  const a = document.querySelector(`[data-attachment="${current}"]`)?.nextElementSibling
-  showAttachment(a)
+function nextAttachment() {
+  const currentEl = document.querySelector(`[data-attachment="${overlay.getAttribute('data-current-id')}"]`)
+  let el = currentEl?.nextElementSibling
+  while (el && !el.matches(':not([data-attachment-type="unknown"])')) {
+    el = el.nextElementSibling
+  }
+  showAttachment(el)
 }

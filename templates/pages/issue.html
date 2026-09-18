@@ -91,15 +91,16 @@
         <h2>Attachments</h2>
         <div class="attachments">
           {{range .Issue.Attachments}}
-            <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}">
+            <a class="attachment" href="{{.GetUrl}}" target="_blank" data-attachment="{{.Id}}" data-attachment-info="{{.Filename}} - {{.AuthorName}}" data-attachment-type="{{.GetFileType}}">
               {{if .IsImage}}
                 <img src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy" />
               {{else if .IsVideo}}
-                <video src="{{.GetUrl}}" alt="{{.Filename}}" loading="lazy">
-                  <div class="attachment-nopreview">{{.Filename}}</div>
+                {{icon "video"}}
+                <video src="{{.GetUrl}}" alt="{{.Filename}}" preload="metadata" loading="lazy">
+                  <div class="attachment-filename">{{.Filename}}</div>
                 </video>
               {{else}}
-                <div class="attachment-nopreview">{{.Filename}}</div>
+                <div class="attachment-filename">{{.Filename}}</div>
               {{end}}
             </a>
           {{end}}
@@ -212,13 +213,14 @@
   </div>
 </div>
 
-<div id="image-overlay" class="image-overlay">
-  <div class="image-overlay-backdrop"></div>
-  <div class="image-overlay-content">
-    <button class="image-overlay-arrow left" aria-label="Previous image">{{icon "chevron-left"}}</button>
-    <img id="image-overlay-img" src="" alt="" />
-    <button class="image-overlay-arrow right" aria-label="Next image">{{icon "chevron-right"}}</button>
-    <div class="image-overlay-info"></div>
+<div id="file-overlay" class="file-overlay">
+  <div class="file-overlay-backdrop"></div>
+  <div class="file-overlay-content">
+    <button class="file-overlay-arrow left" aria-label="Previous image">{{icon "chevron-left"}}</button>
+    <img src="" alt="" />
+    <video src="" alt="" controls></video>
+    <button class="file-overlay-arrow right" aria-label="Next image">{{icon "chevron-right"}}</button>
+    <div class="file-overlay-info"></div>
   </div>
 </div>
 {{end}}
