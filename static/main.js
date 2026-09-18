@@ -19,6 +19,9 @@ function afterSwap() {
 
   document.querySelectorAll('[data-attachment]').forEach((el) => {
     el.onclick = (e) => {
+      if (e.ctrlKey || e.shiftKey) {
+        return // Don't overwrite opening attachments in new tab
+      }
       let success = showAttachment(el)
       if (success) {
         e.preventDefault()
@@ -26,7 +29,7 @@ function afterSwap() {
     }
   })
 
-  document.querySelectorAll('.image-overlay-backdrop').forEach((el) => {
+  document.querySelectorAll('.file-overlay-backdrop').forEach((el) => {
     el.onclick = closeOverlay
   })
 
@@ -81,13 +84,11 @@ window.addEventListener('hashchange', () => {
   onHashChange()
 })
 
-const attachmentElements = [...document.querySelectorAll("div.attachments > a.attachment")].filter(element => element.dataset["filetype"] !== "unknown");
-attachmentElements.map((element, idx) => element.dataset["attachmentIdx"] = idx)
-const overlay = document.getElementById('image-overlay')
+const overlay = document.getElementById('file-overlay')
 
 if (overlay) {
-  document.querySelector('.image-overlay-arrow.left').onclick = prevAttachment
-  document.querySelector('.image-overlay-arrow.right').onclick = nextAttachment
+  document.querySelector('.file-overlay-arrow.left').onclick = prevAttachment
+  document.querySelector('.file-overlay-arrow.right').onclick = nextAttachment
   document.addEventListener('keydown', (e) => {
     if (overlay.hasAttribute('data-current-id')) {
       if (e.key === 'Escape') closeOverlay()
@@ -97,33 +98,34 @@ if (overlay) {
   })
   const params = new URL(window.location).searchParams
   const attachment = params.get('attachment')
-
   if (attachment) {
-    const attachmentIdx = parseInt (attachment);
-    if (!isNaN(attachmentIdx) && attachmentIdx >= 0 && attachmentIdx < attachmentElements.length)
-    {
-      const element = attachmentElements[attachment]
-      showAttachment(element)
-    }
+    const el = document.querySelector(`[data-attachment="${attachment}"]`)
+    showAttachment(el)
   }
 }
 
 function showAttachment(el) {
-  const attachmentType = el?.dataset["filetype"]
-  if (!overlay || !el || el.dataset["filetype"] === "unknown") return false
-  
-  const querySelectorElement = attachmentType === "image" ? "img" : "video"
-  const attachmentSrc = el.querySelector(querySelectorElement).src
-  const attachmentAlt = el.getAttribute('data-attachment-info')
-  
-  overlay.querySelector("img").src = querySelectorElement === "img" ? attachmentSrc : ""
-  overlay.querySelector("img").alt = querySelectorElement === "img" ? attachmentAlt : ""
-  overlay.querySelector("video").src = querySelectorElement === "video" ? attachmentSrc : ""
-  overlay.querySelector("video").alt = querySelectorElement === "video" ? attachmentAlt : ""
-  overlay.querySelector("video").controls = querySelectorElement === "video"
-  overlay.querySelector('.image-overlay-info').textContent = el.getAttribute('data-attachment-info')
-
-  const id = el.dataset["attachmentIdx"]
+  if (!overlay || !el) {
+    return false
+  }
+  const fileType = el.getAttribute('data-attachment-type')
+  if (fileType === 'unknown') {
+    return false
+  }
+  overlay.querySelector('img').src = ''
+  overlay.querySelector('video').src = ''
+  if (fileType === 'image') {
+    overlay.querySelector('img').src = el.getAttribute('href')
+    overlay.querySelector('img').alt = el.getAttribute('data-attachment-info')
+  } else if (fileType === 'video') {
+    overlay.querySelector('video').src = el.getAttribute('href')
+    overlay.querySelector('video').alt = el.getAttribute('data-attachment-info')
+    overlay.querySelector('video').controls = true
+  } else {
+    return false
+  }
+  overlay.querySelector('.file-overlay-info').textContent = el.getAttribute('data-attachment-info')
+  const id = el.getAttribute('data-attachment')
   overlay.setAttribute('data-current-id', id)
   const url = new URL(window.location)
   url.searchParams.set('attachment', id)
@@ -132,21 +134,30 @@ function showAttachment(el) {
 }
 
 function closeOverlay() {
-  overlay?.removeAttribute('data-current-id')
+  if (overlay) {
+    overlay.querySelector('video').src = ''
+    overlay.querySelector('img').src = ''
+    overlay.removeAttribute('data-current-id')
+  }
   const url = new URL(window.location)
   url.searchParams.delete('attachment')
   window.history.replaceState({}, '', url)
 }
 
 function prevAttachment() {
-  let nextId = (parseInt(overlay?.dataset["currentId"]) - 1)
-  if (nextId == -1) nextId += attachmentElements.length
-  const attachment = attachmentElements[nextId]
-  showAttachment(attachment)
+  const currentEl = document.querySelector(`[data-attachment="${overlay.getAttribute('data-current-id')}"]`)
+  let el = currentEl?.previousElementSibling
+  while (el && !el.matches(':not([data-attachment-type="unknown"])')) {
+    el = el.previousElementSibling
+  }
+  showAttachment(el)
 }
 
 function nextAttachment() {
-  const nextId = (parseInt(overlay?.dataset["currentId"]) + 1) % attachmentElements.length
-  const attachment = attachmentElements[nextId]
-  showAttachment(attachment)
+  const currentEl = document.querySelector(`[data-attachment="${overlay.getAttribute('data-current-id')}"]`)
+  let el = currentEl?.nextElementSibling
+  while (el && !el.matches(':not([data-attachment-type="unknown"])')) {
+    el = el.nextElementSibling
+  }
+  showAttachment(el)
 }

@@ -624,6 +624,7 @@ tbody .issue-table-key {
 }
 
 .attachment {
+  position: relative;
   color: var(--gray-950);
   background-color: var(--gray-200);
   border-radius: 0.25rem;
@@ -641,7 +642,19 @@ tbody .issue-table-key {
   object-fit: contain;
 }
 
-.attachment-nopreview {
+.attachment svg {
+  position: absolute;
+  display: block;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  fill: var(--gray-400);
+  opacity: 0.7;
+}
+
+.attachment-filename {
   width: 100%;
   padding: 0.5rem;
   font-size: 14px;
@@ -999,7 +1012,7 @@ tbody .issue-table-key {
   display: inline;
 }
 
-.image-overlay {
+.file-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1010,11 +1023,11 @@ tbody .issue-table-key {
   place-items: center;
 }
 
-.image-overlay:not([data-current-id]) {
+.file-overlay:not([data-current-id]) {
   display: none;
 }
 
-.image-overlay-backdrop {
+.file-overlay-backdrop {
   position: absolute;
   top: 0;
   left: 0;
@@ -1023,7 +1036,8 @@ tbody .issue-table-key {
   background: var(--backdrop);
   z-index: 1;
 }
-.image-overlay-content {
+
+.file-overlay-content {
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -1033,10 +1047,12 @@ tbody .issue-table-key {
   color: var(--gray-200);
   pointer-events: none;
 }
-.image-overlay-content > * {
+
+.file-overlay-content > * {
   pointer-events: all;
 }
-.image-overlay-content img {
+
+.file-overlay-content img {
   min-width: 160px;
   min-height: 90px;
   border-radius: 0.25rem;
@@ -1044,7 +1060,8 @@ tbody .issue-table-key {
   background: var(--backdrop-bg);
   object-fit: contain;
 }
-.image-overlay-arrow {
+
+.file-overlay-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -1055,27 +1072,31 @@ tbody .issue-table-key {
   z-index: 3;
   border-radius: 0.25rem;
 }
-.image-overlay-arrow.left {
+
+.file-overlay-arrow.left {
   left: 0;
 }
-.image-overlay-arrow.right {
+
+.file-overlay-arrow.right {
   right: 0;
 }
-.image-overlay-arrow:hover {
+
+.file-overlay-arrow:hover {
   background: var(--backdrop);
 }
-.image-overlay-info {
+
+.file-overlay-info {
   margin-top: 0.5rem;
   background: var(--backdrop-bg);
   padding: 0.25rem 1rem;
   border-radius: 0.25rem;
 }
 
-#image-overlay-img[src=""], #image-overlay-video[src=""] {
+.file-overlay img[src=""], .file-overlay video[src=""] {
   display: none;
 }
 
-#image-overlay-video {
+.file-overlay video {
   max-width: 90vw;
   max-height: 75vh;
 }
