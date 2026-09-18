@@ -61,8 +61,8 @@
       <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
     </select>
     <select name="sort_dir" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-      <option value="DESC">DESC</option>
-      <option value="ASC" {{if eq .Query.sort_dir "ASC"}}selected{{end}}>ASC</option>
+      <option value="DESC">Descending</option>
+      <option value="ASC" {{if eq .Query.sort_dir "ASC"}}selected{{end}}>Ascending</option>
     </select>
   </div>
 </div>
