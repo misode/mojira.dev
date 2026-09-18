@@ -102,6 +102,15 @@ func (i *Issue) HasEnvironment() bool {
 	return i.Environment != "" && !IsEmptyADF(i.Environment)
 }
 
+func (i *Issue) HasComponents() bool {
+	for _, c := range i.Components {
+		if c != "" {
+			return true
+		}
+	}
+	return false
+}
+
 type VisibleVersions struct {
 	Top    []string
 	Middle []string
@@ -230,6 +239,16 @@ func (a *Attachment) IsVideo() bool {
 
 func (a *Attachment) GetUrl() string {
 	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
+}
+
+func (a *Attachment) GetFileType() string {
+	if a.IsImage() {
+		return "image"
+	}
+	if a.IsVideo() {
+		return "video"
+	}
+	return "unknown"
 }
 
 func (c *Comment) Anchor() string {

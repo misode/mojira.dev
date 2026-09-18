@@ -8,6 +8,8 @@ import (
 	"math"
 	"mojira/model"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -29,6 +31,27 @@ func NewDBClient() (*DBClient, error) {
 		return nil, err
 	}
 	return &DBClient{db: db}, nil
+}
+
+func (c *DBClient) RunAllMigrations() error {
+	entries, err := os.ReadDir("migrations")
+	if err != nil {
+		return err
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
+
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".sql") {
+			continue
+		}
+		log.Printf("Running migration: %s", e.Name())
+		if err := c.RunMigration(filepath.Join("migrations", e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *DBClient) RunMigration(filepath string) error {
