@@ -88,6 +88,11 @@ components:
       in: query
       schema:
         type: string
+    Summary:
+      name: summary
+      in: query
+      schema:
+        type: string
     Project:
       name: project
       in: query

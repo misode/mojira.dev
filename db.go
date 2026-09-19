@@ -144,6 +144,7 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 
 type IssueFilter struct {
 	search          string
+	summary         string
 	project         string
 	status          string
 	confirmation    string
@@ -165,6 +166,7 @@ type IssueFilter struct {
 func ParseIssueFilter(query url.Values) *IssueFilter {
 	return &IssueFilter{
 		search:          query.Get("search"),
+		summary:         query.Get("summary"),
 		project:         query.Get("project"),
 		status:          query.Get("status"),
 		confirmation:    query.Get("confirmation"),
@@ -211,7 +213,7 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 	case "duplicates":
 		sortStr = `duplicate_count ` + sortDirStr + `, created_date DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, updated_date, resolved_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $16 LIMIT $17`, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area, offset, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, updated_date, resolved_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($16 = '' OR to_tsvector('english', summary) @@ websearch_to_tsquery('english', $16)) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $17 LIMIT $18`, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area, filter.summary, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -231,14 +233,14 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 	}
 
 	var count int
-	if filter.search == "" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" {
+	if filter.search == "" && filter.summary == "" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" {
 		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, filter.project, filter.status, filter.confirmation, filter.resolution)
 		err = countRow.Scan(&count)
 		if err != nil {
 			return nil, 0, err
 		}
 	} else {
-		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area)
+		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($16 = '' OR to_tsvector('english', summary) @@ websearch_to_tsquery('english', $16)) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area, filter.summary)
 		err = countRow.Scan(&count)
 		if err != nil {
 			return nil, 0, err
