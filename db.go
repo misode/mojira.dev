@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"mojira/model"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -92,6 +93,10 @@ func (c *DBClient) GetAllIssues(limit int) ([]model.Issue, error) {
 		}
 		issues = append(issues, issue)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 	return issues, nil
 }
 
@@ -130,37 +135,83 @@ func (c *DBClient) SearchIssues(text string, limit int) ([]model.Issue, error) {
 		}
 		issues = append(issues, issue)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 	return issues, nil
 }
 
-func (c *DBClient) FilterIssues(search string, project string, status string, confirmation string, resolution string, priority string, reporter string, assignee string, affected_version string, fix_version string, category string, label string, component string, platform string, area string, sort string, offset int, limit int, sort_dir string) ([]model.Issue, int, error) {
+type IssueFilter struct {
+	search          string
+	project         string
+	status          string
+	confirmation    string
+	resolution      string
+	priority        string
+	reporter        string
+	assignee        string
+	affectedVersion string
+	fixVersion      string
+	category        string
+	label           string
+	component       string
+	platform        string
+	area            string
+	sort            string
+	sortDir         string
+}
+
+func ParseIssueFilter(query url.Values) *IssueFilter {
+	return &IssueFilter{
+		search:          query.Get("search"),
+		project:         query.Get("project"),
+		status:          query.Get("status"),
+		confirmation:    query.Get("confirmation"),
+		resolution:      query.Get("resolution"),
+		priority:        query.Get("priority"),
+		reporter:        query.Get("reporter"),
+		assignee:        query.Get("assignee"),
+		affectedVersion: query.Get("affected_version"),
+		fixVersion:      query.Get("fix_version"),
+		category:        query.Get("category"),
+		label:           query.Get("label"),
+		component:       query.Get("component"),
+		platform:        query.Get("platform"),
+		area:            query.Get("area"),
+		sort:            query.Get("sort"),
+		sortDir:         query.Get("sort_dir"),
+	}
+}
+
+func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]model.Issue, int, error) {
 	// Disallow queries starting with "-" for performance reasons
-	if strings.HasPrefix(strings.TrimSpace(search), "-") {
+	if strings.HasPrefix(strings.TrimSpace(filter.search), "-") {
 		return []model.Issue{}, 0, nil
 	}
 	filterStr := ``
 	sortDirStr := `DESC`
-	if sort_dir == "ASC" {
+	if strings.ToLower(filter.sortDir) == "asc" {
 		sortDirStr = "ASC"
 	}
 	sortStr := `created_date ` + sortDirStr
-	switch sort {
-	case "Updated":
+	switch strings.ToLower(filter.sort) {
+	case "updated":
 		sortStr = `updated_date ` + sortDirStr
 		filterStr += ` AND (updated_date IS NOT NULL)`
-	case "Resolved":
+	case "resolved":
 		sortStr = `resolved_date ` + sortDirStr
 		filterStr += ` AND (resolved_date IS NOT NULL)`
-	case "Priority":
+	case "priority":
 		sortStr = `mojang_priority_rank ` + sortDirStr + `, created_date DESC`
-	case "Votes":
+	case "votes":
 		sortStr = `total_votes ` + sortDirStr + `, created_date DESC`
-	case "Comments":
+	case "comments":
 		sortStr = `comment_count ` + sortDirStr + `, created_date DESC`
-	case "Duplicates":
+	case "duplicates":
 		sortStr = `duplicate_count ` + sortDirStr + `, created_date DESC`
 	}
-	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $16 LIMIT $17`, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, offset, limit)
+	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, assignee_avatar, assignee_name, created_date, updated_date, resolved_date, total_votes FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr+` ORDER BY `+sortStr+` OFFSET $16 LIMIT $17`, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -169,22 +220,25 @@ func (c *DBClient) FilterIssues(search string, project string, status string, co
 	var issues []model.Issue
 	for rows.Next() {
 		var issue model.Issue
-		var ignoredTotalVotes int
-		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate, &ignoredTotalVotes); err != nil {
+		if err := rows.Scan(&issue.Key, &issue.Summary, &issue.Status, &issue.Resolution, &issue.ConfirmationStatus, &issue.ReporterAvatar, &issue.ReporterName, &issue.AssigneeAvatar, &issue.AssigneeName, &issue.CreatedDate, &issue.UpdatedDate, &issue.ResolvedDate, &issue.Votes); err != nil {
 			return nil, 0, err
 		}
 		issues = append(issues, issue)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, 0, err
+	}
 
 	var count int
-	if search == "" && priority == "" && reporter == "" && assignee == "" && affected_version == "" && fix_version == "" && category == "" && label == "" && component == "" && platform == "" && area == "" {
-		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, project, status, confirmation, resolution)
+	if filter.search == "" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" {
+		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, filter.project, filter.status, filter.confirmation, filter.resolution)
 		err = countRow.Scan(&count)
 		if err != nil {
 			return nil, 0, err
 		}
 	} else {
-		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area)
+		countRow := c.db.QueryRow(`SELECT COUNT(*) FROM issue WHERE state = 'present' AND ($2 = '' OR project = $2) AND ($3 = '' OR status = $3) AND ($4 = '' OR confirmation_status = $4) AND ($5 = '' OR resolution = $5 OR (resolution = '' AND $5 = 'Unresolved')) AND ($6 = '' OR mojang_priority = $6) AND ($7 = '' OR LOWER(reporter_name) = LOWER($7)) AND ($8 = '' OR LOWER(assignee_name) = LOWER($8)) AND ($9 = '' OR $9=ANY(affected_versions)) AND ($10 = '' OR $10=ANY(fix_versions)) AND ($11 = '' OR $11=ANY(category)) AND ($12 = '' OR $12=ANY(labels)) AND ($13 = '' OR $13=ANY(components)) AND ($14 = '' OR platform = $14) AND ($15 = '' OR area = $15) AND ($1 = '' OR to_tsvector('english', text) @@ websearch_to_tsquery('english', $1))`+filterStr, filter.search, filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.reporter, filter.assignee, filter.affectedVersion, filter.fixVersion, filter.category, filter.label, filter.component, filter.platform, filter.area)
 		err = countRow.Scan(&count)
 		if err != nil {
 			return nil, 0, err
@@ -207,6 +261,10 @@ func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue
 		}
 		issues = append(issues, issue)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 	return issues, nil
 }
 
@@ -223,6 +281,10 @@ func (c *DBClient) GetIssueByAssignee(assignee string, limit int) ([]model.Issue
 			return nil, err
 		}
 		issues = append(issues, issue)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 	return issues, nil
 }
@@ -321,6 +383,10 @@ func (c *DBClient) GetCommentsByUser(name string, offset int, limit int) ([]mode
 		}
 		cmt.Issue = &model.Issue{Key: issueKey}
 		comments = append(comments, cmt)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 	return comments, nil
 }
@@ -445,6 +511,10 @@ func (c *DBClient) QueueIssueKeys(keys []string, priority int, reason string) ([
 		}
 		result = append(result, key)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
@@ -466,6 +536,10 @@ func (c *DBClient) PeekQueuedIssues(ctx context.Context, limit int) ([]string, e
 			return nil, err
 		}
 		keys = append(keys, key)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 	return keys, nil
 }
@@ -490,6 +564,10 @@ func (c *DBClient) PeekFutureVersionIssues(ctx context.Context, limit int) ([]st
 			return nil, err
 		}
 		keys = append(keys, key)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 	return keys, nil
 }
@@ -597,6 +675,10 @@ func (c *DBClient) GetQueue(ctx context.Context) ([]QueueRow, int, error) {
 			return nil, 0, err
 		}
 		queue = append(queue, q)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, 0, err
 	}
 	count, err := c.GetQueueSize(ctx)
 	if err != nil {

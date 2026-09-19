@@ -1,0 +1,296 @@
+openapi: 3.1.0
+info:
+  title: mojira.dev API
+  version: 1.0.0
+servers:
+  - url: https://mojira.dev/api
+
+paths:
+  /v1/issues:
+    get:
+      summary: List issues
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Project'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Confirmation'
+        - $ref: '#/components/parameters/Resolution'
+        - $ref: '#/components/parameters/Priority'
+        - $ref: '#/components/parameters/Reporter'
+        - $ref: '#/components/parameters/Assignee'
+        - $ref: '#/components/parameters/AffectedVersion'
+        - $ref: '#/components/parameters/FixVersion'
+        - $ref: '#/components/parameters/Category'
+        - $ref: '#/components/parameters/Label'
+        - $ref: '#/components/parameters/Component'
+        - $ref: '#/components/parameters/Platform'
+        - $ref: '#/components/parameters/Area'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/SortDir'
+      responses:
+        '200':
+          description: A page of issues and the total count of matching issues.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueList'
+        '500':
+          description: Internal server error.
+
+  /v1/issues/{key}:
+    get:
+      summary: Get a single issue by key
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          example: MC-1
+      responses:
+        '200':
+          description: The requested issue.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueDetail'
+        '404':
+          description: No issue exists with the given key (or it was removed).
+          content:
+            application/json:
+              schema:
+                type: string
+              example: Issue not found
+        '500':
+          description: Internal server error.
+
+components:
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+    Project:
+      name: project
+      in: query
+      schema:
+        type: string
+    Status:
+      name: status
+      in: query
+      schema:
+        type: string
+    Confirmation:
+      name: confirmation
+      in: query
+      schema:
+        type: string
+    Resolution:
+      name: resolution
+      in: query
+      schema:
+        type: string
+    Priority:
+      name: priority
+      in: query
+      schema:
+        type: string
+    Reporter:
+      name: reporter
+      in: query
+      schema:
+        type: string
+    Assignee:
+      name: assignee
+      in: query
+      schema:
+        type: string
+    AffectedVersion:
+      name: affected_version
+      in: query
+      schema:
+        type: string
+    FixVersion:
+      name: fix_version
+      in: query
+      schema:
+        type: string
+    Category:
+      name: category
+      in: query
+      schema:
+        type: string
+    Label:
+      name: label
+      in: query
+      schema:
+        type: string
+    Component:
+      name: component
+      in: query
+      schema:
+        type: string
+    Platform:
+      name: platform
+      in: query
+      schema:
+        type: string
+    Area:
+      name: area
+      in: query
+      schema:
+        type: string
+    Sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+    SortDir:
+      name: sort_dir
+      in: query
+      schema:
+        type: string
+        enum: [ASC, DESC]
+        default: DESC
+
+  schemas:
+    IssueList:
+      type: object
+      required: [total_count, issues]
+      properties:
+        total_count:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueSummary'
+
+    IssueSummary:
+      type: object
+      required: [key, summary, confirmation_status, resolution, votes]
+      properties:
+        key:
+          type: string
+        summary:
+          type: string
+        status:
+          type: [string, "null"]
+        resolution:
+          type: string
+        confirmation_status:
+          type: string
+        reporter_name:
+          type: [string, "null"]
+        reporter_avatar:
+          type: [string, "null"]
+          format: url
+        assignee_name:
+          type: [string, "null"]
+        assignee_avatar:
+          type: [string, "null"]
+          format: url
+        created_date:
+          type: [string, "null"]
+          format: date-time
+        updated_date:
+          type: [string, "null"]
+          format: date-time
+        resolved_date:
+          type: [string, "null"]
+          format: date-time
+        votes:
+          type: integer
+          minimum: 0
+
+    IssueDetail:
+      type: object
+      required: [key, summary, labels, confirmation_status, resolution, affected_versions, fix_versions, category, components, votes]
+      properties:
+        key:
+          type: string
+        summary:
+          type: string
+        reporter_name:
+          type: [string, "null"]
+        reporter_avatar:
+          type: [string, "null"]
+          format: url
+        assignee_name:
+          type: [string, "null"]
+        assignee_avatar:
+          type: [string, "null"]
+          format: url
+        description:
+          type: [string, "null"]
+          format: json
+        environment:
+          type: [string, "null"]
+          format: json
+        labels:
+          type: array
+          items:
+            type: string
+        created_date:
+          type: [string, "null"]
+          format: date-time
+        updated_date:
+          type: [string, "null"]
+          format: date-time
+        resolved_date:
+          type: [string, "null"]
+          format: date-time
+        status:
+          type: [string, "null"]
+        confirmation_status:
+          type: string
+        resolution:
+          type: string
+        affected_versions:
+          type: array
+          items:
+            type: string
+        fix_versions:
+          type: array
+          items:
+            type: string
+        category:
+          type: array
+          items:
+            type: string
+        mojang_priority:
+          type: [string, "null"]
+        area:
+          type: [string, "null"]
+        components:
+          type: array
+          items:
+            type: string
+        platform:
+          type: [string, "null"]
+        os_version:
+          type: [string, "null"]
+        realms_platform:
+          type: [string, "null"]
+        ado:
+          type: [string, "null"]
+        votes:
+          type: integer
+          minimum: 0

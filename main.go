@@ -28,8 +28,11 @@ var httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 func InstrumentMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		rr := &responseRecorder{ResponseWriter: w, statusCode: 200}
+		rr := &responseRecorder{ResponseWriter: w, statusCode: 0}
 		next.ServeHTTP(rr, r)
+		if rr.statusCode == 0 {
+			rr.statusCode = http.StatusOK
+		}
 		duration := time.Since(start).Seconds()
 		routePattern := chi.RouteContext(r.Context()).RoutePattern()
 		httpDuration.WithLabelValues(routePattern, r.Method, http.StatusText(rr.statusCode)).Observe(duration)
@@ -106,6 +109,7 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(cors.Handler(cors.Options{}))
 
+			r.Get("/api/v1/issues", apiV1Issues(service))
 			r.Get("/api/v1/issues/{key}", apiV1Issue(service))
 		})
 	})

@@ -98,23 +98,7 @@ func issueRedirectHandler(w http.ResponseWriter, r *http.Request) {
 func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
-		search := query.Get("search")
-		project := query.Get("project")
-		status := query.Get("status")
-		confirmation := query.Get("confirmation")
-		resolution := query.Get("resolution")
-		priority := query.Get("priority")
-		reporter := query.Get("reporter")
-		assignee := query.Get("assignee")
-		affected_version := query.Get("affected_version")
-		fix_version := query.Get("fix_version")
-		category := query.Get("category")
-		label := query.Get("label")
-		component := query.Get("component")
-		platform := query.Get("platform")
-		area := query.Get("area")
-		sort := query.Get("sort")
-		sort_dir := query.Get("sort_dir")
+		filter := ParseIssueFilter(query)
 		page, err := strconv.Atoi(query.Get("page"))
 		if err != nil {
 			page = 1
@@ -123,10 +107,10 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 		offset := (page - 1) * issuePageSize
 
 		t0 := time.Now()
-		issues, count, err := service.db.FilterIssues(search, project, status, confirmation, resolution, priority, reporter, assignee, affected_version, fix_version, category, label, component, platform, area, sort, offset, issuePageSize, sort_dir)
+		issues, count, err := service.db.FilterIssues(filter, offset, issuePageSize)
 		t1 := time.Now()
 		if t1.Sub(t0) > time.Duration(4)*time.Second {
-			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), project, status, confirmation, resolution, priority, sort, search)
+			log.Printf("[WARNING] Slow filter! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.sort, filter.search)
 		}
 		if err != nil {
 			log.Printf("[ERROR] FilterIssues: %s", err)
@@ -337,6 +321,105 @@ func apiRefreshHandler(service *IssueService) http.HandlerFunc {
 	}
 }
 
+func apiField(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+type V1IssueSummary struct {
+	Key                string     `json:"key"`
+	Summary            string     `json:"summary"`
+	Status             *string    `json:"status"`
+	Resolution         string     `json:"resolution"`
+	ConfirmationStatus string     `json:"confirmation_status"`
+	ReporterName       *string    `json:"reporter_name"`
+	ReporterAvatar     *string    `json:"reporter_avatar"`
+	AssigneeName       *string    `json:"assignee_name"`
+	AssigneeAvatar     *string    `json:"assignee_avatar"`
+	CreatedDate        *time.Time `json:"created_date"`
+	UpdatedDate        *time.Time `json:"updated_date"`
+	ResolvedDate       *time.Time `json:"resolved_date"`
+	Votes              int        `json:"votes"`
+}
+
+type V1Issues struct {
+	TotalCount int              `json:"total_count"`
+	Issues     []V1IssueSummary `json:"issues"`
+}
+
+func newV1Issues(issues *[]model.Issue, totalCount int) V1Issues {
+	results := make([]V1IssueSummary, 0, len(*issues))
+	for i := range *issues {
+		issue := &(*issues)[i]
+		confirmationStatus := "Unconfirmed"
+		if issue.ConfirmationStatus != "" {
+			confirmationStatus = issue.ConfirmationStatus
+		}
+		resolution := "Unresolved"
+		if issue.Resolution != "" {
+			resolution = issue.Resolution
+		}
+		results = append(results, V1IssueSummary{
+			Key:                issue.Key,
+			Summary:            issue.Summary,
+			Status:             apiField(issue.Status),
+			Resolution:         resolution,
+			ConfirmationStatus: confirmationStatus,
+			ReporterName:       apiField(issue.ReporterName),
+			ReporterAvatar:     apiField(issue.ReporterAvatar),
+			AssigneeName:       apiField(issue.AssigneeName),
+			AssigneeAvatar:     apiField(issue.AssigneeAvatar),
+			CreatedDate:        issue.CreatedDate,
+			UpdatedDate:        issue.UpdatedDate,
+			ResolvedDate:       issue.ResolvedDate,
+			Votes:              issue.Votes + issue.LegacyVotes,
+		})
+	}
+	return V1Issues{
+		TotalCount: totalCount,
+		Issues:     results,
+	}
+}
+
+func apiV1Issues(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		filter := ParseIssueFilter(query)
+		limit, err := strconv.Atoi(query.Get("limit"))
+		if err != nil {
+			limit = 10
+		}
+		limit = min(max(limit, 1), 100)
+		page, err := strconv.Atoi(query.Get("page"))
+		if err != nil {
+			page = 1
+		}
+		page = max(page, 1)
+		offset := (page - 1) * limit
+		t0 := time.Now()
+		issues, count, err := service.db.FilterIssues(filter, offset, limit)
+		t1 := time.Now()
+		if t1.Sub(t0) > time.Duration(4)*time.Second {
+			log.Printf("[WARNING] Slow filter (API)! %s: project=%s status=%s confirmation=%s resolution=%s priority=%s sort=%s search=%s", t1.Sub(t0), filter.project, filter.status, filter.confirmation, filter.resolution, filter.priority, filter.sort, filter.search)
+		}
+		if err != nil {
+			log.Printf("[ERROR] API /v1/issues: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		result := newV1Issues(&issues, count)
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			log.Printf("[ERROR] API /v1/issues: %s", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 type V1Issue = struct {
 	Key                string     `json:"key"`
 	Summary            string     `json:"summary"`
@@ -364,13 +447,6 @@ type V1Issue = struct {
 	RealmsPlatform     *string    `json:"realms_platform"`
 	ADO                *string    `json:"ado"`
 	Votes              int        `json:"votes"`
-}
-
-func apiField(value string) *string {
-	if value == "" {
-		return nil
-	}
-	return &value
 }
 
 func newV1Issue(issue *model.Issue) V1Issue {
@@ -433,6 +509,7 @@ func apiV1Issue(service *IssueService) http.HandlerFunc {
 			}
 			log.Printf("[ERROR] API /v1/issues/%s: %s", key, err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		result := newV1Issue(issue)
@@ -440,6 +517,7 @@ func apiV1Issue(service *IssueService) http.HandlerFunc {
 		if err != nil {
 			log.Printf("[ERROR] API /v1/issues/%s: %s", key, err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
 		}
 	}
 }
