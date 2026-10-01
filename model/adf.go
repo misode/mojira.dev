@@ -239,7 +239,7 @@ func renderADFChildren(node map[string]any, issue *Issue) string {
 }
 
 func linkifyIssueKeys(text string) string {
-	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
+	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
 	for _, prefix := range prefixes {
 		re := regexp.MustCompile(fmt.Sprintf(`\b(%s-\d+)\b`, prefix))
 		text = re.ReplaceAllStringFunc(text, func(key string) string {
@@ -250,7 +250,7 @@ func linkifyIssueKeys(text string) string {
 }
 
 func extractIssueKeyFromURL(url string) string {
-	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
+	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
 	for _, prefix := range prefixes {
 		re := regexp.MustCompile(prefix + `-\d+`)
 		if match := re.FindString(url); match != "" {

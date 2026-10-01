@@ -84,6 +84,7 @@ var PortalIds = map[string]int{
 	"REALMS": 9,
 	"WEB":    10,
 	"BDS":    4,
+	"MCD2":   2050,
 }
 
 func (i *Issue) PortalId() int {

@@ -247,7 +247,7 @@
       <a class="comment-time" href="#{{.Anchor}}">
         <time datetime="{{formatTime .Date}}">{{formatTime .Date}}</time>
       </a>
-      <!-- <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button> -->
+      <button onclick="navigator.clipboard.writeText(this.dataset.adf)" data-adf='{{.AdfComment | html}}' style="cursor:pointer;margin-left:0.5em;">📋</button>
     </div>
     <div class="comment-body">
       <div class="adf">{{.Render}}</div>

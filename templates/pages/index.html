@@ -13,6 +13,7 @@
     <option {{if eq .Query.project "REALMS"}}selected{{end}}>REALMS</option>
     <option {{if eq .Query.project "WEB"}}selected{{end}}>WEB</option>
     <option {{if eq .Query.project "BDS"}}selected{{end}}>BDS</option>
+    <option {{if eq .Query.project "MCD2"}}selected{{end}}>MCD2</option>
   </select>
   <select name="status" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Status</option>

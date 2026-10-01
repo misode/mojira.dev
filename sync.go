@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-var projects = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS"}
+var projects = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
 
 var syncQueueCount = promauto.NewGauge(
 	prometheus.GaugeOpts{
