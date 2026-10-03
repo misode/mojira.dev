@@ -204,17 +204,32 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 		b = b.Where("status = ?", filter.status)
 	}
 	if filter.confirmation != "" {
-		b = b.Where("confirmation_status = ?", filter.confirmation)
+		switch strings.ToLower(filter.confirmation) {
+		case "any":
+			b = b.Where("confirmation_status <> '' AND confirmation_status <> 'Unconfirmed'")
+		default:
+			b = b.Where("confirmation_status = ?", filter.confirmation)
+		}
 	}
 	if filter.resolution != "" {
-		if strings.ToLower(filter.resolution) == "unresolved" {
+		switch strings.ToLower(filter.resolution) {
+		case "any":
+			b = b.Where("resolution <> ''")
+		case "unresolved":
 			b = b.Where("resolution = ''")
-		} else {
+		default:
 			b = b.Where("resolution = ?", filter.resolution)
 		}
 	}
 	if filter.priority != "" {
-		b = b.Where("mojang_priority = ?", filter.priority)
+		switch strings.ToLower(filter.priority) {
+		case "none":
+			b = b.Where("mojang_priority = ''")
+		case "any":
+			b = b.Where("mojang_priority <> ''")
+		default:
+			b = b.Where("mojang_priority = ?", filter.priority)
+		}
 	}
 	if filter.reporter != "" {
 		b = b.Where("LOWER(reporter_name) = LOWER(?)", filter.reporter)
@@ -303,7 +318,7 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 	}
 
 	var count int
-	if filter.search == "" && filter.summary == "" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" && strings.ToLower(filter.sort) != "updated" && strings.ToLower(filter.sort) != "resolved" {
+	if filter.search == "" && filter.summary == "" && strings.ToLower(filter.confirmation) != "any" && strings.ToLower(filter.resolution) != "any" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" && strings.ToLower(filter.sort) != "updated" && strings.ToLower(filter.sort) != "resolved" {
 		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, filter.project, filter.status, filter.confirmation, filter.resolution)
 		err = countRow.Scan(&count)
 		if err != nil {

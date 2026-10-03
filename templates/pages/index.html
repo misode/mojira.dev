@@ -6,7 +6,7 @@
   {{if .Query.assignee}}<input type="hidden" name="assignee" value="{{.Query.assignee}}">{{end}}
   <input name="search" type="text" placeholder="Search" value="{{.Query.search}}" hx-get="/" hx-trigger="input[this.value.length >= 3 || this.value.length === 0] delay:0.3s" hx-include=".filters [name]" hx-swap="none">
   <select name="project" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Project</option>
+    <option value="">Project...</option>
     <option {{if eq .Query.project "MC"}}selected{{end}}>MC</option>
     <option {{if eq .Query.project "MCPE"}}selected{{end}}>MCPE</option>
     <option {{if eq .Query.project "MCL"}}selected{{end}}>MCL</option>
@@ -16,7 +16,7 @@
     <option {{if eq .Query.project "MCD2"}}selected{{end}}>MCD2</option>
   </select>
   <select name="status" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Status</option>
+    <option value="">Status...</option>
     <option {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
     <option {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
     <option {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
@@ -25,14 +25,16 @@
     <option {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
   </select>
   <select name="confirmation" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Confirmation</option>
+    <option value="">Confirmation...</option>
     <option {{if eq .Query.confirmation "Unconfirmed"}}selected{{end}}>Unconfirmed</option>
     <option {{if eq .Query.confirmation "Plausible"}}selected{{end}}>Plausible</option>
     <option {{if eq .Query.confirmation "Community Consensus"}}selected{{end}}>Community Consensus</option>
     <option {{if eq .Query.confirmation "Confirmed"}}selected{{end}}>Confirmed</option>
+    <option value="Any" {{if eq .Query.confirmation "Any"}}selected{{end}}>Any Confirmation</option>
   </select>
   <select name="resolution" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Resolution</option>
+    <option value="">Resolution...</option>
+    <option {{if eq .Query.resolution "Unresolved"}}selected{{end}}>Unresolved</option>
     <option {{if eq .Query.resolution "Awaiting Response"}}selected{{end}}>Awaiting Response</option>
     <option {{if eq .Query.resolution "Cannot Reproduce"}}selected{{end}}>Cannot Reproduce</option>
     <option {{if eq .Query.resolution "Done"}}selected{{end}}>Done</option>
@@ -40,16 +42,18 @@
     <option {{if eq .Query.resolution "Fixed"}}selected{{end}}>Fixed</option>
     <option {{if eq .Query.resolution "Incomplete"}}selected{{end}}>Incomplete</option>
     <option {{if eq .Query.resolution "Invalid"}}selected{{end}}>Invalid</option>
-    <option {{if eq .Query.resolution "Unresolved"}}selected{{end}}>Unresolved</option>
     <option {{if eq .Query.resolution "Won't Fix"}}selected{{end}}>Won't Fix</option>
     <option {{if eq .Query.resolution "Works As Intended"}}selected{{end}}>Works As Intended</option>
+    <option value="Any" {{if eq .Query.resolution "Any"}}selected{{end}}>Any Resolution</option>
   </select>
   <select name="priority" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Priority</option>
+    <option value="">Priority...</option>
+    <option value="None" {{if eq .Query.priority "None"}}selected{{end}}>No Priority</option>
     <option {{if eq .Query.priority "Low"}}selected{{end}}>Low</option>
     <option {{if eq .Query.priority "Normal"}}selected{{end}}>Normal</option>
     <option {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
     <option {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
+    <option value="Any" {{if eq .Query.priority "Any"}}selected{{end}}>Any Priority</option>
   </select>
   <div class="filter-group">
     <select name="sort" hx-get="/" hx-include=".filters [name]" hx-swap="none">
