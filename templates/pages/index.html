@@ -101,7 +101,17 @@
         {{range .Issues}}
           <tr {{if .IsResolved}}class="issue-resolved"{{end}}>
             <td><a class="issue-table-key" href="/{{.Key}}">{{.Key}}</a></td>
-            <td><div class="issue-table-summary" title="{{.Summary}}">{{.Summary}}</div></td>
+            <td>
+              {{if and (.IsProject "MCD2") (ne $.Query.project "MCD2")}}
+              <div class="issue-table-summary">
+                <span class="spoiler" tabindex="-1">{{.Summary}}</span>
+              </div>
+              {{else}}
+              <div class="issue-table-summary" title="{{.Summary}}">
+                {{.Summary}}
+              </div>
+              {{end}}
+            </td>
             <td><div class="issue-table-status">
               <div class="status-badge">
                 {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}

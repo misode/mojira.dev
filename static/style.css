@@ -379,6 +379,13 @@ tbody .issue-table-key {
 
 .issue-table-summary {
   width: 600px;
+  overflow: hidden;
+}
+
+.issue-table-summary .spoiler {
+  display: inline-block;
+  filter: blur(5px);
+  user-select: none;
 }
 
 .issue-table-status {
