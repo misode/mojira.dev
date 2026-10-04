@@ -72,14 +72,15 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 		formatter := html.New(
 			html.PreventSurroundingPre(true),
 			html.TabWidth(4),
+			html.WithClasses(true),
 		)
 		var buf bytes.Buffer
-		err = formatter.Format(&buf, styles.Get("vs"), iterator)
+		err = formatter.Format(&buf, styles.Get("github"), iterator)
 		if err != nil {
 			log.Printf("[WARNING] Error during code highlighting: %s", err)
 			return fmt.Sprintf("<pre><code>%s</code></pre>", text)
 		}
-		return fmt.Sprintf("<pre><code>%s</code></pre>", buf.String())
+		return fmt.Sprintf("<pre><code class=\"chroma\" lang=\"%s\">%s</code></pre>", lang, buf.String())
 	case "rule":
 		return "<hr>"
 	case "panel":

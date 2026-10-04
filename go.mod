@@ -1,14 +1,15 @@
 module mojira
 
-go 1.23.3
+go 1.26.0
 
 require github.com/lib/pq v1.10.9
 
 require github.com/joho/godotenv v1.5.1
 
 require (
-	github.com/alecthomas/chroma/v2 v2.18.0
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/Masterminds/squirrel v1.5.4
+	github.com/alecthomas/chroma/v2 v2.27.0
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-chi/cors v1.2.2
 	github.com/go-chi/httprate v0.15.0
 	github.com/kyokomi/emoji/v2 v2.2.13
@@ -16,10 +17,9 @@ require (
 )
 
 require (
-	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/dlclark/regexp2/v2 v2.2.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
@@ -28,6 +28,6 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )

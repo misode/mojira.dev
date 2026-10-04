@@ -1,6 +1,6 @@
 {{define "base"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,19 @@
   <link rel="stylesheet" href="/static/reset.css">
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <script>
+    (function() {
+      // https://stackoverflow.com/a/25490531
+      function readCookie(name) {
+        return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''
+      }
+      let theme = readCookie('mojira-theme')
+      if (!theme) {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body>
   <header>
@@ -17,6 +30,10 @@
     <div class="search">
       <input type="text" name="search" placeholder="Search" autocomplete="off" hx-post="/api/search" hx-trigger="input delay:0.2s" hx-target="#search-results">
       <div id="search-results" class="search-results"></div>
+    </div>
+    <div class="theme-toggle">
+      {{ icon "sun" }}
+      {{ icon "moon" }}
     </div>
   </header>
 

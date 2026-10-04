@@ -108,7 +108,7 @@
             <td>
               {{if and (.IsProject "MCD2") (ne $.Query.project "MCD2")}}
               <div class="issue-table-summary">
-                <span class="spoiler" tabindex="-1">{{.Summary}}</span>
+                <span class="spoiler">{{.Summary}}</span>
               </div>
               {{else}}
               <div class="issue-table-summary" title="{{.Summary}}">

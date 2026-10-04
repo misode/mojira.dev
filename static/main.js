@@ -42,6 +42,15 @@ function afterSwap() {
     }
   })
 
+  document.querySelectorAll('.theme-toggle').forEach((el) => {
+    el.onclick = (e) => {
+      const theme = document.documentElement.getAttribute('data-theme')
+      const newTheme = theme === 'dark' ? 'light' : 'dark'
+      document.cookie = `mojira-theme=${newTheme};path=/;max-age=31536000;samesite=lax`
+      document.documentElement.setAttribute('data-theme', newTheme)
+    }
+  })
+
   expandCommentsIfNeeded()
 }
 
