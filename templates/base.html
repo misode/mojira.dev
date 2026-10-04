@@ -1,6 +1,6 @@
 {{define "base"}}
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,15 +10,6 @@
   <link rel="stylesheet" href="/static/reset.css">
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
-  <script>
-    (function() {
-      let theme = localStorage.getItem('mojira-theme')
-      if (!theme) {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      }
-      document.documentElement.setAttribute('data-theme', theme)
-    })()
-  </script>
 </head>
 <body>
   <header>
@@ -28,9 +19,15 @@
       <div id="search-results" class="search-results"></div>
     </div>
     <div class="theme-toggle">
-      {{ icon "sun" }}
-      {{ icon "moon" }}
+      <label title="Light"><input type="radio" name="mojira-theme" value="light" aria-label="Light" checked>{{ icon "sun" }}</label>
+      <label title="Dark"><input type="radio" name="mojira-theme" value="dark" aria-label="Dark">{{ icon "moon" }}</label>
     </div>
+    <script>
+      document.querySelectorAll('input[name="mojira-theme"]').forEach((input) => {
+        input.checked = input.value === (localStorage.getItem(input.name) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+        input.addEventListener('change', () => localStorage.setItem(input.name, input.value))
+      })
+    </script>
   </header>
 
   <div class="content {{block "content-class" .}}{{end}}">

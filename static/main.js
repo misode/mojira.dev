@@ -42,15 +42,6 @@ function afterSwap() {
     }
   })
 
-  document.querySelectorAll('.theme-toggle').forEach((el) => {
-    el.onclick = (e) => {
-      const theme = document.documentElement.getAttribute('data-theme')
-      const newTheme = theme === 'dark' ? 'light' : 'dark'
-      localStorage.setItem('mojira-theme', newTheme)
-      document.documentElement.setAttribute('data-theme', newTheme)
-    }
-  })
-
   expandCommentsIfNeeded()
 }
 
