@@ -153,30 +153,25 @@ header {
 }
 
 .theme-toggle {
-  display: inline-grid;
+  display: flex;
   color: var(--gray-700);
   &:hover {
     color: var(--gray-950);
   }
   > label {
-    display: flex;
-    padding: 0.5rem;
-    cursor: pointer;
-    &:not(:has(:checked)) {
-      position: absolute;
-      opacity: 0;
-    }
-    &:has(:checked) + &,
-    &:first-of-type:has(~ :last-of-type :checked) {
-      z-index: 1;
+    display: contents;
+    &:has(:checked) > svg {
+      display: none;
     }
     > input {
       appearance: none;
-      margin: 0;
     }
     > svg {
+      box-sizing: content-box;
       width: 20px;
       height: 20px;
+      padding: 0.5rem;
+      cursor: pointer;
     }
   }
 }
