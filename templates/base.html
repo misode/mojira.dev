@@ -12,11 +12,7 @@
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
   <script>
     (function() {
-      // https://stackoverflow.com/a/25490531
-      function readCookie(name) {
-        return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''
-      }
-      let theme = readCookie('mojira-theme')
+      let theme = localStorage.getItem('mojira-theme')
       if (!theme) {
         theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       }

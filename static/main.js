@@ -46,7 +46,7 @@ function afterSwap() {
     el.onclick = (e) => {
       const theme = document.documentElement.getAttribute('data-theme')
       const newTheme = theme === 'dark' ? 'light' : 'dark'
-      document.cookie = `mojira-theme=${newTheme};path=/;max-age=31536000;samesite=lax`
+      localStorage.setItem('mojira-theme', newTheme)
       document.documentElement.setAttribute('data-theme', newTheme)
     }
   })
