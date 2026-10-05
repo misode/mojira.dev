@@ -28,11 +28,11 @@
   --panel-error: light-dark(#FFECEB, #381e1d);
 }
 
-html:has(input[name="mojira-theme"][value="light"]:checked) {
+html:has(input[name="mojira-theme"]:not(:checked)) {
   color-scheme: light;
 }
 
-html:has(input[name="mojira-theme"][value="dark"]:checked) {
+html:has(input[name="mojira-theme"]:checked) {
   color-scheme: dark;
 }
 
@@ -153,26 +153,27 @@ header {
 }
 
 .theme-toggle {
-  display: flex;
+  padding: 0.5rem;
+  cursor: pointer;
   color: var(--gray-700);
   &:hover {
     color: var(--gray-950);
   }
-  > label {
-    display: contents;
-    &:has(:checked) > svg {
-      display: none;
-    }
-    > input {
-      appearance: none;
-    }
-    > svg {
-      box-sizing: content-box;
-      width: 20px;
-      height: 20px;
-      padding: 0.5rem;
-      cursor: pointer;
-    }
+  &:has(:focus-visible) {
+    outline: auto;
+  }
+  > input {
+    appearance: none;
+    display: block;
+    outline: none;
+  }
+  > svg {
+    width: 20px;
+    height: 20px;
+  }
+  &:not(:has(:checked)) > svg:first-of-type,
+  &:has(:checked) > svg:last-of-type {
+    display: none;
   }
 }
 
@@ -1262,11 +1263,13 @@ tbody .issue-table-key {
   /* GenericSubheading */ .gu { color: light-dark(currentColor, #79c0ff) }
   /* GenericTraceback */ .gt { color: light-dark(currentColor, #ff7b72) }
   /* TextWhitespace */ .w { color: light-dark(currentColor, #6e7681) }
-  html:has(input[name="mojira-theme"][value="light"]:checked) & {
+  /* Light Mode */
+  html:has(input[name="mojira-theme"]:not(:checked)) & {
     /* GenericPrompt */ .gp,
     /* GenericSubheading */ .gu { font-weight: bold }
   }
-  html:has(input[name="mojira-theme"][value="dark"]:checked) & {
+  /* Dark Mode */
+  html:has(input[name="mojira-theme"]:checked) & {
     /* NameClass */ .nc,
     /* NameConstant */ .no,
     /* NameDecorator */ .nd,

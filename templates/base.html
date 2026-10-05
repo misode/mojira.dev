@@ -18,14 +18,15 @@
       <input type="text" name="search" placeholder="Search" autocomplete="off" hx-post="/api/search" hx-trigger="input delay:0.2s" hx-target="#search-results">
       <div id="search-results" class="search-results"></div>
     </div>
-    <div class="theme-toggle">
-      <label title="Light"><input type="radio" name="mojira-theme" value="light" aria-label="Light" checked>{{ icon "sun" }}</label>
-      <label title="Dark"><input type="radio" name="mojira-theme" value="dark" aria-label="Dark">{{ icon "moon" }}</label>
-    </div>
+    <label class="theme-toggle" title="Switch theme">
+      <input type="checkbox" name="mojira-theme">
+      {{ icon "sun" }}
+      {{ icon "moon" }}
+    </label>
     <script>
       document.querySelectorAll('input[name="mojira-theme"]').forEach((input) => {
-        input.checked = input.value === (localStorage.getItem(input.name) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
-        input.addEventListener('change', () => localStorage.setItem(input.name, input.value))
+        input.checked = (localStorage.getItem(input.name) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark'
+        input.addEventListener('change', () => localStorage.setItem(input.name, input.checked ? 'dark' : 'light'))
       })
     </script>
   </header>
