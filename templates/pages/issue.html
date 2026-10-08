@@ -40,14 +40,14 @@
         {
           "type": 10,
           "content": "### [[{{.Issue.Key}}] {{.Issue.Summary}}](https://mojira.dev/{{.Issue.Key}})\n{{previewADF .Issue.Description}}"
-        }
+        },
         {{end}}
         {
           "type": 14
         },
         {
           "type": 10,
-          "content": "{{if .Issue.IsResolved}}Resolved{{if .Issue.Resolution}}as **{{.Issue.Resolution}}**{{end}} <t:{{.Issue.ResolvedDate.Unix}}:R> • {{else if .Issue.ConfirmationStatus}}**{{.Issue.ConfirmationStatus}}** • {{else}}{{.Issue.Status}} • {{end}}Created by [{{.Issue.ReporterName}}](https://mojira.dev/user/{{urlPathEscape .Issue.ReporterName}}) <t:{{.Issue.CreatedDate.Unix}}:R>"
+          "content": "{{if .Issue.IsResolved}}Resolved{{if .Issue.Resolution}} as **{{.Issue.Resolution}}**{{end}} <t:{{.Issue.ResolvedDate.Unix}}:R> • {{else if .Issue.ConfirmationStatus}}**{{.Issue.ConfirmationStatus}}** • {{else}}{{.Issue.Status}} • {{end}}{{if .Issue.AssigneeName}}Assigned to [**{{.Issue.AssigneeName}}**](https://mojira.dev/user/{{urlPathEscape .Issue.AssigneeName}}) • {{end}}Created by [**{{.Issue.ReporterName}}**](https://mojira.dev/user/{{urlPathEscape .Issue.ReporterName}}) <t:{{.Issue.CreatedDate.Unix}}:R>"
         }
       ]
     }
