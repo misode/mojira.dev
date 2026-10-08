@@ -13,6 +13,47 @@
 <meta property="twitter:domain" content="mojira.dev">
 <meta property="og:url" content="https://mojira.dev/{{.Issue.Key}}">
 <meta property="twitter:url" content="https://mojira.dev/{{.Issue.Key}}">
+{{if .EnableEmbed}}
+<script id="discord:component-embed" type="application/json">
+  {
+    "component": {
+      "type": 17,
+      "accent_color": 3066994,
+      "components": [
+        {{if .Issue.FirstImage}}
+        {
+          "type": 9,
+          "components": [
+            {
+              "type": 10,
+              "content": "### [[{{.Issue.Key}}] {{.Issue.Summary}}](https://mojira.dev/{{.Issue.Key}})\n{{previewADF .Issue.Description}}"
+            }
+          ],
+          "accessory": {
+            "type": 11,
+            "media": {
+              "url": "{{.Issue.FirstImage.GetUrl}}"
+            }
+          }
+        },
+        {{else}}
+        {
+          "type": 10,
+          "content": "### [[{{.Issue.Key}}] {{.Issue.Summary}}](https://mojira.dev/{{.Issue.Key}})\n{{previewADF .Issue.Description}}"
+        }
+        {{end}}
+        {
+          "type": 14
+        },
+        {
+          "type": 10,
+          "content": "{{if .Issue.IsResolved}}Resolved{{if .Issue.Resolution}}as **{{.Issue.Resolution}}**{{end}} <t:{{.Issue.ResolvedDate.Unix}}:R> • {{else if .Issue.ConfirmationStatus}}**{{.Issue.ConfirmationStatus}}** • {{else}}{{.Issue.Status}} • {{end}}Created by [{{.Issue.ReporterName}}](https://mojira.dev/user/{{urlPathEscape .Issue.ReporterName}}) <t:{{.Issue.CreatedDate.Unix}}:R>"
+        }
+      ]
+    }
+  }
+</script>
+{{end}}
 {{end}}
 
 {{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}
