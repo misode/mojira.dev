@@ -13,7 +13,6 @@
 <meta property="twitter:domain" content="mojira.dev">
 <meta property="og:url" content="https://mojira.dev/{{.Issue.Key}}">
 <meta property="twitter:url" content="https://mojira.dev/{{.Issue.Key}}">
-{{if .EnableEmbed}}
 <script id="discord:component-embed" type="application/json">
   {
     "component": {
@@ -53,7 +52,6 @@
     }
   }
 </script>
-{{end}}
 {{end}}
 
 {{define "title"}}[{{.Issue.Key}}] {{.Issue.Summary}}{{end}}

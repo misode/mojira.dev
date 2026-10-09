@@ -157,7 +157,6 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 func issueHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
-		embed := r.URL.Query().Get("embed")
 		issue, err := service.GetIssue(r.Context(), key)
 		if err != nil {
 			if errors.Is(err, model.ErrIssueRemoved) {
@@ -172,8 +171,7 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 			return
 		}
 		render(w, "pages/issue", map[string]any{
-			"Issue":       issue,
-			"EnableEmbed": embed,
+			"Issue": issue,
 		})
 	}
 }
