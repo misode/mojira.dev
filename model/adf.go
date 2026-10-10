@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/formatters/html"
@@ -148,6 +150,8 @@ func renderADFNode(node map[string]any, issue *Issue) string {
 							if href, ok := attrs["href"].(string); ok {
 								if id := extractCommentIdFromURL(href); id != "" {
 									text = fmt.Sprintf("<a href='%s'>%s</a>", id, text)
+								} else if key := extractIssueKeyFromURL(href); key != "" {
+									text = fmt.Sprintf("<a href='/%s'>%s</a>", key, text)
 								} else {
 									text = fmt.Sprintf("<a href='%s' rel='nofollow' target='_blank'>%s</a>", template.HTMLEscapeString(href), text)
 								}
@@ -239,26 +243,27 @@ func renderADFChildren(node map[string]any, issue *Issue) string {
 	return sb.String()
 }
 
+var issueKeyPrefixes = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
+var issueHostnames = []string{"bugs-legacy.mojang.com", "bugs.mojang.com", "report.bugs.mojang.com", "mojira.atlassian.net", "mojang.atlassian.net"}
+
 func linkifyIssueKeys(text string) string {
-	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
-	for _, prefix := range prefixes {
-		re := regexp.MustCompile(fmt.Sprintf(`\b(%s-\d+)\b`, prefix))
-		text = re.ReplaceAllStringFunc(text, func(key string) string {
-			return fmt.Sprintf(`<a href='/%s'>%s</a>`, key, key)
-		})
-	}
-	return text
+	re := regexp.MustCompile(fmt.Sprintf(`\b((?:%s)-\d+)\b`, strings.Join(issueKeyPrefixes, "|")))
+	return re.ReplaceAllStringFunc(text, func(key string) string {
+		return fmt.Sprintf(`<a href='/%s'>%s</a>`, key, key)
+	})
 }
 
-func extractIssueKeyFromURL(url string) string {
-	prefixes := []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
-	for _, prefix := range prefixes {
-		re := regexp.MustCompile(prefix + `-\d+`)
-		if match := re.FindString(url); match != "" {
-			return match
-		}
+func extractIssueKeyFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || !slices.Contains(issueHostnames, strings.ToLower(u.Hostname())) {
+		return ""
 	}
-	return ""
+	path := strings.Trim(u.EscapedPath(), "/")
+	m := regexp.MustCompile(fmt.Sprintf(`(?:^|/)((?:%s)-\d+)\b`, strings.Join(issueKeyPrefixes, "|"))).FindStringSubmatch(path)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
 }
 
 func extractCommentIdFromURL(url string) string {
