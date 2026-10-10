@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"html/template"
@@ -182,6 +183,126 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 			"AreaOptions":      getFilterOptions("area"),
 			"PlatformOptions":  getFilterOptions("platform"),
 		})
+	}
+}
+
+type atomLink struct {
+	Href string `xml:"href,attr"`
+	Rel  string `xml:"rel,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+}
+
+type atomEntry struct {
+	Title     string    `xml:"title"`
+	ID        string    `xml:"id"`
+	Updated   time.Time `xml:"updated"`
+	Published time.Time `xml:"published"`
+	Link      atomLink  `xml:"link"`
+	Summary   string    `xml:"summary"`
+}
+
+type atomFeed struct {
+	XMLName xml.Name    `xml:"http://www.w3.org/2005/Atom feed"`
+	Title   string      `xml:"title"`
+	ID      string      `xml:"id"`
+	Updated time.Time   `xml:"updated"`
+	Links   []atomLink  `xml:"link"`
+	Entries []atomEntry `xml:"entry"`
+}
+
+func cloneURLValues(values url.Values) url.Values {
+	clone := make(url.Values, len(values))
+	for key, entries := range values {
+		clone[key] = append([]string(nil), entries...)
+	}
+	return clone
+}
+
+func feedHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		filter := ParseIssueFilter(query)
+		limit, err := strconv.Atoi(query.Get("limit"))
+		if err != nil {
+			limit = issuePageSize
+		}
+		limit = min(max(limit, 1), 100)
+		page, err := strconv.Atoi(query.Get("page"))
+		if err != nil {
+			page = 1
+		}
+		page = max(page, 1)
+
+		issues, count, err := service.db.FilterIssues(filter, (page-1)*limit, limit)
+		if err != nil {
+			log.Printf("[ERROR] AtomFeed: %s", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		feedQuery := cloneURLValues(query)
+		feedQuery.Set("limit", strconv.Itoa(limit))
+		feedQuery.Set("page", strconv.Itoa(page))
+		feedURL := "https://mojira.dev/feed?" + feedQuery.Encode()
+		feedIDQuery := cloneURLValues(query)
+		feedIDQuery.Del("limit")
+		feedIDQuery.Del("page")
+		feedID := "https://mojira.dev/feed"
+		if encoded := feedIDQuery.Encode(); encoded != "" {
+			feedID += "?" + encoded
+		}
+		feed := atomFeed{
+			Title: "mojira.dev",
+			ID:    feedID,
+			Links: []atomLink{{Href: feedURL, Rel: "self", Type: "application/atom+xml"}},
+		}
+		if page > 1 {
+			previousQuery := cloneURLValues(feedQuery)
+			previousQuery.Set("page", strconv.Itoa(page-1))
+			feed.Links = append(feed.Links, atomLink{Href: "https://mojira.dev/feed?" + previousQuery.Encode(), Rel: "previous"})
+		}
+		if page*limit < count {
+			nextQuery := cloneURLValues(feedQuery)
+			nextQuery.Set("page", strconv.Itoa(page+1))
+			feed.Links = append(feed.Links, atomLink{Href: "https://mojira.dev/feed?" + nextQuery.Encode(), Rel: "next"})
+		}
+
+		for _, issue := range issues {
+			updated := issue.CreatedDate
+			if issue.UpdatedDate != nil {
+				updated = issue.UpdatedDate
+			}
+			published := issue.CreatedDate
+			if strings.ToLower(filter.sort) == "updated" && issue.UpdatedDate != nil {
+				published = issue.UpdatedDate
+			}
+			if strings.ToLower(filter.sort) == "resolved" && issue.ResolvedDate != nil {
+				published = issue.ResolvedDate
+				updated = issue.ResolvedDate
+			}
+			issueURL := "https://mojira.dev/" + url.PathEscape(issue.Key)
+			feed.Entries = append(feed.Entries, atomEntry{
+				Title:     "[" + issue.Key + "] " + issue.Summary,
+				ID:        issueURL,
+				Updated:   updated.UTC(),
+				Published: published.UTC(),
+				Link:      atomLink{Href: issueURL},
+				Summary:   issue.Summary,
+			})
+			if updated.After(feed.Updated) {
+				feed.Updated = updated.UTC()
+			}
+		}
+
+		body, err := xml.MarshalIndent(feed, "", "  ")
+		if err != nil {
+			log.Printf("[ERROR] Encode feed: %s", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/atom+xml; charset=utf-8")
+		w.Write([]byte(xml.Header))
+		w.Write(body)
 	}
 }
 

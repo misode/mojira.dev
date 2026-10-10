@@ -102,6 +102,7 @@ func main() {
 		r.Use(InstrumentMiddleware)
 
 		r.Get("/", indexHandler(service))
+		r.Get("/feed", feedHandler(service))
 		r.Get("/queue", queueOverviewHandler(service))
 		r.Get("/{key}", issueHandler(service))
 		r.Get("/user/{name}", userHandler(service))
