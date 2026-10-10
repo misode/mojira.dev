@@ -93,12 +93,12 @@
     <table class="issue-table">
       <thead>
         <tr>
-          <th><div class="issue-table-key">Key</div></th>
-          <th><div class="issue-table-summary">Summary</div></th>
-          <th><div class="issue-table-status">Status</div></th>
-          <th><div class="issue-table-user">Reporter</div></th>
-          <th><div class="issue-table-user">Assignee</div></th>
-          <th><div class="issue-table-time">Created</div></th>
+          <th data-resizable="key"><div class="issue-table-key">Key</div></th>
+          <th data-resizable="summary"><div class="issue-table-summary">Summary</div></th>
+          <th data-resizable="status"><div class="issue-table-status">Status</div></th>
+          <th data-resizable="reporter"><div class="issue-table-user">Reporter</div></th>
+          <th data-resizable="assignee"><div class="issue-table-user">Assignee</div></th>
+          <th data-resizable="created"><div class="issue-table-time">Created</div></th>
         </tr>
       </thead>
       <tbody>
@@ -138,6 +138,24 @@
         {{end}}
       </tbody>
     </table>
+    <script>
+      (() => {
+        const table = document.currentScript.previousElementSibling
+        table.querySelectorAll('th[data-resizable]').forEach((header) => {
+          const width = Number(sessionStorage.getItem(`resize-${header.dataset.resizable}`))
+          if (!Number.isFinite(width) || width < 80) return
+          Array.from(table.rows).forEach((row) => {
+            const cell = row.cells[header.cellIndex]
+            if (cell) {
+              cell.style.width = `${width}px`
+              if (cell.firstElementChild) {
+                cell.firstElementChild.style.width = `${width}px`
+              }
+            }
+          })
+        })
+      })()
+    </script>
   </div>
 </div>
 {{end}}

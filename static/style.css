@@ -448,7 +448,8 @@ tbody .issue-table-key {
   text-decoration: none;
 }
 
-.issue-table-user:hover, .issue-table-user:focus {
+tbody .issue-table-user:hover,
+tbody .issue-table-user:focus {
   text-decoration: underline;
 }
 

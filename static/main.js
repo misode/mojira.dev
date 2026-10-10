@@ -51,6 +51,16 @@ function afterSwap() {
     }
   })
 
+  document.querySelectorAll('table').forEach((table) => {
+    table.querySelectorAll('th[data-resizable]').forEach((header) => {
+      const key = header.getAttribute('data-resizable')
+      const width = Number(sessionStorage.getItem(`resize-${key}`))
+      if (Number.isFinite(width) && width >= 80) {
+        setTableColumnWidth(table, header.cellIndex, width)
+      }
+    })
+  })
+
   expandCommentsIfNeeded()
 }
 
@@ -169,4 +179,73 @@ function nextAttachment() {
     el = el.nextElementSibling
   }
   showAttachment(el)
+}
+
+function findTableResizeHandle(x, y) {
+  let nearestHeader
+  let nearestDistance = Infinity
+  document.querySelectorAll('th[data-resizable]').forEach((header) => {
+      const bounds = header.getBoundingClientRect()
+      const distance = Math.abs(bounds.right - x)
+    if (y >= bounds.top && y <= bounds.bottom && distance <= 8 && distance < nearestDistance) {
+      nearestHeader = header
+      nearestDistance = distance
+    }
+  })
+  return nearestHeader
+}
+
+document.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) {
+    return
+  }
+  const header = findTableResizeHandle(e.clientX, e.clientY)
+  if (!header) {
+    return
+  }
+  document.documentElement.setAttribute('data-resizable-key', header.getAttribute('data-resizable'))
+  document.documentElement.setAttribute('data-resizable-start-x', e.clientX)
+  document.documentElement.setAttribute('data-resizable-start-width', getComputedStyle(header.firstElementChild || header).width)
+  e.preventDefault()
+})
+
+document.addEventListener('pointermove', (e) => {
+  const key = document.documentElement.getAttribute('data-resizable-key')
+    if (key === null) {
+    document.documentElement.style.cursor = findTableResizeHandle(e.clientX, e.clientY) ? 'col-resize' : ''
+    return
+  }
+    const root = document.documentElement
+    root.style.cursor = 'col-resize'
+    const startX = Number(root.getAttribute('data-resizable-start-x'))
+    const startWidth = parseFloat(root.getAttribute('data-resizable-start-width'))
+  const width = Math.max(80, Math.round(startWidth + e.clientX - startX))
+  document.querySelectorAll('th[data-resizable]').forEach((header) => {
+    if (header.getAttribute('data-resizable') === key) {
+        setTableColumnWidth(header.closest('table'), header.cellIndex, width)
+    }
+  })
+  sessionStorage.setItem(`resize-${key}`, width)
+})
+
+function endTableResize() {
+  document.documentElement.removeAttribute('data-resizable-key')
+  document.documentElement.removeAttribute('data-resizable-start-x')
+  document.documentElement.removeAttribute('data-resizable-start-width')
+  document.documentElement.style.cursor = ''
+}
+
+document.addEventListener('pointerup', endTableResize)
+document.addEventListener('pointercancel', endTableResize)
+
+function setTableColumnWidth(table, index, width) {
+  Array.from(table.rows).forEach((row) => {
+    const cell = row.cells[index]
+    if (cell) {
+      cell.style.width = `${width}px`
+      if (cell.firstElementChild) {
+        cell.firstElementChild.style.width = `${width}px`
+      }
+    }
+  })
 }
