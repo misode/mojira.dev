@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/coreos/go-systemd/v22/activation"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -115,7 +119,42 @@ func main() {
 	})
 
 	log.Println("Starting server...")
-	log.Fatal(http.ListenAndServe("localhost:8080", r))
+	listeners, err := activation.Listeners()
+	if err != nil {
+		log.Fatalf("failed to read systemd listeners: %v", err)
+	}
+
+	var listener net.Listener
+	if len(listeners) > 0 && listeners[0] != nil {
+		listener = listeners[0]
+		log.Println("Serving on systemd activated socket")
+	} else {
+		listener, err = net.Listen("tcp", "localhost:8080")
+		if err != nil {
+			log.Fatalf("failed to listen on localhost:8080: %v", err)
+		}
+		log.Println("Serving on self-bound localhost:8080")
+	}
+
+	srv := &http.Server{Handler: r}
+	go func() {
+		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+	log.Println("Shutdown signal received, draining...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("graceful shutdown error: %v", err)
+	}
+	log.Println("Server stopped")
+	lokiLogger.Close()
 }
 
 func KeyByCFConnectingIP(r *http.Request) (string, error) {

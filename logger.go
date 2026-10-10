@@ -58,6 +58,16 @@ func (l *LokiLogger) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (l *LokiLogger) Close() {
+	if l.token == "" {
+		return
+	}
+	if l.ticker != nil {
+		l.ticker.Stop()
+	}
+	l.flush()
+}
+
 func (l *LokiLogger) parseLog(p []byte) (string, string) {
 	parts := bytes.SplitN(p, []byte(" "), 3)
 	rest := bytes.TrimRight(p, "\n")

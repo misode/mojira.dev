@@ -9,6 +9,7 @@ require github.com/joho/godotenv v1.5.1
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/alecthomas/chroma/v2 v2.27.0
+	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-chi/cors v1.2.2
 	github.com/go-chi/httprate v0.15.0
