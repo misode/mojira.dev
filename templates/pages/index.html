@@ -1,7 +1,7 @@
 {{define "content-class"}}full-page{{end}}
 
 {{define "content"}}
-<div class="filters">
+<div class="filters" id="filters"{{if .SwapFilters}} hx-swap-oob="true"{{end}}>
   {{if .Query.reporter}}<input type="hidden" name="reporter" value="{{.Query.reporter}}">{{end}}
   {{if .Query.assignee}}<input type="hidden" name="assignee" value="{{.Query.assignee}}">{{end}}
   <input name="search" type="text" placeholder="Search" value="{{.Query.search}}" hx-get="/" hx-trigger="input[this.value.length >= 3 || this.value.length === 0] delay:0.3s" hx-include=".filters [name]" hx-swap="none">
@@ -14,15 +14,6 @@
     <option {{if eq .Query.project "WEB"}}selected{{end}}>WEB</option>
     <option {{if eq .Query.project "BDS"}}selected{{end}}>BDS</option>
     <option {{if eq .Query.project "MCD2"}}selected{{end}}>MCD2</option>
-  </select>
-  <select name="status" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-    <option value="">Status...</option>
-    <option {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
-    <option {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
-    <option {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
-    <option {{if eq .Query.status "In Progress"}}selected{{end}}>In Progress</option>
-    <option {{if eq .Query.status "Resolved"}}selected{{end}}>Resolved</option>
-    <option {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
   </select>
   <select name="confirmation" hx-get="/" hx-include=".filters [name]" hx-swap="none">
     <option value="">Confirmation...</option>
@@ -46,15 +37,79 @@
     <option {{if eq .Query.resolution "Works As Intended"}}selected{{end}}>Works As Intended</option>
     <option value="Any" {{if eq .Query.resolution "Any"}}selected{{end}}>Any Resolution</option>
   </select>
-  <select name="priority" hx-get="/" hx-include=".filters [name]" hx-swap="none">
+  {{if or (eq .More "status") .Query.status}}
+  <select name="status" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Status...</option>
+    <option value="Open" {{if eq .Query.status "Open"}}selected{{end}}>Open</option>
+    <option value="Reopened" {{if eq .Query.status "Reopened"}}selected{{end}}>Reopened</option>
+    <option value="Postponed" {{if eq .Query.status "Postponed"}}selected{{end}}>Postponed</option>
+    <option value="In Progress" {{if eq .Query.status "In Progress"}}selected{{end}}>In Progress</option>
+    <option value="Resolved" {{if eq .Query.status "Resolved"}}selected{{end}}>Resolved</option>
+    <option value="Closed" {{if eq .Query.status "Closed"}}selected{{end}}>Closed</option>
+  </select>
+  {{end}}
+  {{if or (eq .More "priority") .Query.priority}}
+  <select name="priority" hx-get="/" hx-include="#filters [name]" hx-swap="none">
     <option value="">Priority...</option>
     <option value="None" {{if eq .Query.priority "None"}}selected{{end}}>No Priority</option>
-    <option {{if eq .Query.priority "Low"}}selected{{end}}>Low</option>
-    <option {{if eq .Query.priority "Normal"}}selected{{end}}>Normal</option>
-    <option {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
-    <option {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
+    <option value="Low" {{if eq .Query.priority "Low"}}selected{{end}}>Low</option>
+    <option value="Normal" {{if eq .Query.priority "Normal"}}selected{{end}}>Normal</option>
+    <option value="Important" {{if eq .Query.priority "Important"}}selected{{end}}>Important</option>
+    <option value="Very Important" {{if eq .Query.priority "Very Important"}}selected{{end}}>Very Important</option>
     <option value="Any" {{if eq .Query.priority "Any"}}selected{{end}}>Any Priority</option>
   </select>
+  {{end}}
+  {{if or (eq .More "category") .Query.category}}
+  <select name="category" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Category...</option>
+    {{range .CategoryOptions}}
+    <option value="{{.}}" {{if eq $.Query.category .}}selected{{end}}>{{.}}</option>
+    {{end}}
+  </select>
+  {{end}}
+  {{if or (eq .More "component") .Query.component}}
+  <select name="component" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Component...</option>
+    {{range .ComponentOptions}}
+    <option value="{{.}}" {{if eq $.Query.component .}}selected{{end}}>{{.}}</option>
+    {{end}}
+  </select>
+  {{end}}
+  {{if or (eq .More "area") .Query.area}}
+  <select name="area" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Area...</option>
+    {{range .AreaOptions}}
+    <option value="{{.}}" {{if eq $.Query.area .}}selected{{end}}>{{.}}</option>
+    {{end}}
+  </select>
+  {{end}}
+  {{if or (eq .More "platform") .Query.platform}}
+  <select name="platform" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Platform...</option>
+    {{range .PlatformOptions}}
+    <option value="{{.}}" {{if eq $.Query.platform .}}selected{{end}}>{{.}}</option>
+    {{end}}
+  </select>
+  {{end}}
+  {{if or (eq .More "realms_platform") .Query.realms_platform}}
+  <select name="realms_platform" hx-get="/" hx-include="#filters [name]" hx-swap="none">
+    <option value="">Realms Platform...</option>
+    <option value="Bedrock" {{if eq .Query.realms_platform "Bedrock"}}selected{{end}}>Bedrock</option>
+    <option value="Java" {{if eq .Query.realms_platform "Java"}}selected{{end}}>Java</option>
+  </select>
+  {{end}}
+  {{if .HasMoreFilters}}
+  <select id="more-select" name="more" hx-get="/" hx-trigger="change" hx-include="#filters [name]" hx-swap="none">
+    <option value="{{.More}}" selected>More...</option>
+    {{if and (ne .More "status") (not .Query.status)}}<option value="status">Status</option>{{end}}
+    {{if and (ne .More "priority") (not .Query.priority)}}<option value="priority">Priority</option>{{end}}
+    {{if and (ne .More "category") (not .Query.category)}}<option value="category">Category</option>{{end}}
+    {{if and (ne .More "component") (not .Query.component)}}<option value="component">Component</option>{{end}}
+    {{if and (ne .More "area") (not .Query.area)}}<option value="area">Area</option>{{end}}
+    {{if and (ne .More "platform") (not .Query.platform)}}<option value="platform">Platform</option>{{end}}
+    {{if and (ne .More "realms_platform") (not .Query.realms_platform)}}<option value="realms_platform">Realms Platform</option>{{end}}
+  </select>
+  {{end}}
   <div class="filter-group">
     <select name="sort" hx-get="/" hx-include=".filters [name]" hx-swap="none">
       <option value="">Sort by: Created</option>
@@ -66,7 +121,7 @@
       <option value="Duplicates" {{if eq .Query.sort "Duplicates"}}selected{{end}}>Sort by: Duplicates</option>
     </select>
     <select name="sort_dir" hx-get="/" hx-include=".filters [name]" hx-swap="none">
-      <option value="DESC">Descending</option>
+      <option value="">Descending</option>
       <option value="ASC" {{if eq .Query.sort_dir "ASC"}}selected{{end}}>Ascending</option>
     </select>
   </div>

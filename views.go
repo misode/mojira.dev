@@ -22,6 +22,7 @@ import (
 
 var issuePageSize = 50
 var maxUserComments = 20
+var moreFilters = []string{"status", "priority", "category", "area", "component", "platform", "realms_platform"}
 
 func render(w http.ResponseWriter, name string, data any) {
 	if !strings.HasSuffix(name, ".html") {
@@ -99,8 +100,13 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		filter := ParseIssueFilter(query)
+		more := query.Get("more")
+		if !slices.Contains(moreFilters, more) {
+			more = ""
+		}
+		moreSelectTrigger := r.Header.Get("HX-Trigger") == "more-select"
 		page, err := strconv.Atoi(query.Get("page"))
-		if err != nil {
+		if err != nil || moreSelectTrigger {
 			page = 1
 		}
 		page = max(page, 1)
@@ -144,12 +150,37 @@ func indexHandler(service *IssueService) http.HandlerFunc {
 				queryMap[k] = v[0]
 			}
 		}
+		getFilterOptions := func(name string) []string {
+			if more != name && query.Get(name) == "" {
+				return nil
+			}
+			options, err := service.db.GetIssueFilterOptions(name)
+			if err != nil {
+				log.Printf("[ERROR] GetIssueFilterOptions(%s): %s", name, err)
+				return nil
+			}
+			return options
+		}
+		hasMoreFilters := false
+		for _, name := range moreFilters {
+			if more != name && query.Get(name) == "" {
+				hasMoreFilters = true
+				break
+			}
+		}
 		render(w, "pages/index", map[string]any{
-			"Issues": issues,
-			"Count":  count,
-			"Query":  queryMap,
-			"Page":   page,
-			"Outage": outage,
+			"Issues":           issues,
+			"Count":            count,
+			"Query":            queryMap,
+			"Page":             page,
+			"Outage":           outage,
+			"More":             more,
+			"SwapFilters":      moreSelectTrigger,
+			"HasMoreFilters":   hasMoreFilters,
+			"CategoryOptions":  getFilterOptions("category"),
+			"ComponentOptions": getFilterOptions("component"),
+			"AreaOptions":      getFilterOptions("area"),
+			"PlatformOptions":  getFilterOptions("platform"),
 		})
 	}
 }

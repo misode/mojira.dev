@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -19,7 +20,14 @@ import (
 )
 
 type DBClient struct {
-	db *sql.DB
+	db             *sql.DB
+	optionsCacheMu sync.RWMutex
+	optionsCache   map[string]optionsCacheEntry
+}
+
+type optionsCacheEntry struct {
+	options   []string
+	expiresAt time.Time
 }
 
 func NewDBClient() (*DBClient, error) {
@@ -32,7 +40,7 @@ func NewDBClient() (*DBClient, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
-	return &DBClient{db: db}, nil
+	return &DBClient{db: db, optionsCache: make(map[string]optionsCacheEntry)}, nil
 }
 
 func (c *DBClient) RunAllMigrations() error {
@@ -160,6 +168,7 @@ type IssueFilter struct {
 	component       string
 	platform        string
 	area            string
+	realmsPlatform  string
 	sort            string
 	sortDir         string
 }
@@ -182,6 +191,7 @@ func ParseIssueFilter(query url.Values) *IssueFilter {
 		component:       query.Get("component"),
 		platform:        query.Get("platform"),
 		area:            query.Get("area"),
+		realmsPlatform:  query.Get("realms_platform"),
 		sort:            query.Get("sort"),
 		sortDir:         query.Get("sort_dir"),
 	}
@@ -258,6 +268,9 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 	if filter.area != "" {
 		b = b.Where("area = ?", filter.area)
 	}
+	if filter.realmsPlatform != "" {
+		b = b.Where("realms_platform = ?", filter.realmsPlatform)
+	}
 	if filter.summary != "" {
 		b = b.Where("to_tsvector('english', summary) @@ websearch_to_tsquery('english', ?)", filter.summary)
 	}
@@ -318,7 +331,7 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 	}
 
 	var count int
-	if filter.search == "" && filter.summary == "" && strings.ToLower(filter.confirmation) != "any" && strings.ToLower(filter.resolution) != "any" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" && strings.ToLower(filter.sort) != "updated" && strings.ToLower(filter.sort) != "resolved" {
+	if filter.search == "" && filter.summary == "" && strings.ToLower(filter.confirmation) != "any" && strings.ToLower(filter.resolution) != "any" && filter.priority == "" && filter.reporter == "" && filter.assignee == "" && filter.affectedVersion == "" && filter.fixVersion == "" && filter.category == "" && filter.label == "" && filter.component == "" && filter.platform == "" && filter.area == "" && filter.realmsPlatform == "" && strings.ToLower(filter.sort) != "updated" && strings.ToLower(filter.sort) != "resolved" {
 		countRow := c.db.QueryRow(`SELECT COALESCE(SUM(count), 0) FROM issue_count WHERE ($1 = '' OR project = $1) AND ($2 = '' OR status = $2) AND ($3 = '' OR confirmation_status = $3) AND ($4 = '' OR resolution = $4 OR (resolution = '' AND $4 = 'Unresolved'))`, filter.project, filter.status, filter.confirmation, filter.resolution)
 		err = countRow.Scan(&count)
 		if err != nil {
@@ -336,6 +349,53 @@ func (c *DBClient) FilterIssues(filter *IssueFilter, offset int, limit int) ([]m
 		}
 	}
 	return issues, count, nil
+}
+
+func (c *DBClient) GetIssueFilterOptions(filter string) ([]string, error) {
+	c.optionsCacheMu.RLock()
+	cached, ok := c.optionsCache[filter]
+	c.optionsCacheMu.RUnlock()
+	if ok && time.Now().Before(cached.expiresAt) {
+		return append([]string(nil), cached.options...), nil
+	}
+
+	var query string
+	switch filter {
+	case "category":
+		query = `SELECT DISTINCT value FROM issue CROSS JOIN LATERAL unnest(category) AS filter_values(value) WHERE state = 'present' AND value <> '' ORDER BY value`
+	case "component":
+		query = `SELECT DISTINCT value FROM issue CROSS JOIN LATERAL unnest(components) AS filter_values(value) WHERE state = 'present' AND value <> '' ORDER BY value`
+	case "area":
+		query = `SELECT DISTINCT area FROM issue WHERE state = 'present' AND area <> '' ORDER BY area`
+	case "platform":
+		query = `SELECT DISTINCT platform FROM issue WHERE state = 'present' AND platform <> '' ORDER BY platform`
+	default:
+		return nil, nil
+	}
+	rows, err := c.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var options []string
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+		options = append(options, value)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	c.optionsCacheMu.Lock()
+	c.optionsCache[filter] = optionsCacheEntry{
+		options:   append([]string(nil), options...),
+		expiresAt: time.Now().Add(5 * time.Minute),
+	}
+	c.optionsCacheMu.Unlock()
+	return options, nil
 }
 
 func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue, error) {
