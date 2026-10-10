@@ -525,22 +525,44 @@ func (c *DBClient) updateIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 	if err != nil {
 		return err
 	}
-	query := `UPDATE issue SET summary = $2, creator_name = $3, creator_avatar = $4, reporter_name = $5, reporter_avatar = $6, assignee_name = $7, assignee_avatar = $8, description = $9, environment = $10, labels = $11, created_date = $12, updated_date = $13, resolved_date = $14, status = $15, confirmation_status = $16, resolution = $17, affected_versions = $18, fix_versions = $19, category = $20, mojang_priority = $21, area = $22, components = $23, ado = $24, platform = $25, os_version = $26, realms_platform = $27, votes = $28, legacy_votes = $29, text = $30, comment_count = $31, duplicate_count = $32, synced_date = $33, state = 'present' WHERE key = $1`
-	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.CreatorName, issue.CreatorAvatar, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, issue.LegacyVotes, text, len(issue.Comments), duplicateCount, issue.SyncedDate)
+	query := `UPDATE issue SET summary = $2, reporter_name = $3, reporter_avatar = $4, assignee_name = $5, assignee_avatar = $6, description = $7, environment = $8, labels = $9, created_date = $10, updated_date = $11, resolved_date = $12, status = $13, confirmation_status = $14, resolution = $15, affected_versions = $16, fix_versions = $17, category = $18, mojang_priority = $19, area = $20, components = $21, ado = $22, platform = $23, os_version = $24, realms_platform = $25, votes = $26, text = $27, comment_count = $28, duplicate_count = $29, synced_date = $30, state = 'present' WHERE key = $1`
+	_, err = tx.Exec(query, issue.Key, issue.Summary, issue.ReporterName, issue.ReporterAvatar, issue.AssigneeName, issue.AssigneeAvatar, issue.Description, issue.Environment, pq.Array(issue.Labels), issue.CreatedDate, issue.UpdatedDate, issue.ResolvedDate, issue.Status, issue.ConfirmationStatus, issue.Resolution, pq.Array(issue.AffectedVersions), pq.Array(issue.FixVersions), pq.Array(issue.Category), issue.MojangPriority, issue.Area, pq.Array(issue.Components), issue.ADO, issue.Platform, issue.OSVersion, issue.RealmsPlatform, issue.Votes, text, len(issue.Comments), duplicateCount, issue.SyncedDate)
 	if err != nil {
 		return errors.New("failed to update issue: " + err.Error())
 	}
 
-	_, err = tx.Exec(`DELETE FROM comment WHERE issue_key = $1`, issue.Key)
-	if err != nil {
-		return errors.New("failed to delete comments: " + err.Error())
-	}
+	commentIDs := make([]string, 0, len(issue.Comments))
 	for _, cmt := range issue.Comments {
-		_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, legacy_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6, $7)`, issue.Key, cmt.Id, cmt.LegacyId, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
+		commentIDs = append(commentIDs, cmt.Id)
+	}
+	if len(commentIDs) > 0 {
+		_, err = tx.Exec(`DELETE FROM comment WHERE issue_key = $1 AND comment_id <> ALL($2)`, issue.Key, pq.Array(commentIDs))
 		if err != nil {
-			return errors.New("failed to insert comment: " + err.Error())
+			return errors.New("failed to delete removed comments: " + err.Error())
+		}
+	} else {
+		_, err = tx.Exec(`DELETE FROM comment WHERE issue_key = $1`, issue.Key)
+		if err != nil {
+			return errors.New("failed to delete removed comments: " + err.Error())
 		}
 	}
+	for _, cmt := range issue.Comments {
+		result, err := tx.Exec(`UPDATE comment SET date = $3, author_name = $4, author_avatar = $5, adf_comment = $6 WHERE issue_key = $1 AND comment_id = $2`, issue.Key, cmt.Id, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
+		if err != nil {
+			return errors.New("failed to update comment: " + err.Error())
+		}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return errors.New("failed to inspect comment update: " + err.Error())
+		}
+		if rowsAffected == 0 {
+			_, err = tx.Exec(`INSERT INTO comment (issue_key, comment_id, date, author_name, author_avatar, adf_comment) VALUES ($1, $2, $3, $4, $5, $6)`, issue.Key, cmt.Id, cmt.Date, cmt.AuthorName, cmt.AuthorAvatar, cmt.AdfComment)
+			if err != nil {
+				return errors.New("failed to insert comment: " + err.Error())
+			}
+		}
+	}
+
 	_, err = tx.Exec(`DELETE FROM issue_link WHERE issue_key = $1`, issue.Key)
 	if err != nil {
 		return errors.New("failed to delete issue links: " + err.Error())
@@ -551,6 +573,7 @@ func (c *DBClient) updateIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 			return errors.New("failed to insert issue_link: " + err.Error())
 		}
 	}
+
 	_, err = tx.Exec(`DELETE FROM attachment WHERE issue_key = $1`, issue.Key)
 	if err != nil {
 		return errors.New("failed to delete attachments: " + err.Error())
@@ -561,6 +584,7 @@ func (c *DBClient) updateIssueImpl(tx *sql.Tx, issue *model.Issue) error {
 			return errors.New("failed to insert attachment: " + err.Error())
 		}
 	}
+
 	return nil
 }
 

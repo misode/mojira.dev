@@ -13,7 +13,6 @@ import (
 
 type IssueService struct {
 	db           *DBClient
-	legacy       *api.LegacyClient
 	public       *api.PublicClient
 	serviceDesk  *api.ServiceDeskClient
 	redactedKeys map[string]struct{}
@@ -25,7 +24,6 @@ func NewIssueService() *IssueService {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	legacy := api.NewLegacyClient()
 	public := api.NewPublicClient()
 	serviceDesk := api.NewServiceDeskClient()
 	err = serviceDesk.Authenticate()
@@ -46,7 +44,7 @@ func NewIssueService() *IssueService {
 	}
 	log.Printf("Using %v redacted keys", len(redactedKeys))
 
-	return &IssueService{db: dbClient, legacy: legacy, public: public, serviceDesk: serviceDesk, redactedKeys: redactedKeys}
+	return &IssueService{db: dbClient, public: public, serviceDesk: serviceDesk, redactedKeys: redactedKeys}
 }
 
 func (s *IssueService) GetIssue(ctx context.Context, key string) (*model.Issue, error) {
@@ -103,17 +101,11 @@ func (s *IssueService) RefreshIssue(ctx context.Context, key string) (*model.Iss
 }
 
 func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue, error) {
-	_, isRedacted := s.redactedKeys[key]
-	var legacyIssue *api.LegacyIssue
 	var pubIssue *api.PublicIssue
 	var sdIssue *api.ServiceDeskIssue
-	var legacyError, pubErr, sdErr error
+	var pubErr, sdErr error
 
-	done := make(chan struct{}, 3)
-	go func() {
-		legacyIssue, legacyError = s.legacy.GetIssue(ctx, key)
-		done <- struct{}{}
-	}()
+	done := make(chan struct{}, 2)
 	go func() {
 		pubIssue, pubErr = s.public.GetIssue(ctx, key)
 		done <- struct{}{}
@@ -122,7 +114,6 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		sdIssue, sdErr = s.serviceDesk.GetIssue(ctx, key)
 		done <- struct{}{}
 	}()
-	<-done
 	<-done
 	<-done
 
@@ -169,42 +160,6 @@ func (s *IssueService) fetchIssue(ctx context.Context, key string) (*model.Issue
 		merged.Attachments = pubIssue.Attachments
 		now := time.Now()
 		merged.SyncedDate = &now
-	}
-
-	if legacyError != nil && merged.CreatedDate.Before(time.Date(2025, 2, 11, 0, 0, 0, 0, time.UTC)) && !errors.Is(legacyError, model.ErrIssueNotFound) {
-		return nil, legacyError
-	}
-	if legacyIssue != nil {
-		if legacyIssue.CreatorKey != legacyIssue.ReporterKey && !isRedacted {
-			merged.CreatorName = legacyIssue.CreatorName
-			merged.CreatorAvatar = legacyIssue.CreatorAvatar
-		}
-		if merged.ReporterName == "migrated" && !isRedacted {
-			merged.ReporterName = legacyIssue.ReporterName
-			merged.ReporterAvatar = legacyIssue.ReporterAvatar
-		}
-		if merged.ResolvedDate != nil && legacyIssue.ResolvedDate != nil {
-			merged.ResolvedDate = legacyIssue.ResolvedDate
-		}
-		merged.LegacyVotes = legacyIssue.Votes
-		// Sync comments
-		legacyMap := make(map[int64]*model.Comment)
-		for i := range legacyIssue.Comments {
-			c := &legacyIssue.Comments[i]
-			legacyMap[c.Date.Unix()] = c
-		}
-		usedIds := make(map[string]bool)
-		for i, c := range merged.Comments {
-			match := legacyMap[c.Date.Unix()]
-			if match != nil && !usedIds[match.LegacyId] {
-				usedIds[match.LegacyId] = true
-				merged.Comments[i].LegacyId = match.LegacyId
-				if c.AuthorName == "migrated" {
-					merged.Comments[i].AuthorName = match.AuthorName
-					merged.Comments[i].AuthorAvatar = match.AuthorAvatar
-				}
-			}
-		}
 	}
 
 	for i := range merged.Comments {
