@@ -1,5 +1,24 @@
+/** @typedef {CustomEvent<{elt?: Element}> & {target: Element}} HtmxEvent */
+
+/**
+ * @typedef {Object} HtmxExtension
+ * @property {(api: object) => void} [init]
+ * @property {(name: string, event: HtmxEvent) => boolean} [onEvent]
+ */
+
+/**
+ * @param {string} name
+ * @param {() => HtmxExtension} builder
+ */
+function registerHtmxExtension(name, builder) {
+  htmx.defineExtension(name, builder())
+}
+
 // Formats timestamps in the user locale
-htmx.defineExtension('localized-time', (() => {
+registerHtmxExtension('localized-time', () => {
+  /**
+   * @param {Element} root
+   */
   function formatTimes(root) {
     const elements = root.matches?.('time[datetime]') ? [root] : []
     elements.push(...root.querySelectorAll('time[datetime]'))
@@ -23,10 +42,10 @@ htmx.defineExtension('localized-time', (() => {
       return true
     }
   }
-})())
+})
 
 // Copies values from [data-copy] elements
-htmx.defineExtension('copy-to-clipboard', (() => {
+registerHtmxExtension('copy-to-clipboard', () => {
   const copiedTimers = new WeakMap()
 
   return {
@@ -43,10 +62,10 @@ htmx.defineExtension('copy-to-clipboard', (() => {
       })
     }
   }
-})())
+})
 
 // Expandable content (comments, linked issues, affects versions)
-htmx.defineExtension('content-expand', {
+registerHtmxExtension('content-expand', () => ({
   init() {
     document.addEventListener('click', (event) => {
       const element = event.target.closest?.('[data-expand]')
@@ -59,10 +78,10 @@ htmx.defineExtension('content-expand', {
       }
     })
   }
-})
+}))
 
 // Light and dark theme toggle
-htmx.defineExtension('theme-toggle', {
+registerHtmxExtension('theme-toggle', () => ({
   init() {
     document.addEventListener('click', (event) => {
       if (!event.target.closest?.('.theme-toggle')) {
@@ -74,10 +93,10 @@ htmx.defineExtension('theme-toggle', {
       document.documentElement.setAttribute('data-theme', newTheme)
     })
   }
-})
+}))
 
 // Expands, highlights, and scrolls to comments in the URL hash
-htmx.defineExtension('comment-navigation', (() => {
+registerHtmxExtension('comment-navigation', () => {
   function expandCommentsIfNeeded() {
     const hash = window.location.hash
     if (hash && hash.startsWith('#comment-')) {
@@ -117,17 +136,25 @@ htmx.defineExtension('comment-navigation', (() => {
       return true
     }
   }
-})())
+})
 
 // Opens image and video attachments in an overlay
-htmx.defineExtension('attachment-viewer', (() => {
+registerHtmxExtension('attachment-viewer', () => {
+  /** @type {HTMLDivElement | null} */
   let overlay
 
+  /**
+   * @param {string} id
+   * @returns {Element | null}
+   */
   function findAttachment(id) {
-    return Array.from(document.querySelectorAll('[data-attachment]'))
-      .find((el) => el.getAttribute('data-attachment') === id)
+    return document.querySelector(`[data-attachment="${id}"]`)
   }
 
+  /**
+   * @param {Element | null} el
+   * @returns {boolean}
+   */
   function showAttachment(el) {
     if (!overlay || !el) {
       return false
@@ -170,14 +197,17 @@ htmx.defineExtension('attachment-viewer', (() => {
     window.history.replaceState({}, '', url)
   }
 
+  /**
+   * @param {string} direction
+   */
   function moveAttachment(direction) {
     if (!overlay) {
       return
     }
     const currentEl = findAttachment(overlay.getAttribute('data-current-id'))
-    let el = currentEl?.[direction === 'previous' ? 'previousElementSibling' : 'nextElementSibling']
+    let el = currentEl?.[direction === 'prev' ? 'previousElementSibling' : 'nextElementSibling']
     while (el && el.getAttribute('data-attachment-type') === 'unknown') {
-      el = el[direction === 'previous' ? 'previousElementSibling' : 'nextElementSibling']
+      el = el[direction === 'prev' ? 'previousElementSibling' : 'nextElementSibling']
     }
     showAttachment(el)
   }
@@ -201,7 +231,7 @@ htmx.defineExtension('attachment-viewer', (() => {
           return
         }
         if (event.target.closest?.('.file-overlay-arrow.left')) {
-          moveAttachment('previous')
+          moveAttachment('prev')
         } else if (event.target.closest?.('.file-overlay-arrow.right')) {
           moveAttachment('next')
         }
@@ -212,7 +242,7 @@ htmx.defineExtension('attachment-viewer', (() => {
           return
         }
         if (event.key === 'Escape') closeOverlay()
-        if (event.key === 'ArrowLeft') moveAttachment('previous')
+        if (event.key === 'ArrowLeft') moveAttachment('prev')
         if (event.key === 'ArrowRight') moveAttachment('next')
       })
 
@@ -222,10 +252,15 @@ htmx.defineExtension('attachment-viewer', (() => {
       }
     }
   }
-})())
+})
 
-// Make table columns with [data-resizable] resizable
-htmx.defineExtension('table-resize', (() => {
+// Make table columns resizable
+registerHtmxExtension('table-resize', () => {
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @returns {HTMLTableCellElement | undefined}
+   */
   function findHandle(x, y) {
     let nearestHeader
     let nearestDistance = Infinity
@@ -240,6 +275,11 @@ htmx.defineExtension('table-resize', (() => {
     return nearestHeader
   }
 
+  /**
+   * @param {HTMLTableElement} table
+   * @param {number} index
+   * @param {number} width
+   */
   function setColumnWidth(table, index, width) {
     Array.from(table.rows).forEach((row) => {
       const cell = row.cells[index]
@@ -252,6 +292,9 @@ htmx.defineExtension('table-resize', (() => {
     })
   }
 
+  /**
+   * @param {Element} root
+   */
   function restoreWidths(root) {
     const tables = new Set(root.matches?.('table') ? [root] : [])
     if (root.closest) {
@@ -329,4 +372,4 @@ htmx.defineExtension('table-resize', (() => {
       return true
     }
   }
-})())
+})
