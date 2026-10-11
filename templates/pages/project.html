@@ -7,6 +7,33 @@
     {{.ProjectName}}
   </h1>
 
+  <div class="stats">
+    <a class="stat" href="/?project={{.Project}}&amp;resolution=Unresolved">
+      <div class="stat-label">Unresolved issues</div>
+      <div class="stat-value">{{.Stats.Unresolved}}</div>
+    </a>
+    <a class="stat" href="/?project={{.Project}}&amp;resolution=Unresolved&amp;confirmation=Unconfirmed">
+      <div class="stat-label">Unconfirmed issues</div>
+      <div class="stat-value">{{.Stats.Unconfirmed}}</div>
+    </a>
+    <a class="stat" href="/?project={{.Project}}">
+      <div class="stat-label">Total reported</div>
+      <div class="stat-value">{{.Stats.TotalReported}}</div>
+    </a>
+    <a class="stat" href="/?project={{.Project}}">
+      <div class="stat-label">Reported in past 30 days</div>
+      <div class="stat-value">{{.Stats.ReportedLast30Days}}</div>
+    </a>
+    <a class="stat" href="/?project={{.Project}}&amp;resolution=Fixed&amp;sort=Resolved">
+      <div class="stat-label">Total fixed</div>
+      <div class="stat-value">{{.Stats.TotalFixed}}</div>
+    </a>
+    <a class="stat" href="/?project={{.Project}}&amp;resolution=Fixed&amp;sort=Resolved">
+      <div class="stat-label">Fixed in past 30 days</div>
+      <div class="stat-value">{{.Stats.FixedLast30Days}}</div>
+    </a>
+  </div>
+
   <div class="project-feeds">
     <div class="feed">
       <h2>Unresolved</h2>

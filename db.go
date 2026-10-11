@@ -398,6 +398,30 @@ func (c *DBClient) GetIssueFilterOptions(filter string) ([]string, error) {
 	return options, nil
 }
 
+type ProjectStats struct {
+	Unresolved         int
+	Unconfirmed        int
+	TotalReported      int
+	ReportedLast30Days int
+	TotalFixed         int
+	FixedLast30Days    int
+}
+
+func (c *DBClient) GetProjectStats(project string) (ProjectStats, error) {
+	var stats ProjectStats
+	row := c.db.QueryRow(`
+		SELECT
+			COALESCE((SELECT SUM(count) FROM issue_count WHERE project = $1 AND resolution = ''), 0),
+			COALESCE((SELECT SUM(count) FROM issue_count WHERE project = $1 AND resolution = '' AND confirmation_status = 'Unconfirmed'), 0),
+			COALESCE((SELECT SUM(count) FROM issue_count WHERE project = $1), 0),
+			(SELECT COUNT(*) FROM issue WHERE state = 'present' AND project = $1 AND created_date >= NOW() - INTERVAL '30 days'),
+			COALESCE((SELECT SUM(count) FROM issue_count WHERE project = $1 AND resolution = 'Fixed'), 0),
+			(SELECT COUNT(*) FROM issue WHERE state = 'present' AND project = $1 AND resolution = 'Fixed' AND resolved_date >= NOW() - INTERVAL '30 days')
+	`, project)
+	err := row.Scan(&stats.Unresolved, &stats.Unconfirmed, &stats.TotalReported, &stats.ReportedLast30Days, &stats.TotalFixed, &stats.FixedLast30Days)
+	return stats, err
+}
+
 func (c *DBClient) GetIssueByReporter(reporter string, limit int) ([]model.Issue, error) {
 	rows, err := c.db.Query(`SELECT key, summary, status, resolution, confirmation_status, reporter_avatar, reporter_name, created_date FROM issue WHERE state = 'present' AND LOWER(reporter_name) = LOWER($1) ORDER BY created_date DESC LIMIT $2`, reporter, limit)
 	if err != nil {

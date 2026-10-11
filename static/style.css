@@ -914,6 +914,53 @@ tbody .issue-table-user:focus {
   font-weight: 500;
 }
 
+.stats {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (max-width: 980px) {
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: 0.25rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stat:hover,
+.stat:focus-visible {
+  background-color: var(--gray-200);
+  border-color: var(--gray-300);
+  color: var(--gray-950);
+}
+
+.stat-label {
+  color: var(--gray-600);
+  font-size: 12px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
 .project-feeds {
   display: flex;
   flex-direction: column;

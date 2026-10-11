@@ -344,6 +344,12 @@ func projectHandler(service *IssueService) http.HandlerFunc {
 			})
 			return
 		}
+		stats, err := service.db.GetProjectStats(project)
+		if err != nil {
+			log.Printf("[ERROR] GetProjectStats (%s): %s", project, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 		newFilter := &IssueFilter{project: project, resolution: "Unresolved"}
 		newIssues, _, err := service.db.FilterIssues(newFilter, 0, 10)
 		if err != nil {
@@ -362,6 +368,7 @@ func projectHandler(service *IssueService) http.HandlerFunc {
 			"Project":       project,
 			"ProjectName":   projectName,
 			"ActiveProject": project,
+			"Stats":         stats,
 			"NewIssues":     newIssues,
 			"FixedIssues":   fixedIssues,
 		})
