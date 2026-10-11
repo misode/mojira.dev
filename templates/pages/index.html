@@ -169,7 +169,7 @@
             </td>
             <td><div class="issue-table-status">
               <div class="status-badge">
-                {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
+                {{.CombinedStatus}}
               </div>
             </div></td>
             <td><a class="issue-table-user" href="/user/{{urlPathEscape .ReporterName}}">

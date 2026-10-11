@@ -12,7 +12,7 @@
     <span class="issue-link-key">{{.Key}}</span>
     <span class="issue-link-summary" title="{{.Summary}}">{{.Summary}}</span>
     <span class="status-badge">
-      {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
+      {{.CombinedStatus}}
     </span>
   </a>
 {{end}}

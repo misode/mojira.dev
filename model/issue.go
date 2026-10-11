@@ -111,6 +111,16 @@ func (i *Issue) IsResolved() bool {
 	return i.Status == "Resolved" || i.Status == "Closed"
 }
 
+func (i *Issue) CombinedStatus() string {
+	if i.Resolution != "" {
+		return i.Resolution
+	} else if i.ConfirmationStatus != "" {
+		return i.ConfirmationStatus
+	} else {
+		return i.Status
+	}
+}
+
 func (i *Issue) HasEnvironment() bool {
 	return i.Environment != "" && !IsEmptyADF(i.Environment)
 }
