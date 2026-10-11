@@ -31,6 +31,7 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 
 	tmpl, err := template.New(filepath.Base(name)).Funcs(template.FuncMap{
+		"projectIds": func() []string { return model.ProjectIds },
 		"formatTime": formatTime,
 		"previewADF": func(adf string) string {
 			text := model.ExtractPlainTextFromADF(adf)
@@ -308,22 +309,61 @@ func feedHandler(service *IssueService) http.HandlerFunc {
 
 func issueHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		key := r.PathValue("key")
+		project := r.PathValue("project")
+		index := r.PathValue("index")
+		key := fmt.Sprintf("%s-%s", project, index)
 		issue, err := service.GetIssue(r.Context(), key)
 		if err != nil {
 			if errors.Is(err, model.ErrIssueRemoved) {
 				render(w, "pages/issue_removed", map[string]any{
-					"Key": key,
+					"Key":           key,
+					"ActiveProject": project,
 				})
 				return
 			}
 			render(w, "pages/issue_not_found", map[string]any{
-				"Key": key,
+				"Key":           key,
+				"ActiveProject": project,
 			})
 			return
 		}
 		render(w, "pages/issue", map[string]any{
-			"Issue": issue,
+			"Issue":         issue,
+			"ActiveProject": project,
+		})
+	}
+}
+
+func projectHandler(service *IssueService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		project := r.PathValue("project")
+		projectName := model.ProjectNames[project]
+		if projectName == "" {
+			render(w, "pages/project_not_found", map[string]any{
+				"Project": project,
+			})
+			return
+		}
+		newFilter := &IssueFilter{project: project, resolution: "Unresolved"}
+		newIssues, _, err := service.db.FilterIssues(newFilter, 0, 10)
+		if err != nil {
+			log.Printf("[ERROR] FilterIssues (project %s, unresolved): %s", project, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		fixedFilter := &IssueFilter{project: project, resolution: "Fixed", sort: "Resolved"}
+		fixedIssues, _, err := service.db.FilterIssues(fixedFilter, 0, 10)
+		if err != nil {
+			log.Printf("[ERROR] FilterIssues (project %s, fixed): %s", project, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		render(w, "pages/project", map[string]any{
+			"Project":       project,
+			"ProjectName":   projectName,
+			"ActiveProject": project,
+			"NewIssues":     newIssues,
+			"FixedIssues":   fixedIssues,
 		})
 	}
 }

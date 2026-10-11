@@ -104,7 +104,8 @@ func main() {
 		r.Get("/", indexHandler(service))
 		r.Get("/feed", feedHandler(service))
 		r.Get("/queue", queueOverviewHandler(service))
-		r.Get("/{key}", issueHandler(service))
+		r.Get("/{project}", projectHandler(service))
+		r.Get("/{project}-{index}", issueHandler(service))
 		r.Get("/user/{name}", userHandler(service))
 
 		r.Post("/api/search", apiSearchHandler(service))

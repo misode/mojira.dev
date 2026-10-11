@@ -23,6 +23,14 @@
 <body hx-ext="table-resize, attachment-viewer, localized-time, copy-to-clipboard, content-expand, theme-toggle, comment-navigation">
   <header>
     <a class="header-main" href="/">mojira.dev</a>
+    <nav class="project-nav">
+      {{range projectIds}}
+      <a class="project-chip{{if eq $.ActiveProject .}} active{{end}}" href="/{{.}}">
+        <img src="/static/projects/{{.}}.png" alt="" width="20" height="20">
+        <span>{{.}}</span>
+      </a>
+      {{end}}
+    </nav>
     <div class="search">
       <input type="text" name="search" placeholder="Search" autocomplete="off" hx-post="/api/search" hx-trigger="input delay:0.2s" hx-target="#search-results">
       <div id="search-results" class="search-results"></div>

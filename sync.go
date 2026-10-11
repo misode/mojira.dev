@@ -14,8 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-var projects = []string{"MC", "MCPE", "MCL", "REALMS", "WEB", "BDS", "MCD2"}
-
 var syncQueueCount = promauto.NewGauge(
 	prometheus.GaugeOpts{
 		Name: "mojira_sync_queue_size",
@@ -72,7 +70,7 @@ func updateFeedListener(service *IssueService) {
 	}
 	var filteredKeys []string
 	for _, key := range updatedKeys {
-		if slices.Contains(projects, strings.Split(key, "-")[0]) {
+		if slices.Contains(model.ProjectIds, strings.Split(key, "-")[0]) {
 			filteredKeys = append(filteredKeys, key)
 		}
 	}

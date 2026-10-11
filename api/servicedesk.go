@@ -80,7 +80,7 @@ func (s *ServiceDeskClient) GetIssue(ctx context.Context, key string) (*ServiceD
 		return nil, NewApiError("servicedesk", errors.New("no connection to servicedesk"))
 	}
 
-	portalId := model.PortalIds[strings.Split(key, "-")[0]]
+	portalId := model.ProjectPortalIds[strings.Split(key, "-")[0]]
 	body, err := json.Marshal(map[string]any{
 		"models": []string{"reqDetails"},
 		"options": map[string]any{

@@ -110,9 +110,58 @@ header {
   text-decoration: none;
   color: var(--gray-950);
   font-weight: bold;
+  flex: 0 0 auto;
 }
 
 .header-main:hover {
+  color: var(--gray-950);
+}
+
+.project-nav {
+  margin: 0 0.5rem;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.project-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.project-chip {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.25rem;
+  color: var(--gray-700);
+  font-size: 12PX;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.project-chip img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.project-chip:hover,
+.project-chip:focus-visible {
+  background-color: var(--gray-200);
+  color: var(--gray-950);
+}
+
+.project-chip.active {
+  border-color: var(--gray-400);
+  background-color: var(--gray-200);
   color: var(--gray-950);
 }
 
@@ -120,6 +169,7 @@ header {
   margin-left: auto;
   position: relative;
   flex-grow: 1;
+  min-width: 6rem;
   max-width: 12rem;
   transition: max-width 0.2s;
 }
@@ -809,7 +859,7 @@ tbody .issue-table-user:focus {
   color: var(--gray-500);
 }
 
-/* USER DETAIL */
+/* USER PAGE */
 
 .user {
   max-width: 1200px;
@@ -818,6 +868,9 @@ tbody .issue-table-user:focus {
 }
 
 .user h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 20px;
   font-weight: 500;
 }
@@ -839,13 +892,49 @@ tbody .issue-table-user:focus {
   }
 }
 
-.user h2 {
+.user-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* PROJECT PAGE */
+
+.project {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.project h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.project-feeds {
+  display: flex;
+  flex-direction: column;
+  gap: 0 2rem;
+}
+
+@media (min-width: 720px) {
+  .project-feeds {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.feed h2 {
   margin-top: 1rem;
   font-size: 16px;
   font-weight: bold;
 }
 
-.user-section-link {
+.feed-link {
   font-size: 12px;
   font-weight: 600;
   display: block;
@@ -854,15 +943,9 @@ tbody .issue-table-user:focus {
   text-decoration: none;
 }
 
-.user-section-link:hover {
+.feed-link:hover {
   color: var(--link-hover);
   text-decoration: underline;
-}
-
-.user-comments {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
 /* SHARED */

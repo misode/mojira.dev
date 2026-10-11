@@ -1,0 +1,37 @@
+{{define "title"}}{{.ProjectName}} | mojira.dev{{end}}
+
+{{define "content"}}
+<div class="project">
+  <h1>
+    <img src="/static/projects/{{.Project}}.png" alt="" width="24" height="24">
+    {{.ProjectName}}
+  </h1>
+
+  <div class="project-feeds">
+    <div class="feed">
+      <h2>Unresolved</h2>
+      <a class="feed-link" href="/?project={{.Project}}&resolution=Unresolved">View all</a>
+      <div>
+        {{range .NewIssues}}
+          {{template "issueLink" .}}
+        {{else}}
+          <span class="no-results">No issues.</span>
+        {{end}}
+      </div>
+    </div>
+    <div class="feed">
+      <h2>Recent fixes</h2>
+      <a class="feed-link" href="/?project={{.Project}}&resolution=Fixed&sort=Resolved">View all</a>
+      <div>
+        {{range .FixedIssues}}
+          {{template "issueLink" .}}
+        {{else}}
+          <span class="no-results">No issues.</span>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{template "base" .}}

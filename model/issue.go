@@ -77,18 +77,30 @@ func (i *Issue) Project() string {
 	return strings.Split(i.Key, "-")[0]
 }
 
-var PortalIds = map[string]int{
+var ProjectIds = []string{"MC", "MCPE", "MCD2", "MCL", "REALMS", "WEB", "BDS"}
+
+var ProjectNames = map[string]string{
+	"MC":     "Minecraft: Java Edition",
+	"MCPE":   "Minecraft: Bedrock Edition",
+	"MCD2":   "Minecraft Dungeons II",
+	"REALMS": "Minecraft Realms",
+	"WEB":    "Mojang Web Experiences & Services",
+	"MCL":    "Minecraft Launcher",
+	"BDS":    "Bedrock Dedicated Server",
+}
+
+var ProjectPortalIds = map[string]int{
 	"MC":     2,
 	"MCPE":   6,
+	"MCD2":   2050,
 	"MCL":    7,
 	"REALMS": 9,
 	"WEB":    10,
 	"BDS":    4,
-	"MCD2":   2050,
 }
 
 func (i *Issue) PortalId() int {
-	return PortalIds[i.Project()]
+	return ProjectPortalIds[i.Project()]
 }
 
 func (i *Issue) IsProject(projects ...string) bool {

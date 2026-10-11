@@ -36,30 +36,34 @@
 
   <div class="user-split">
     <div>
-      <h2>Assigned</h2>
-      {{if .AssignedIssues}}
-      <a class="user-section-link" href="/?assignee={{.UserName}}">View all</a>
-      {{end}}
-      <div>
-        {{range .AssignedIssues}}
-          {{template "issueLink" .}}
-        {{else}}
-          <span class="no-results">No issues.</span>
+      <div class="feed">
+        <h2>Assigned</h2>
+        {{if .AssignedIssues}}
+        <a class="feed-link" href="/?assignee={{.UserName}}">View all</a>
         {{end}}
+        <div>
+          {{range .AssignedIssues}}
+            {{template "issueLink" .}}
+          {{else}}
+            <span class="no-results">No issues.</span>
+          {{end}}
+        </div>
       </div>
-      <h2>Reported</h2>
-      {{if .ReportedIssues}}
-      <a class="user-section-link" href="/?reporter={{.UserName}}">View all</a>
-      {{end}}
-      <div>
-        {{range .ReportedIssues}}
-          {{template "issueLink" .}}
-        {{else}}
-          <span class="no-results">No issues.</span>
+      <div class="feed">
+        <h2>Reported</h2>
+        {{if .ReportedIssues}}
+        <a class="feed-link" href="/?reporter={{.UserName}}">View all</a>
         {{end}}
+        <div>
+          {{range .ReportedIssues}}
+            {{template "issueLink" .}}
+          {{else}}
+            <span class="no-results">No issues.</span>
+          {{end}}
+        </div>
       </div>
     </div>
-    <div>
+    <div class="feed">
       <h2>Comments</h2>
       <div class="user-comments">
         {{range .Comments}}
@@ -76,17 +80,6 @@
     </div>
   </div>
 </div>
-{{end}}
-
-{{define "issueLink"}}
-  <a class="issue-link {{if .IsResolved}}issue-resolved{{end}}" href="/{{.Key}}">
-    <img src="/static/icons/bug.svg" width="16" height="16" alt="">
-    <span class="issue-link-key">{{.Key}}</span>
-    <span class="issue-link-summary" title="{{.Summary}}">{{.Summary}}</span>
-    <span class="status-badge">
-      {{if .Resolution}}{{.Resolution}}{{else}}{{.ConfirmationStatus}}{{end}}
-    </span>
-  </a>
 {{end}}
 
 {{template "base" .}}

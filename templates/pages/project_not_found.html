@@ -1,0 +1,16 @@
+{{define "content"}}
+<div class="project">
+  <h1>
+    {{.Project}}
+  </h1>
+
+  <div class="error-page">
+    {{icon "alert"}}
+    <p>
+      This project does not exist.
+    </p>
+  </div>
+</div>
+{{end}}
+
+{{template "base" .}}
