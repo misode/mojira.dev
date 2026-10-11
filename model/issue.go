@@ -238,6 +238,10 @@ func (a *Attachment) IsVideo() bool {
 	return strings.HasPrefix(a.MimeType, "video/")
 }
 
+func (a *Attachment) IsArchive() bool {
+	return a.MimeType == "application/zip"
+}
+
 func (a *Attachment) IsText() bool {
 	return strings.HasPrefix(a.MimeType, "text/") || a.MimeType == "application/json" || a.MimeType == "application/xml"
 }
@@ -252,6 +256,9 @@ func (a *Attachment) GetFileType() string {
 	}
 	if a.IsVideo() {
 		return "video"
+	}
+	if a.IsArchive() {
+		return "archive"
 	}
 	if a.IsText() {
 		return "text"

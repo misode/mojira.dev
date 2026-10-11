@@ -138,21 +138,108 @@ registerHtmxExtension('comment-navigation', () => {
   }
 })
 
-// Opens image, video, and text attachments in an overlay
+// Opens image, video, archive, and text attachments in an overlay
 registerHtmxExtension('attachment-viewer', () => {
+  const DOWNLOAD_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"></path><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"></path></svg>'
+
   /** @type {HTMLDivElement | null} */
   let overlay
 
   /**
+   * @param {HTMLElement} parent 
+   * @param {*} directory 
+   */
+  function renderArchiveDirectory(parent, directory) {
+    const ul = document.createElement('ul')
+    const directories = [...directory.directories.entries()].sort(([a], [b]) => a.localeCompare(b))
+    const files = directory.files.sort((a, b) => a.name.localeCompare(b.name))
+
+    directories.forEach(([name, child]) => {
+      const li = document.createElement('li')
+      const details = document.createElement('details')
+      const summary = document.createElement('summary')
+      summary.textContent = name
+      details.append(summary)
+      renderArchiveDirectory(details, child)
+      li.append(details)
+      ul.append(li)
+    })
+
+    files.forEach((file) => {
+      const li = document.createElement('li')
+      li.className = 'file-tree-entry'
+      const name = document.createElement('span')
+      name.textContent = file.name
+      const button = document.createElement('button')
+      button.innerHTML = DOWNLOAD_ICON
+      button.addEventListener('click', async () => {
+        const blob = await file.entry.async('blob')
+        const objectUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = objectUrl
+        link.download = file.name
+        document.body.append(link)
+        link.click()
+        link.remove()
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+      })
+      li.append(name, button)
+      ul.append(li)
+    })
+
+    if (ul.childElementCount) {
+      parent.append(ul)
+    }
+  }
+
+  /**
+   * @param {HTMLElement} tree
+   * @param {*} archive
+   */
+  function renderArchive(tree, archive) {
+    tree.replaceChildren()
+    const root = { directories: new Map(), files: [] }
+    Object.entries(archive.files).forEach(([path, entry]) => {
+      path = path.replaceAll('\\', '/')
+      const parts = path.split('/').filter(p => p)
+      if (!parts.length) {
+        return
+      }
+      let directory = root
+      const directoryParts = entry.dir ? parts : parts.slice(0, -1)
+      directoryParts.forEach((part) => {
+        if (!directory.directories.has(part)) {
+          directory.directories.set(part, { directories: new Map(), files: [] })
+        }
+        directory = directory.directories.get(part)
+      })
+      if (!entry.dir) {
+        directory.files.push({ name: parts.at(-1), path: path, entry })
+      }
+    })
+    renderArchiveDirectory(tree, root)
+  }
+
+  /**
+   * @param {string} url
+   */
+  async function loadArchive(url) {
+    const { default: JSZip } = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')
+    const response = await fetch(url)
+    const buffer = await response.arrayBuffer()
+    return JSZip.loadAsync(buffer)
+  }
+
+  /**
    * @param {string} id
-   * @returns {Element | null}
+   * @returns {HTMLElement | null}
    */
   function findAttachment(id) {
     return document.querySelector(`[data-attachment="${id}"]`)
   }
 
   /**
-   * @param {Element | null} el
+   * @param {HTMLElement | null} el
    * @returns {boolean}
    */
   function showAttachment(el) {
@@ -163,22 +250,46 @@ registerHtmxExtension('attachment-viewer', () => {
     if (fileType === 'unknown') {
       return false
     }
+    const fileInfo = el.getAttribute('data-attachment-info')
+    const fileUrl = el.getAttribute('href')
     const image = overlay.querySelector('img')
     const video = overlay.querySelector('video')
     const text = overlay.querySelector('textarea')
+    const fileTree = overlay.querySelector('.file-tree')
     image.src = ''
     video.src = ''
     text.value = ''
+    fileTree.replaceChildren()
     const id = el.getAttribute('data-attachment')
     if (fileType === 'image') {
-      image.src = el.getAttribute('href')
-      image.alt = el.getAttribute('data-attachment-info')
+      image.src = fileUrl
+      image.alt = fileInfo
     } else if (fileType === 'video') {
-      video.src = el.getAttribute('href')
-      video.alt = el.getAttribute('data-attachment-info')
+      video.src = fileUrl
+      video.alt = fileInfo
       video.controls = true
+    } else if (fileType === 'archive') {
+      fileTree.replaceChildren()
+      const msg = document.createElement('span')
+      msg.textContent = 'Loading archive...'
+      fileTree.append(msg)
+      loadArchive(fileUrl)
+        .then(archive => {
+          if (overlay.getAttribute('data-current-id') === id) {
+            renderArchive(fileTree, archive)
+          }
+        })
+        .catch(error => {
+          console.error(`Failed loading archive ${id}:`, error)
+          if (overlay.getAttribute('data-current-id') === id) {
+            fileTree.replaceChildren()
+            const msg = document.createElement('span')
+            msg.textContent = 'Failed to load archive.'
+            fileTree.append(msg)
+          }
+        })
     } else if (fileType === 'text') {
-      fetch(el.getAttribute('href'))
+      fetch(fileUrl)
         .then(res => res.text())
         .then(contents => {
           if (overlay.getAttribute('data-current-id') === id) {
@@ -188,7 +299,8 @@ registerHtmxExtension('attachment-viewer', () => {
     } else {
       return false
     }
-    overlay.querySelector('.file-overlay-info').textContent = el.getAttribute('data-attachment-info')
+    overlay.querySelector('.file-overlay-info').href = fileUrl
+    overlay.querySelector('.file-overlay-name').textContent = fileInfo
     overlay.setAttribute('data-current-id', id)
     overlay.setAttribute('data-file-type', fileType)
     const url = new URL(window.location)
@@ -201,6 +313,7 @@ registerHtmxExtension('attachment-viewer', () => {
     if (overlay) {
       overlay.querySelector('video').src = ''
       overlay.querySelector('img').src = ''
+      overlay.querySelector('.file-tree').replaceChildren()
       overlay.querySelector('textarea').value = ''
       overlay.removeAttribute('data-current-id')
       overlay.removeAttribute('data-file-type')

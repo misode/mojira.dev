@@ -1117,7 +1117,7 @@ tbody .issue-table-user:focus {
   flex-direction: column;
   align-items: center;
   max-width: calc(100vw - 7rem);
-  max-height: calc(100vh - 1rem);
+  max-height: calc(100vh - 3rem);
   color: var(--gray-200);
   pointer-events: none;
 }
@@ -1160,10 +1160,21 @@ tbody .issue-table-user:focus {
 }
 
 .file-overlay-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-top: 0.5rem;
   background: var(--backdrop-bg);
   padding: 0.25rem 1rem;
   border-radius: 0.25rem;
+  color: var(--gray-50);
+  text-decoration: none;
+}
+
+.file-overlay-info:hover {
+  color: var(--gray-50);
+  text-decoration: underline;
+  background: var(--backdrop);
 }
 
 .file-overlay img[src=""], .file-overlay video[src=""] {
@@ -1194,6 +1205,69 @@ tbody .issue-table-user:focus {
 
 .file-overlay[data-file-type="text"] textarea {
   display: block;
+}
+
+.file-tree {
+  display: none;
+  width: 80vw;
+  height: 75vh;
+  padding: 0.5rem 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 0.25rem;
+  background: var(--gray-50);
+  color: var(--gray-900);
+}
+
+.file-overlay[data-file-type="archive"] .file-tree {
+  display: block;
+}
+
+.file-tree > span {
+  display: flex;
+  justify-content: center;
+}
+
+.file-tree ul {
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.file-tree > ul {
+  padding-left: 0;
+}
+
+.file-tree summary {
+  cursor: pointer;
+  padding: 0.25rem 1rem;
+}
+
+.file-tree .file-tree-entry {
+  padding: 0.25rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.file-tree summary:hover, .file-tree .file-tree-entry:hover {
+  background-color: var(--gray-200);
+}
+
+.file-tree .file-tree-entry button {
+  flex: none;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.25rem;
+}
+
+.file-tree .file-tree-entry button:hover {
+  color: var(--gray-950);
+  background-color: var(--gray-300);
 }
 
 .error-page {
