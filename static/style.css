@@ -1175,6 +1175,27 @@ tbody .issue-table-user:focus {
   max-height: 75vh;
 }
 
+.file-overlay textarea {
+  display: none;
+  width: 80vw;
+  height: 75vh;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  font-family: ui-monospace, Menlo, "Segoe UI Mono", "Ubuntu Mono", monospace;
+  font-size: 14px;
+  white-space: pre;
+  overflow: auto;
+  overscroll-behavior: contain;
+  resize: none;
+}
+
+.file-overlay[data-file-type="text"] textarea {
+  display: block;
+}
+
 .error-page {
   max-width: 600px;
   margin: 2rem auto;

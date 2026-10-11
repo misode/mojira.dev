@@ -138,7 +138,7 @@ registerHtmxExtension('comment-navigation', () => {
   }
 })
 
-// Opens image and video attachments in an overlay
+// Opens image, video, and text attachments in an overlay
 registerHtmxExtension('attachment-viewer', () => {
   /** @type {HTMLDivElement | null} */
   let overlay
@@ -165,8 +165,11 @@ registerHtmxExtension('attachment-viewer', () => {
     }
     const image = overlay.querySelector('img')
     const video = overlay.querySelector('video')
+    const text = overlay.querySelector('textarea')
     image.src = ''
     video.src = ''
+    text.value = ''
+    const id = el.getAttribute('data-attachment')
     if (fileType === 'image') {
       image.src = el.getAttribute('href')
       image.alt = el.getAttribute('data-attachment-info')
@@ -174,12 +177,20 @@ registerHtmxExtension('attachment-viewer', () => {
       video.src = el.getAttribute('href')
       video.alt = el.getAttribute('data-attachment-info')
       video.controls = true
+    } else if (fileType === 'text') {
+      fetch(el.getAttribute('href'))
+        .then(res => res.text())
+        .then(contents => {
+          if (overlay.getAttribute('data-current-id') === id) {
+            text.value = contents
+          }
+        })
     } else {
       return false
     }
     overlay.querySelector('.file-overlay-info').textContent = el.getAttribute('data-attachment-info')
-    const id = el.getAttribute('data-attachment')
     overlay.setAttribute('data-current-id', id)
+    overlay.setAttribute('data-file-type', fileType)
     const url = new URL(window.location)
     url.searchParams.set('attachment', id)
     window.history.replaceState({}, '', url)
@@ -190,7 +201,9 @@ registerHtmxExtension('attachment-viewer', () => {
     if (overlay) {
       overlay.querySelector('video').src = ''
       overlay.querySelector('img').src = ''
+      overlay.querySelector('textarea').value = ''
       overlay.removeAttribute('data-current-id')
+      overlay.removeAttribute('data-file-type')
     }
     const url = new URL(window.location)
     url.searchParams.delete('attachment')

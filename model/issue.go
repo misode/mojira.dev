@@ -238,6 +238,10 @@ func (a *Attachment) IsVideo() bool {
 	return strings.HasPrefix(a.MimeType, "video/")
 }
 
+func (a *Attachment) IsText() bool {
+	return strings.HasPrefix(a.MimeType, "text/") || a.MimeType == "application/json" || a.MimeType == "application/xml"
+}
+
 func (a *Attachment) GetUrl() string {
 	return fmt.Sprintf("https://bugs.mojang.com/api/issue-attachment-get?attachmentId=%s", a.Id)
 }
@@ -248,6 +252,9 @@ func (a *Attachment) GetFileType() string {
 	}
 	if a.IsVideo() {
 		return "video"
+	}
+	if a.IsText() {
+		return "text"
 	}
 	return "unknown"
 }
