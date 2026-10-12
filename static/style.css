@@ -457,6 +457,7 @@ footer a:hover {
 .issue-table tbody td:first-child, .issue-table thead th:first-child {
   position: sticky;
   left: 0;
+  z-index: 1;
 }
 
 .issue-table-key {
