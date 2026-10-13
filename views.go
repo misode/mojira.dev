@@ -309,7 +309,7 @@ func feedHandler(service *IssueService) http.HandlerFunc {
 
 func issueHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		project := r.PathValue("project")
+		project := strings.ToUpper(r.PathValue("project"))
 		index := r.PathValue("index")
 		key := fmt.Sprintf("%s-%s", project, index)
 		issue, err := service.GetIssue(r.Context(), key)
@@ -336,7 +336,7 @@ func issueHandler(service *IssueService) http.HandlerFunc {
 
 func projectHandler(service *IssueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		project := r.PathValue("project")
+		project := strings.ToUpper(r.PathValue("project"))
 		projectName := model.ProjectNames[project]
 		if projectName == "" {
 			render(w, "pages/project_not_found", map[string]any{
